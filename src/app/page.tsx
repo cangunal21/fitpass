@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { mockClasses, mockDropInSlots } from '@/lib/mockData'
+import Navbar from '@/components/Navbar'
 
 const categories = [
   { id: 1, name: 'Yoga', icon: '🧘', color: '#8B5CF6' },
@@ -37,13 +38,7 @@ export default function Home() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8f8f8' }}>
-      <nav style={{ backgroundColor: '#fff', borderBottom: '1px solid #eee', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 1px 8px rgba(0,0,0,0.06)' }}>
-        <div style={{ fontSize: 22, fontWeight: 800, color: '#FF385C', letterSpacing: -0.5 }}>fitpass</div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Link href="/giris" style={{ padding: '8px 18px', borderRadius: 24, border: '1px solid #ddd', background: '#fff', fontSize: 14, fontWeight: 500, color: '#333', textDecoration: 'none' }}>Giriş Yap</Link>
-          <Link href="/kayit" style={{ padding: '8px 18px', borderRadius: 24, border: 'none', background: '#FF385C', fontSize: 14, fontWeight: 600, color: '#fff', textDecoration: 'none' }}>Kayıt Ol</Link>
-        </div>
-      </nav>
+      <Navbar />
 
       <div style={{ backgroundColor: '#fff', padding: '20px 24px 16px', borderBottom: '1px solid #eee' }}>
         <div style={{ maxWidth: 800, margin: '0 auto', position: 'relative' }}>

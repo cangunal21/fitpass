@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { mockInstructors, mockVenues, mockClasses } from '@/lib/mockData'
+import Navbar from '@/components/Navbar'
 
 export default function InstructorPage() {
   const params = useParams()
@@ -18,13 +19,7 @@ export default function InstructorPage() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8f8f8' }}>
-      <nav style={{ backgroundColor: '#fff', borderBottom: '1px solid #eee', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 1px 8px rgba(0,0,0,0.06)' }}>
-        <Link href="/" style={{ fontSize: 22, fontWeight: 800, color: '#FF385C', letterSpacing: -0.5, textDecoration: 'none' }}>fitpass</Link>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Link href="/giris" style={{ padding: '8px 18px', borderRadius: 24, border: '1px solid #ddd', background: '#fff', fontSize: 14, fontWeight: 500, color: '#333', textDecoration: 'none' }}>Giriş Yap</Link>
-          <Link href="/kayit" style={{ padding: '8px 18px', borderRadius: 24, border: 'none', background: '#FF385C', fontSize: 14, fontWeight: 600, color: '#fff', textDecoration: 'none' }}>Kayıt Ol</Link>
-        </div>
-      </nav>
+      <Navbar />
 
       <div style={{ maxWidth: 800, margin: '0 auto', padding: '32px 24px' }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#888', fontSize: 14, textDecoration: 'none', fontWeight: 500, marginBottom: 20 }}>← Geri Dön</Link>
