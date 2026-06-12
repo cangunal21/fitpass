@@ -56,9 +56,7 @@ export default function GirisPage() {
             <div>
               <label style={{ fontSize: 13, fontWeight: 600, color: '#444', display: 'block', marginBottom: 6 }}>Şifre</label>
               <input name="password" type="password" placeholder="Şifren" value={form.password} onChange={handleChange} required style={inputStyle} />
-              <div style={{ textAlign: 'right', marginTop: 6 }}>
-                <span style={{ fontSize: 12, color: '#FF385C', cursor: 'pointer', fontWeight: 600 }}>Şifremi Unuttum</span>
-              </div>
+              {/* Şifremi Unuttum - domain bağlandıktan sonra aktif edilecek */}
             </div>
 
             {error && (
