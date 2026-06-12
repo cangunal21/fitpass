@@ -1,17 +1,28 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { mockUsers } from '@/lib/mockData'
 import Navbar from '@/components/Navbar'
+import { getUser } from '@/lib/api'
 
 export default function ProfilPage() {
   const params = useParams()
   const user = mockUsers.find(u => u.username === params.username) || mockUsers[0]
   const friends = mockUsers.filter(u => u.id !== user.id).slice(0, 4)
-  const [activeTab, setActiveTab] = useState<'aktivite' | 'arkadaşlar' | 'istatistik'>('aktivite')
+  const [activeTab, setActiveTab] = useState<'aktivite' | 'rezervasyonlar' | 'arkadaşlar' | 'istatistik'>('aktivite')
   const [isFollowing, setIsFollowing] = useState(false)
+  const [myBookings, setMyBookings] = useState<any[]>([])
+  const loggedInUser = getUser()
+  const isOwnProfile = loggedInUser?.username === params.username
+
+  useEffect(() => {
+    if (isOwnProfile) {
+      const saved = JSON.parse(localStorage.getItem('fitpass_bookings') || '[]')
+      setMyBookings(saved)
+    }
+  }, [])
 
   const tiers = [
     { name: 'Acemi', min: 1 }, { name: 'Aday', min: 10 }, { name: 'Sporcu', min: 35 }, { name: 'Atlet', min: 70 }, { name: 'Şampiyon', min: 120 },
@@ -120,9 +131,14 @@ export default function ProfilPage() {
 
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 4, backgroundColor: '#eee', borderRadius: 16, padding: 4, marginBottom: 20, width: 'fit-content' }}>
-          {(['aktivite', 'arkadaşlar', 'istatistik'] as const).map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)} style={{ padding: '10px 20px', borderRadius: 12, border: 'none', background: activeTab === tab ? '#fff' : 'transparent', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: activeTab === tab ? '#1a1a1a' : '#888', boxShadow: activeTab === tab ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
-              {tab === 'aktivite' ? '📋 Aktivite' : tab === 'arkadaşlar' ? '👥 Arkadaşlar' : '📊 İstatistik'}
+          {([
+            { key: 'aktivite', label: '📋 Aktivite' },
+            ...(isOwnProfile ? [{ key: 'rezervasyonlar', label: '🎟️ Rezervasyonlar' }] : []),
+            { key: 'arkadaşlar', label: '👥 Arkadaşlar' },
+            { key: 'istatistik', label: '📊 İstatistik' },
+          ] as const).map(tab => (
+            <button key={tab.key} onClick={() => setActiveTab(tab.key as any)} style={{ padding: '10px 20px', borderRadius: 12, border: 'none', background: activeTab === tab.key ? '#fff' : 'transparent', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: activeTab === tab.key ? '#1a1a1a' : '#888', boxShadow: activeTab === tab.key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
+              {tab.label}
             </button>
           ))}
         </div>
@@ -138,6 +154,33 @@ export default function ProfilPage() {
                 <div style={{ fontSize: 12, color: '#bbb', whiteSpace: 'nowrap' }}>{act.time}</div>
               </div>
             ))}
+          </div>
+        )}
+
+        {activeTab === 'rezervasyonlar' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {myBookings.length === 0 ? (
+              <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '40px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+                <div style={{ fontSize: 48, marginBottom: 12 }}>🎟️</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#1a1a1a', marginBottom: 6 }}>Henüz rezervasyonun yok</div>
+                <div style={{ fontSize: 13, color: '#888', marginBottom: 20 }}>Dersler sayfasından ders bul ve rezervasyon yap</div>
+                <Link href="/" style={{ padding: '12px 24px', borderRadius: 14, background: '#FF385C', color: '#fff', textDecoration: 'none', fontSize: 14, fontWeight: 600 }}>Ders Bul</Link>
+              </div>
+            ) : (
+              myBookings.map((b: any) => (
+                <div key={b.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: '#FFF0F3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>{b.classIcon}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>{b.classTitle}</div>
+                    <div style={{ fontSize: 12, color: '#888' }}>{b.date} · {b.time}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#FF385C' }}>₺{b.price}</div>
+                    <div style={{ fontSize: 11, color: '#10B981', fontWeight: 600, backgroundColor: '#F0FDF4', padding: '2px 8px', borderRadius: 8 }}>✓ Onaylı</div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         )}
 
