@@ -1,10 +1,13 @@
 'use client'
 
+'use client'
+
 import { useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { mockClasses, mockVenues, mockInstructors } from '@/lib/mockData'
 import Navbar from '@/components/Navbar'
+import { getToken, getUser } from '@/lib/api'
 
 export default function DersDetay() {
   const params = useParams()
@@ -142,67 +145,81 @@ export default function DersDetay() {
 
 function BookingModal({ cls, onClose }: { cls: typeof mockClasses[0], onClose: () => void }) {
   const [step, setStep] = useState(1)
-  const [taggedFriend, setTaggedFriend] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleConfirm = async () => {
+    const token = getToken()
+    const user = getUser()
+
+    if (!token || !user) {
+      setError('Rezervasyon yapmak için giriş yapmalısın.')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+
+    try {
+      // MVP: rezervasyonu localStorage'a kaydet (backend session entegrasyonu sonra)
+      const booking = {
+        id: Date.now(),
+        classId: cls.id,
+        classTitle: cls.title,
+        classIcon: cls.icon,
+        date: cls.date,
+        time: cls.time,
+        price: cls.basePrice,
+        status: 'confirmed',
+        createdAt: new Date().toISOString(),
+      }
+      const existing = JSON.parse(localStorage.getItem('fitpass_bookings') || '[]')
+      localStorage.setItem('fitpass_bookings', JSON.stringify([booking, ...existing]))
+      setStep(2)
+    } catch {
+      setError('Bir hata oluştu, tekrar dene.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ backgroundColor: '#fff', borderRadius: 24, width: '100%', maxWidth: 480, padding: '32px', position: 'relative', maxHeight: '90vh', overflowY: 'auto' }}>
         <button onClick={onClose} style={{ position: 'absolute', top: 16, right: 16, background: '#f5f5f5', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', fontSize: 16 }}>×</button>
-        <div style={{ display: 'flex', gap: 6, marginBottom: 28 }}>
-          {[1, 2, 3].map(s => <div key={s} style={{ flex: 1, height: 4, borderRadius: 4, backgroundColor: s <= step ? '#FF385C' : '#eee' }} />)}
-        </div>
 
         {step === 1 && (
           <div>
             <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>Rezervasyonu Onayla</h2>
             <p style={{ fontSize: 13, color: '#888', marginBottom: 24 }}>Ders detaylarını kontrol et</p>
             <div style={{ backgroundColor: '#f9f9f9', borderRadius: 16, padding: '18px', marginBottom: 20 }}>
-              <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 16 }}>
+              <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 12 }}>
                 <div style={{ fontSize: 32 }}>{cls.icon}</div>
                 <div>
                   <div style={{ fontSize: 15, fontWeight: 700 }}>{cls.title}</div>
                   <div style={{ fontSize: 13, color: '#666' }}>{cls.date} · {cls.time}</div>
                 </div>
               </div>
+              <div style={{ borderTop: '1px solid #eee', paddingTop: 12, display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 14, fontWeight: 700 }}>Toplam</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: '#FF385C' }}>₺{cls.basePrice}</span>
+              </div>
             </div>
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ fontSize: 13, fontWeight: 600, color: '#444', display: 'block', marginBottom: 8 }}>👥 Arkadaşını Etiketle (opsiyonel)</label>
-              <input type="text" placeholder="@kullaniciadi" value={taggedFriend} onChange={e => setTaggedFriend(e.target.value)} style={{ width: '100%', padding: '11px 14px', borderRadius: 12, border: '1.5px solid #e5e5e5', fontSize: 14, outline: 'none', backgroundColor: '#fafafa', color: '#1a1a1a' }} />
+            <div style={{ backgroundColor: '#FFF9F0', borderRadius: 12, padding: '12px 14px', marginBottom: 20, fontSize: 12, color: '#92400e' }}>
+              🔒 12 saat öncesine kadar %50 iade garantisi
             </div>
-            <button onClick={() => setStep(2)} style={{ width: '100%', padding: '14px', borderRadius: 14, border: 'none', background: '#FF385C', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>Devam Et →</button>
+            {error && <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#DC2626', marginBottom: 16 }}>⚠️ {error}</div>}
+            <button onClick={handleConfirm} disabled={loading} style={{ width: '100%', padding: '14px', borderRadius: 14, border: 'none', background: loading ? '#ccc' : '#FF385C', color: '#fff', fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer' }}>
+              {loading ? 'İşleniyor...' : 'Rezervasyonu Onayla ✓'}
+            </button>
           </div>
         )}
 
         {step === 2 && (
-          <div>
-            <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>Ödeme</h2>
-            <p style={{ fontSize: 13, color: '#888', marginBottom: 24 }}>Güvenli ödeme — İyzico ile korunuyor</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 20 }}>
-              <input type="text" placeholder="Kart Üzerindeki İsim" style={inputStyle} />
-              <input type="text" placeholder="0000 0000 0000 0000" style={inputStyle} />
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <input type="text" placeholder="AA/YY" style={inputStyle} />
-                <input type="text" placeholder="CVV" style={inputStyle} />
-              </div>
-            </div>
-            <div style={{ backgroundColor: '#f9f9f9', borderRadius: 14, padding: '14px 16px', marginBottom: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 14, fontWeight: 700 }}>Toplam</span>
-                <span style={{ fontSize: 14, fontWeight: 700 }}>₺{cls.basePrice}</span>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setStep(1)} style={{ flex: 1, padding: '14px', borderRadius: 14, border: '1.5px solid #eee', background: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: '#333' }}>← Geri</button>
-              <button onClick={() => setStep(3)} style={{ flex: 2, padding: '14px', borderRadius: 14, border: 'none', background: '#FF385C', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>₺{cls.basePrice} Öde</button>
-            </div>
-          </div>
-        )}
-
-        {step === 3 && (
           <div style={{ textAlign: 'center', padding: '20px 0' }}>
             <div style={{ fontSize: 64, marginBottom: 16 }}>🎉</div>
             <h2 style={{ fontSize: 22, fontWeight: 800, color: '#1a1a1a', marginBottom: 8 }}>Rezervasyon Tamam!</h2>
-            <p style={{ fontSize: 14, color: '#666', marginBottom: 24, lineHeight: 1.6 }}><strong>{cls.title}</strong> dersine başarıyla kayıt oldun.</p>
+            <p style={{ fontSize: 14, color: '#666', marginBottom: 24, lineHeight: 1.6 }}><strong>{cls.title}</strong> dersine başarıyla kayıt oldun. Seni bekliyoruz!</p>
             <button onClick={onClose} style={{ width: '100%', padding: '14px', borderRadius: 14, border: 'none', background: '#FF385C', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>Harika! 🚀</button>
           </div>
         )}
