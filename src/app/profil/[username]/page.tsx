@@ -169,14 +169,25 @@ export default function ProfilPage() {
             ) : (
               myBookings.map((b: any) => (
                 <div key={b.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 14 }}>
-                  <div style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: '#FFF0F3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>{b.classIcon}</div>
+                  <div style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: b.status === 'cancelled' ? '#f5f5f5' : '#FFF0F3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, opacity: b.status === 'cancelled' ? 0.5 : 1 }}>{b.classIcon}</div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>{b.classTitle}</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: b.status === 'cancelled' ? '#999' : '#1a1a1a', textDecoration: b.status === 'cancelled' ? 'line-through' : 'none' }}>{b.classTitle}</div>
                     <div style={{ fontSize: 12, color: '#888' }}>{b.date} · {b.time}</div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#FF385C' }}>₺{b.price}</div>
-                    <div style={{ fontSize: 11, color: '#10B981', fontWeight: 600, backgroundColor: '#F0FDF4', padding: '2px 8px', borderRadius: 8 }}>✓ Onaylı</div>
+                  <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: b.status === 'cancelled' ? '#999' : '#FF385C' }}>₺{b.price}</div>
+                    {b.status === 'cancelled' ? (
+                      <div style={{ fontSize: 11, color: '#EF4444', fontWeight: 600, backgroundColor: '#FEF2F2', padding: '2px 8px', borderRadius: 8 }}>✗ İptal</div>
+                    ) : (
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        <div style={{ fontSize: 11, color: '#10B981', fontWeight: 600, backgroundColor: '#F0FDF4', padding: '2px 8px', borderRadius: 8 }}>✓ Onaylı</div>
+                        <button onClick={() => {
+                          const updated = myBookings.map(x => x.id === b.id ? { ...x, status: 'cancelled' } : x)
+                          setMyBookings(updated)
+                          localStorage.setItem('fitpass_bookings', JSON.stringify(updated))
+                        }} style={{ fontSize: 11, color: '#EF4444', fontWeight: 600, background: 'none', border: '1px solid #FECACA', borderRadius: 8, padding: '2px 8px', cursor: 'pointer' }}>İptal Et</button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))
