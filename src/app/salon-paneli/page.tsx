@@ -96,7 +96,7 @@ export default function SalonPaneliPage() {
     const data = await res.json()
     if (data.error) { setClassError(data.error); return }
     setClassSuccess('Ders başarıyla eklendi!')
-    setClassForm({ title: '', category: '', basePrice: '', duration: '', capacity: '', description: '' })
+    setClassForm({ title: '', category: '', basePrice: '', duration: '', capacity: '', description: '', instructorId: '' })
     fetchVenue(token)
     setTimeout(() => setActiveTab('dersler'), 1500)
   }
