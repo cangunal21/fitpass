@@ -9,14 +9,18 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 export default function SalonPaneliPage() {
   const router = useRouter()
   const [venue, setVenue] = useState<any>(null)
-  const [activeTab, setActiveTab] = useState<'dersler' | 'rezervasyonlar' | 'ders-ekle'>('dersler')
+  const [activeTab, setActiveTab] = useState<'dersler' | 'hocalar' | 'rezervasyonlar' | 'ders-ekle'>('dersler')
   const [bookings, setBookings] = useState<any[]>([])
+  const [instructors, setInstructors] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [classForm, setClassForm] = useState({ title: '', category: '', basePrice: '', duration: '', capacity: '', description: '' })
+  const [classForm, setClassForm] = useState({ title: '', category: '', basePrice: '', duration: '', capacity: '', description: '', instructorId: '' })
   const [classError, setClassError] = useState('')
   const [classSuccess, setClassSuccess] = useState('')
   const [sessionForms, setSessionForms] = useState<Record<number, { date: string; time: string; capacity: string }>>({})
   const [sessionSuccess, setSessionSuccess] = useState<Record<number, string>>({})
+  const [instructorForm, setInstructorForm] = useState({ fullName: '', specialty: '', bio: '', avatarUrl: '', phone: '', email: '' })
+  const [instructorError, setInstructorError] = useState('')
+  const [instructorSuccess, setInstructorSuccess] = useState('')
 
   useEffect(() => {
     const token = localStorage.getItem('fitpass_venue_token')
@@ -44,9 +48,34 @@ export default function SalonPaneliPage() {
     setBookings(data.bookings || [])
   }
 
+  const fetchInstructors = async () => {
+    const token = localStorage.getItem('fitpass_venue_token')!
+    const res = await fetch(`${API_URL}/api/venue/instructors`, { headers: { Authorization: `Bearer ${token}` } })
+    const data = await res.json()
+    setInstructors(data.instructors || [])
+  }
+
   const handleTabChange = (tab: typeof activeTab) => {
     setActiveTab(tab)
     if (tab === 'rezervasyonlar') fetchBookings()
+    if (tab === 'hocalar' || tab === 'ders-ekle') fetchInstructors()
+  }
+
+  const handleAddInstructor = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setInstructorError(''); setInstructorSuccess('')
+    const token = localStorage.getItem('fitpass_venue_token')!
+    const res = await fetch(`${API_URL}/api/venue/instructors`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(instructorForm),
+    })
+    const data = await res.json()
+    if (data.error) { setInstructorError(data.error); return }
+    setInstructorSuccess('Hoca başarıyla eklendi!')
+    setInstructorForm({ fullName: '', specialty: '', bio: '', avatarUrl: '', phone: '', email: '' })
+    fetchInstructors()
+    setTimeout(() => setInstructorSuccess(''), 2000)
   }
 
   const handleLogout = () => {
@@ -131,6 +160,7 @@ export default function SalonPaneliPage() {
         <div style={{ display: 'flex', gap: 4, backgroundColor: '#eee', borderRadius: 16, padding: 4, marginBottom: 24, width: 'fit-content' }}>
           {([
             { key: 'dersler', label: '📚 Derslerim' },
+            { key: 'hocalar', label: '👨‍🏫 Hocalarım' },
             { key: 'ders-ekle', label: '➕ Ders Ekle' },
             { key: 'rezervasyonlar', label: '🎟️ Rezervasyonlar' },
           ] as const).map(tab => (
@@ -206,6 +236,68 @@ export default function SalonPaneliPage() {
           </div>
         )}
 
+        {/* HOCALAR */}
+        {activeTab === 'hocalar' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'start' }}>
+            {/* Hoca listesi */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1a1a1a', margin: 0 }}>Mevcut Hocalar</h3>
+              {instructors.length === 0 ? (
+                <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '24px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+                  <div style={{ fontSize: 36, marginBottom: 8 }}>👨‍🏫</div>
+                  <div style={{ fontSize: 14, color: '#888' }}>Henüz hoca eklenmedi</div>
+                </div>
+              ) : instructors.map((inst: any) => (
+                <div key={inst.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', gap: 14, alignItems: 'center' }}>
+                  <div style={{ width: 48, height: 48, borderRadius: '50%', backgroundColor: '#FFF0F3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
+                    {inst.avatarUrl ? <img src={inst.avatarUrl} style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover' }} alt="" /> : '👤'}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>{inst.fullName}</div>
+                    <div style={{ fontSize: 12, color: '#FF385C', fontWeight: 600 }}>{inst.specialty}</div>
+                    {inst.bio && <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{inst.bio}</div>}
+                    <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>{inst._count?.classes || 0} ders</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Hoca ekle formu */}
+            <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1a1a1a', marginBottom: 20 }}>Yeni Hoca Ekle</h3>
+              <form onSubmit={handleAddInstructor} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div>
+                  <label style={labelStyle}>Ad Soyad *</label>
+                  <input type="text" placeholder="Ayşe Kaya" value={instructorForm.fullName} onChange={e => setInstructorForm({ ...instructorForm, fullName: e.target.value })} required style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Uzmanlık Alanı *</label>
+                  <input type="text" placeholder="Yoga, Pilates..." value={instructorForm.specialty} onChange={e => setInstructorForm({ ...instructorForm, specialty: e.target.value })} required style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Bio</label>
+                  <textarea placeholder="Hoca hakkında kısa bilgi..." value={instructorForm.bio} onChange={e => setInstructorForm({ ...instructorForm, bio: e.target.value })} rows={2} style={{ ...inputStyle, resize: 'vertical' as const }} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Telefon</label>
+                  <input type="tel" placeholder="05XX XXX XX XX" value={instructorForm.phone} onChange={e => setInstructorForm({ ...instructorForm, phone: e.target.value })} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>E-posta</label>
+                  <input type="email" placeholder="hoca@email.com" value={instructorForm.email} onChange={e => setInstructorForm({ ...instructorForm, email: e.target.value })} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Fotoğraf URL (opsiyonel)</label>
+                  <input type="url" placeholder="https://..." value={instructorForm.avatarUrl} onChange={e => setInstructorForm({ ...instructorForm, avatarUrl: e.target.value })} style={inputStyle} />
+                </div>
+                {instructorError && <div style={errorStyle}>⚠️ {instructorError}</div>}
+                {instructorSuccess && <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#16a34a' }}>✓ {instructorSuccess}</div>}
+                <button type="submit" style={{ padding: '12px', borderRadius: 12, border: 'none', background: '#FF385C', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Hoca Ekle</button>
+              </form>
+            </div>
+          </div>
+        )}
+
         {/* DERS EKLE */}
         {activeTab === 'ders-ekle' && (
           <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '32px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
@@ -234,6 +326,15 @@ export default function SalonPaneliPage() {
                 <div>
                   <label style={labelStyle}>Kapasite (kişi)</label>
                   <input name="capacity" type="number" placeholder="15" value={classForm.capacity} onChange={e => setClassForm({ ...classForm, capacity: e.target.value })} required style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Hoca (opsiyonel)</label>
+                  <select value={classForm.instructorId} onChange={e => setClassForm({ ...classForm, instructorId: e.target.value })} style={inputStyle}>
+                    <option value="">Hoca seçin</option>
+                    {instructors.map((inst: any) => (
+                      <option key={inst.id} value={inst.id}>{inst.fullName} — {inst.specialty}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div>
