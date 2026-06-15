@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { Building2, Clock, BookOpen, Calendar, Ticket, AlertCircle, User, Check } from 'lucide-react'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
@@ -126,10 +127,10 @@ export default function SalonPaneliPage() {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8f8f8' }}>
       <nav style={{ backgroundColor: '#fff', borderBottom: '1px solid #eee', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 1px 8px rgba(0,0,0,0.06)' }}>
-        <Link href="/" style={{ fontSize: 22, fontWeight: 800, color: '#FF385C', letterSpacing: -0.5, textDecoration: 'none' }}>fitpass</Link>
+        <Link href="/" style={{ fontSize: 22, fontWeight: 800, color: '#4F46E5', letterSpacing: -0.5, textDecoration: 'none' }}>şipşakspor</Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 14, fontWeight: 600, color: '#333' }}>🏢 {venue?.name}</span>
-          {!venue?.isApproved && <span style={{ fontSize: 12, backgroundColor: '#FEF9C3', color: '#92400e', padding: '4px 10px', borderRadius: 20, fontWeight: 600 }}>⏳ Onay Bekliyor</span>}
+          <span style={{ fontSize: 14, fontWeight: 600, color: '#333', display: 'flex', alignItems: 'center', gap: 6 }}><Building2 size={16} /> {venue?.name}</span>
+          {!venue?.isApproved && <span style={{ fontSize: 12, backgroundColor: '#FEF9C3', color: '#92400e', padding: '4px 10px', borderRadius: 20, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Clock size={14} /> Onay Bekliyor</span>}
           <button onClick={handleLogout} style={{ padding: '8px 16px', borderRadius: 20, border: '1px solid #eee', background: '#fff', fontSize: 13, cursor: 'pointer', color: '#666' }}>Çıkış</button>
         </div>
       </nav>
@@ -137,19 +138,19 @@ export default function SalonPaneliPage() {
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px' }}>
         {!venue?.isApproved && (
           <div style={{ backgroundColor: '#FEF9C3', border: '1px solid #FDE68A', borderRadius: 16, padding: '16px 20px', marginBottom: 24, fontSize: 14, color: '#92400e' }}>
-            ⏳ <strong>Salonunuz onay bekliyor.</strong> Onaylandıktan sonra dersleriniz yayınlanacak. Onay süreci genellikle 1-2 iş günü sürmektedir.
+            <Clock size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 6 }} /><strong>Salonunuz onay bekliyor.</strong> Onaylandıktan sonra dersleriniz yayınlanacak. Onay süreci genellikle 1-2 iş günü sürmektedir.
           </div>
         )}
 
         {/* İstatistikler */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 28 }}>
           {[
-            { label: 'Toplam Ders', value: venue?.classes?.length || 0, icon: '📚', color: '#8B5CF6' },
-            { label: 'Toplam Seans', value: venue?.classes?.reduce((acc: number, c: any) => acc + (c.sessions?.length || 0), 0) || 0, icon: '📅', color: '#3B82F6' },
-            { label: 'Aktif Dersler', value: venue?.classes?.filter((c: any) => c.isActive).length || 0, icon: '✅', color: '#10B981' },
+            { label: 'Toplam Ders', value: venue?.classes?.length || 0, icon: <BookOpen size={28} />, color: '#8B5CF6' },
+            { label: 'Toplam Seans', value: venue?.classes?.reduce((acc: number, c: any) => acc + (c.sessions?.length || 0), 0) || 0, icon: <Calendar size={28} />, color: '#3B82F6' },
+            { label: 'Aktif Dersler', value: venue?.classes?.filter((c: any) => c.isActive).length || 0, icon: <Check size={28} />, color: '#10B981' },
           ].map((s, i) => (
             <div key={i} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', textAlign: 'center' }}>
-              <div style={{ fontSize: 28, marginBottom: 8 }}>{s.icon}</div>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>{s.icon}</div>
               <div style={{ fontSize: 28, fontWeight: 800, color: s.color }}>{s.value}</div>
               <div style={{ fontSize: 13, color: '#888' }}>{s.label}</div>
             </div>
@@ -159,10 +160,10 @@ export default function SalonPaneliPage() {
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 4, backgroundColor: '#eee', borderRadius: 16, padding: 4, marginBottom: 24, width: 'fit-content' }}>
           {([
-            { key: 'dersler', label: '📚 Derslerim' },
-            { key: 'hocalar', label: '👨‍🏫 Hocalarım' },
-            { key: 'ders-ekle', label: '➕ Ders Ekle' },
-            { key: 'rezervasyonlar', label: '🎟️ Rezervasyonlar' },
+            { key: 'dersler', label: 'Derslerim' },
+            { key: 'hocalar', label: 'Hocalarım' },
+            { key: 'ders-ekle', label: '+ Ders Ekle' },
+            { key: 'rezervasyonlar', label: 'Rezervasyonlar' },
           ] as const).map(tab => (
             <button key={tab.key} onClick={() => handleTabChange(tab.key)} style={{ padding: '10px 20px', borderRadius: 12, border: 'none', background: activeTab === tab.key ? '#fff' : 'transparent', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: activeTab === tab.key ? '#1a1a1a' : '#888', boxShadow: activeTab === tab.key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
               {tab.label}
@@ -175,9 +176,9 @@ export default function SalonPaneliPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {(!venue?.classes || venue.classes.length === 0) ? (
               <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '40px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-                <div style={{ fontSize: 48, marginBottom: 12 }}>📚</div>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}><BookOpen size={48} /></div>
                 <div style={{ fontSize: 16, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>Henüz ders eklemediniz</div>
-                <button onClick={() => setActiveTab('ders-ekle')} style={{ padding: '12px 24px', borderRadius: 14, border: 'none', background: '#FF385C', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>➕ İlk Dersi Ekle</button>
+                <button onClick={() => setActiveTab('ders-ekle')} style={{ padding: '12px 24px', borderRadius: 14, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>+ İlk Dersi Ekle</button>
               </div>
             ) : venue.classes.map((cls: any) => (
               <div key={cls.id} style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
@@ -189,7 +190,7 @@ export default function SalonPaneliPage() {
                       <span style={{ fontSize: 12, backgroundColor: cls.isActive ? '#F0FDF4' : '#FEF2F2', padding: '3px 10px', borderRadius: 20, color: cls.isActive ? '#16a34a' : '#DC2626', fontWeight: 600 }}>{cls.isActive ? '● Aktif' : '● Pasif'}</span>
                     </div>
                   </div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: '#FF385C' }}>₺{cls.basePrice}</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: '#4F46E5' }}>₺{cls.basePrice}</div>
                 </div>
 
                 <div style={{ fontSize: 13, color: '#888', marginBottom: 16 }}>
@@ -198,7 +199,7 @@ export default function SalonPaneliPage() {
 
                 {/* Seans Ekle */}
                 <div style={{ backgroundColor: '#f9f9f9', borderRadius: 14, padding: '16px' }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#555', marginBottom: 12 }}>➕ Yeni Seans Ekle</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#555', marginBottom: 12 }}>+ Yeni Seans Ekle</div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 8, alignItems: 'end' }}>
                     <div>
                       <label style={{ fontSize: 11, color: '#888', display: 'block', marginBottom: 4 }}>Tarih</label>
@@ -212,7 +213,7 @@ export default function SalonPaneliPage() {
                       <label style={{ fontSize: 11, color: '#888', display: 'block', marginBottom: 4 }}>Kapasite</label>
                       <input type="number" placeholder="15" value={sessionForms[cls.id]?.capacity || ''} onChange={e => setSessionForms({ ...sessionForms, [cls.id]: { ...sessionForms[cls.id], capacity: e.target.value } })} style={{ width: '100%', padding: '8px 10px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', boxSizing: 'border-box' as const }} />
                     </div>
-                    <button onClick={() => handleAddSession(cls.id)} style={{ padding: '8px 16px', borderRadius: 10, border: 'none', background: '#FF385C', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' as const }}>Ekle</button>
+                    <button onClick={() => handleAddSession(cls.id)} style={{ padding: '8px 16px', borderRadius: 10, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' as const }}>Ekle</button>
                   </div>
                   {sessionSuccess[cls.id] && <div style={{ fontSize: 12, color: '#10B981', fontWeight: 600, marginTop: 8 }}>✓ {sessionSuccess[cls.id]}</div>}
                 </div>
@@ -224,8 +225,8 @@ export default function SalonPaneliPage() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                       {cls.sessions.map((s: any) => (
                         <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', backgroundColor: '#f5f5f5', borderRadius: 10, fontSize: 13 }}>
-                          <span>📅 {new Date(s.date).toLocaleDateString('tr-TR')} · 🕐 {s.time}</span>
-                          <span style={{ color: '#888' }}>{s._count?.bookings || 0}/{s.capacity} kişi</span>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Calendar size={13} /> {new Date(s.startsAt).toLocaleDateString('tr-TR')} · <Clock size={13} /> {new Date(s.startsAt).toLocaleTimeString('tr-TR', {hour:'2-digit',minute:'2-digit'})}</span>
+                          <span style={{ color: '#888' }}>{s._count?.bookings || 0}/{s.availableSpots} kişi</span>
                         </div>
                       ))}
                     </div>
@@ -244,17 +245,17 @@ export default function SalonPaneliPage() {
               <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1a1a1a', margin: 0 }}>Mevcut Hocalar</h3>
               {instructors.length === 0 ? (
                 <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '24px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-                  <div style={{ fontSize: 36, marginBottom: 8 }}>👨‍🏫</div>
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}><User size={36} /></div>
                   <div style={{ fontSize: 14, color: '#888' }}>Henüz hoca eklenmedi</div>
                 </div>
               ) : instructors.map((inst: any) => (
                 <div key={inst.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', gap: 14, alignItems: 'center' }}>
                   <div style={{ width: 48, height: 48, borderRadius: '50%', backgroundColor: '#FFF0F3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
-                    {inst.avatarUrl ? <img src={inst.avatarUrl} style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover' }} alt="" /> : '👤'}
+                    {inst.avatarUrl ? <img src={inst.avatarUrl} style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover' }} alt="" /> : <User size={22} />}
                   </div>
                   <div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>{inst.fullName}</div>
-                    <div style={{ fontSize: 12, color: '#FF385C', fontWeight: 600 }}>{inst.specialty}</div>
+                    <div style={{ fontSize: 12, color: '#4F46E5', fontWeight: 600 }}>{inst.specialty}</div>
                     {inst.bio && <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{inst.bio}</div>}
                     <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>{inst._count?.classes || 0} ders</div>
                   </div>
@@ -290,9 +291,9 @@ export default function SalonPaneliPage() {
                   <label style={labelStyle}>Fotoğraf URL (opsiyonel)</label>
                   <input type="url" placeholder="https://..." value={instructorForm.avatarUrl} onChange={e => setInstructorForm({ ...instructorForm, avatarUrl: e.target.value })} style={inputStyle} />
                 </div>
-                {instructorError && <div style={errorStyle}>⚠️ {instructorError}</div>}
+                {instructorError && <div style={{ ...errorStyle, display: 'flex', alignItems: 'center', gap: 8 }}><AlertCircle size={14} /> {instructorError}</div>}
                 {instructorSuccess && <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#16a34a' }}>✓ {instructorSuccess}</div>}
-                <button type="submit" style={{ padding: '12px', borderRadius: 12, border: 'none', background: '#FF385C', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Hoca Ekle</button>
+                <button type="submit" style={{ padding: '12px', borderRadius: 12, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Hoca Ekle</button>
               </form>
             </div>
           </div>
@@ -341,9 +342,9 @@ export default function SalonPaneliPage() {
                 <label style={labelStyle}>Açıklama (opsiyonel)</label>
                 <textarea name="description" placeholder="Ders hakkında kısa açıklama..." value={classForm.description} onChange={e => setClassForm({ ...classForm, description: e.target.value })} rows={3} style={{ ...inputStyle, resize: 'vertical' as const }} />
               </div>
-              {classError && <div style={errorStyle}>⚠️ {classError}</div>}
+              {classError && <div style={{ ...errorStyle, display: 'flex', alignItems: 'center', gap: 8 }}><AlertCircle size={14} /> {classError}</div>}
               {classSuccess && <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#16a34a' }}>✓ {classSuccess}</div>}
-              <button type="submit" style={{ padding: '14px', borderRadius: 14, border: 'none', background: '#FF385C', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>Dersi Ekle</button>
+              <button type="submit" style={{ padding: '14px', borderRadius: 14, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>Dersi Ekle</button>
             </form>
           </div>
         )}
@@ -353,17 +354,17 @@ export default function SalonPaneliPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {bookings.length === 0 ? (
               <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '40px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-                <div style={{ fontSize: 48, marginBottom: 12 }}>🎟️</div>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}><Ticket size={48} /></div>
                 <div style={{ fontSize: 16, fontWeight: 700, color: '#1a1a1a' }}>Henüz rezervasyon yok</div>
               </div>
             ) : bookings.map((b: any) => (
               <div key={b.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>{b.user?.fullName}</div>
-                  <div style={{ fontSize: 12, color: '#888' }}>{b.classSession?.class?.title} · {new Date(b.classSession?.date).toLocaleDateString('tr-TR')}</div>
+                  <div style={{ fontSize: 12, color: '#888' }}>{b.session?.class?.title} · {b.session?.startsAt ? new Date(b.session.startsAt).toLocaleDateString('tr-TR') : ''}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#FF385C' }}>₺{b.totalPrice}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#4F46E5' }}>₺{b.totalPrice}</div>
                   <div style={{ fontSize: 11, color: b.status === 'confirmed' ? '#10B981' : '#EF4444', fontWeight: 600 }}>{b.status === 'confirmed' ? '✓ Onaylı' : '✗ İptal'}</div>
                 </div>
               </div>
