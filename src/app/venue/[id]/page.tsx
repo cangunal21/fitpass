@@ -17,6 +17,16 @@ export default function VenuePage() {
   const [venue, setVenue] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'dersler' | 'hocalar' | 'yorumlar'>('dersler')
+  const [reviews, setReviews] = useState<any[]>([])
+  const [reviewsLoading, setReviewsLoading] = useState(false)
+  const [showReviewForm, setShowReviewForm] = useState(false)
+  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '', isAnonymous: true })
+  const [reviewSubmitting, setReviewSubmitting] = useState(false)
+  const [reviewError, setReviewError] = useState('')
+  const [reviewSuccess, setReviewSuccess] = useState('')
+  const [userBookings, setUserBookings] = useState<any[]>([])
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
   useEffect(() => {
     api.getVenueById(id).then((data: any) => {
@@ -33,11 +43,47 @@ export default function VenuePage() {
     }).finally(() => setLoading(false))
   }, [id])
 
-  const mockReviews = [
-    { id: 1, rating: 5, comment: 'Muhteşem bir mekan, hocaları çok profesyonel.', date: '3 gün önce' },
-    { id: 2, rating: 5, comment: 'Temizlik ve konfor açısından İstanbul\'un en iyisi.', date: '1 hafta önce' },
-    { id: 3, rating: 4, comment: 'Dersler çok kaliteli, fiyatlar biraz yüksek ama değer.', date: '2 hafta önce' },
-  ]
+  useEffect(() => {
+    if (activeTab === 'yorumlar' && venue?.id && !venue._isMock) {
+      setReviewsLoading(true)
+      fetch(`${API_URL}/api/reviews/venue/${venue.id}`)
+        .then(r => r.json())
+        .then(d => setReviews(d.reviews || []))
+        .finally(() => setReviewsLoading(false))
+
+      const token = localStorage.getItem('fitpass_token')
+      if (token) {
+        fetch(`${API_URL}/api/auth/my-bookings`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }).then(r => r.json()).then(d => {
+          const venueBookings = (d.bookings || []).filter((b: any) =>
+            b.session?.class?.venueId === venue.id && b.status === 'confirmed'
+          )
+          setUserBookings(venueBookings)
+        })
+      }
+    }
+  }, [activeTab, venue])
+
+  const handleSubmitReview = async (bookingId: number) => {
+    setReviewSubmitting(true)
+    setReviewError('')
+    const token = localStorage.getItem('fitpass_token')
+    if (!token) { setReviewError('Giriş yapmanız gerekiyor.'); setReviewSubmitting(false); return }
+
+    const res = await fetch(`${API_URL}/api/reviews`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ bookingId, ...reviewForm })
+    })
+    const data = await res.json()
+    setReviewSubmitting(false)
+    if (data.error) { setReviewError(data.error); return }
+    setReviewSuccess('Yorumunuz eklendi!')
+    setShowReviewForm(false)
+    fetch(`${API_URL}/api/reviews/venue/${venue.id}`)
+      .then(r => r.json()).then(d => setReviews(d.reviews || []))
+  }
 
   // Loading skeleton
   if (loading) {
@@ -103,8 +149,17 @@ export default function VenuePage() {
 
         {/* Hero kartı */}
         <div style={{ backgroundColor: '#fff', borderRadius: 24, overflow: 'hidden', border: '1px solid #F0F0F0', marginBottom: 20 }}>
-          <div style={{ background: `linear-gradient(135deg, ${heroColor} 0%, ${heroColor}88 100%)`, height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <SportIconBox name={heroIcon} bgColor="rgba(255,255,255,0.2)" iconColor="#fff" boxSize={100} borderRadius={28} size={52} />
+          <div style={{
+            height: 220,
+            background: venue.coverImageUrl
+              ? `url(${venue.coverImageUrl}) center/cover no-repeat`
+              : `linear-gradient(135deg, ${heroColor} 0%, ${heroColor}88 100%)`,
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            {!venue.coverImageUrl && <SportIconBox name={heroIcon} bgColor="rgba(255,255,255,0.2)" iconColor="#fff" boxSize={100} borderRadius={28} size={52} />}
           </div>
 
           <div style={{ padding: '28px 32px' }}>
@@ -163,6 +218,22 @@ export default function VenuePage() {
               <MapPin size={14} /> {address}
             </div>
           </div>
+
+          {/* Gallery */}
+          {!venue._isMock && (() => {
+            const imgs: string[] = Array.isArray(venue.images) ? venue.images : (typeof venue.images === 'string' ? JSON.parse(venue.images || '[]') : [])
+            if (imgs.length === 0) return null
+            return (
+              <div style={{ padding: '0 32px 20px', marginBottom: 4 }}>
+                <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 12 }}>Galeri</h3>
+                <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
+                  {imgs.map((img, i) => (
+                    <img key={i} src={img} alt="" style={{ width: 160, height: 110, objectFit: 'cover', borderRadius: 12, flexShrink: 0 }} />
+                  ))}
+                </div>
+              </div>
+            )
+          })()}
 
           {/* Stats satırı */}
           <div style={{ borderTop: '1px solid #F5F5F5', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)' }}>
@@ -328,7 +399,8 @@ export default function VenuePage() {
 
         {/* Yorumlar */}
         {activeTab === 'yorumlar' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Rating summary */}
             <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px 28px', border: '1px solid #F0F0F0', display: 'flex', gap: 32, alignItems: 'center' }}>
               <div style={{ textAlign: 'center', flexShrink: 0 }}>
                 <div style={{ fontSize: 52, fontWeight: 800, color: '#111', lineHeight: 1 }}>{avgRating}</div>
@@ -347,7 +419,87 @@ export default function VenuePage() {
               </div>
             </div>
 
-            {mockReviews.map(r => (
+            {/* Review form trigger */}
+            {!venue._isMock && userBookings.length > 0 && !reviewSuccess && (
+              <div style={{ backgroundColor: '#EEF2FF', borderRadius: 16, padding: '16px 20px' }}>
+                {!showReviewForm ? (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 14, color: '#4F46E5', fontWeight: 600 }}>Bu salona katıldınız — yorum bırakın!</span>
+                    <button onClick={() => setShowReviewForm(true)} style={{ padding: '8px 16px', borderRadius: 10, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Yorum Yaz</button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#444', marginBottom: 8 }}>Puanınız</div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        {[1,2,3,4,5].map(n => (
+                          <button key={n} onClick={() => setReviewForm(f => ({...f, rating: n}))} style={{ width: 36, height: 36, borderRadius: 8, border: 'none', background: reviewForm.rating >= n ? '#F59E0B' : '#e5e5e5', fontSize: 18, cursor: 'pointer' }}>★</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#444', marginBottom: 6 }}>Yorumunuz (opsiyonel)</div>
+                      <textarea value={reviewForm.comment} onChange={e => setReviewForm(f => ({...f, comment: e.target.value}))} placeholder="Deneyiminizi paylaşın..." rows={3} style={{ width: '100%', padding: '10px 14px', borderRadius: 12, border: '1.5px solid #e5e5e5', fontSize: 14, outline: 'none', resize: 'vertical', boxSizing: 'border-box' as const }} />
+                    </div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#666', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={reviewForm.isAnonymous} onChange={e => setReviewForm(f => ({...f, isAnonymous: e.target.checked}))} />
+                      Anonim olarak paylaş
+                    </label>
+                    {reviewError && <div style={{ color: '#DC2626', fontSize: 13 }}>{reviewError}</div>}
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button onClick={() => setShowReviewForm(false)} style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1.5px solid #eee', background: '#fff', fontSize: 13, cursor: 'pointer' }}>İptal</button>
+                      <button onClick={() => handleSubmitReview(userBookings[0].id)} disabled={reviewSubmitting} style={{ flex: 2, padding: '10px', borderRadius: 10, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                        {reviewSubmitting ? 'Gönderiliyor...' : 'Yorumu Gönder'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {reviewSuccess && (
+              <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: '14px 18px', fontSize: 14, color: '#16a34a', fontWeight: 600 }}>✓ {reviewSuccess}</div>
+            )}
+
+            {/* Real reviews */}
+            {!venue._isMock && (
+              reviewsLoading ? (
+                <div style={{ textAlign: 'center', color: '#888', padding: 24 }}>Yorumlar yükleniyor...</div>
+              ) : reviews.length === 0 ? (
+                <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '32px', textAlign: 'center', color: '#aaa', fontSize: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+                  Henüz yorum yok. İlk yorumu siz yazın!
+                </div>
+              ) : reviews.map((r: any) => (
+                <div key={r.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: '#4F46E5' }}>
+                        {r.isAnonymous ? '?' : (r.reviewer?.fullName?.[0] || '?')}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>
+                          {r.isAnonymous ? 'Anonim Kullanıcı' : (r.reviewer?.fullName || 'Kullanıcı')}
+                        </div>
+                        <div style={{ fontSize: 11, color: '#aaa' }}>{new Date(r.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 2 }}>
+                      {[1,2,3,4,5].map(n => (
+                        <span key={n} style={{ fontSize: 16, color: n <= r.rating ? '#F59E0B' : '#e5e5e5' }}>★</span>
+                      ))}
+                    </div>
+                  </div>
+                  {r.comment && <p style={{ fontSize: 14, color: '#444', lineHeight: 1.6, margin: 0 }}>{r.comment}</p>}
+                </div>
+              ))
+            )}
+
+            {/* Mock reviews fallback */}
+            {venue._isMock && [
+              { id: 1, rating: 5, comment: 'Muhteşem bir mekan, hocaları çok profesyonel.', date: '3 gün önce' },
+              { id: 2, rating: 5, comment: 'Temizlik ve konfor açısından İstanbul\'un en iyisi.', date: '1 hafta önce' },
+              { id: 3, rating: 4, comment: 'Dersler çok kaliteli, fiyatlar biraz yüksek ama değer.', date: '2 hafta önce' },
+            ].map(r => (
               <div key={r.id} style={{ backgroundColor: '#fff', borderRadius: 20, padding: '22px 28px', border: '1px solid #F0F0F0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

@@ -12,7 +12,7 @@ const headers = { 'Content-Type': 'application/json', 'x-admin-secret': ADMIN_SE
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false)
   const [password, setPassword] = useState('')
-  const [activeTab, setActiveTab] = useState<'stats' | 'venues' | 'users' | 'bookings'>('stats')
+  const [activeTab, setActiveTab] = useState<'stats' | 'venues' | 'users' | 'bookings'>('venues')
   const [stats, setStats] = useState<any>(null)
   const [venues, setVenues] = useState<any[]>([])
   const [users, setUsers] = useState<any[]>([])
@@ -104,6 +104,7 @@ export default function AdminPage() {
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 4, backgroundColor: '#eee', borderRadius: 16, padding: 4, marginBottom: 24, width: 'fit-content' }}>
           {([
+            { key: 'stats', label: 'İstatistikler' },
             { key: 'venues', label: 'Salonlar' },
             { key: 'users', label: 'Kullanıcılar' },
             { key: 'bookings', label: 'Rezervasyonlar' },
@@ -113,6 +114,24 @@ export default function AdminPage() {
             </button>
           ))}
         </div>
+
+        {/* İSTATİSTİKLER */}
+        {activeTab === 'stats' && stats && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+            {[
+              { label: 'Kullanıcılar', value: stats.userCount, icon: <User size={28} />, color: '#8B5CF6' },
+              { label: 'Salonlar', value: stats.venueCount, icon: <Building2 size={28} />, color: '#3B82F6' },
+              { label: 'Rezervasyonlar', value: stats.bookingCount, icon: <Ticket size={28} />, color: '#10B981' },
+              { label: 'Onay Bekleyen', value: stats.pendingVenues, icon: <Clock size={28} />, color: '#F59E0B' },
+            ].map((s, i) => (
+              <div key={i} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', textAlign: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>{s.icon}</div>
+                <div style={{ fontSize: 28, fontWeight: 800, color: s.color }}>{s.value}</div>
+                <div style={{ fontSize: 13, color: '#888' }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* SALONLAR */}
         {activeTab === 'venues' && (
@@ -169,14 +188,19 @@ export default function AdminPage() {
               <div key={b.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>{b.user?.fullName}</div>
-                  <div style={{ fontSize: 12, color: '#888' }}>{b.classSession?.class?.title} · {b.classSession?.class?.venue?.name}</div>
+                  <div style={{ fontSize: 12, color: '#888' }}>{b.session?.class?.title} · {b.session?.class?.venue?.name}</div>
                   <div style={{ fontSize: 11, color: '#999' }}>{new Date(b.createdAt).toLocaleDateString('tr-TR')}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#4F46E5' }}>₺{b.totalPrice}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#4F46E5' }}>₺{b.finalAmount}</div>
                   <div style={{ fontSize: 11, fontWeight: 600, color: b.status === 'confirmed' ? '#10B981' : '#EF4444' }}>
                     {b.status === 'confirmed' ? '✓ Onaylı' : '✗ İptal'}
                   </div>
+                  {b.status === 'cancelled' && b.notes?.includes('iade') && (
+                    <div style={{ fontSize: 11, color: '#F59E0B', fontWeight: 600 }}>
+                      {b.notes.split('İptal: ')[1] || 'İptal'}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

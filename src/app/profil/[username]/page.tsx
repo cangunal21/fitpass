@@ -128,7 +128,12 @@ export default function ProfilPage() {
       if (res.error) {
         setCancelError(res.error)
       } else {
-        setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'cancelled' } : b))
+        const message = res.message || 'Rezervasyon iptal edildi.'
+        setCancelError(null)
+        setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'cancelled', notes: res.booking?.notes || b.notes } : b))
+        // Show success message via error state with green styling (re-used as info)
+        setCancelError(`✓ ${message}`)
+        setTimeout(() => setCancelError(null), 5000)
       }
     } catch {
       setCancelError('İptal edilirken bir hata oluştu.')
@@ -481,7 +486,7 @@ export default function ProfilPage() {
         {activeTab === 'rezervasyonlar' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {cancelError && (
-              <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 12, padding: '12px 16px', fontSize: 13, color: '#DC2626', fontWeight: 500 }}>{cancelError}</div>
+              <div style={{ backgroundColor: cancelError.startsWith('✓') ? '#F0FDF4' : '#FEF2F2', border: `1px solid ${cancelError.startsWith('✓') ? '#BBF7D0' : '#FECACA'}`, borderRadius: 12, padding: '12px 16px', fontSize: 13, color: cancelError.startsWith('✓') ? '#16a34a' : '#DC2626', fontWeight: 500 }}>{cancelError}</div>
             )}
             {loadingBookings ? (
               <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '48px', textAlign: 'center', border: '1px solid #F0F0F0', color: '#999', fontSize: 14 }}>Rezervasyonlar yükleniyor...</div>
@@ -532,18 +537,30 @@ export default function ProfilPage() {
                             <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
                               <div style={{ fontSize: 15, fontWeight: 800, color: isCancelled ? '#bbb' : '#4F46E5' }}>₺{b.finalAmount}</div>
                               {isCancelled ? (
-                                <span style={{ fontSize: 12, color: '#EF4444', fontWeight: 600, backgroundColor: '#FEF2F2', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><X size={12} /> İptal edildi</span>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                                  <span style={{ fontSize: 12, color: '#EF4444', fontWeight: 600, backgroundColor: '#FEF2F2', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><X size={12} /> İptal edildi</span>
+                                  {b.notes?.includes('iade') && (
+                                    <div style={{ fontSize: 11, color: '#F59E0B', fontWeight: 600 }}>{b.notes.split('İptal: ')[1] || ''}</div>
+                                  )}
+                                </div>
                               ) : (
                                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                                   <span style={{ fontSize: 12, color: '#10B981', fontWeight: 600, backgroundColor: '#F0FDF4', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Check size={12} /> Onaylı</span>
                                   {isConfirmed && isFuture && (
-                                    awaitingConfirm ? (
-                                      <button onClick={() => handleCancel(b.id)} style={{ fontSize: 12, color: '#fff', fontWeight: 600, background: '#EF4444', border: 'none', borderRadius: 100, padding: '4px 12px', cursor: 'pointer' }}>Evet, İptal Et</button>
-                                    ) : (
-                                      <button onClick={() => handleCancel(b.id)} style={{ fontSize: 12, color: '#EF4444', fontWeight: 600, background: 'none', border: '1px solid #FECACA', borderRadius: 100, padding: '3px 10px', cursor: 'pointer' }}>İptal Et</button>
-                                    )
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                                      <div style={{ display: 'flex', gap: 6 }}>
+                                        {awaitingConfirm ? (
+                                          <button onClick={() => handleCancel(b.id)} style={{ fontSize: 12, color: '#fff', fontWeight: 600, background: '#EF4444', border: 'none', borderRadius: 100, padding: '4px 12px', cursor: 'pointer' }}>Evet, İptal Et</button>
+                                        ) : (
+                                          <button onClick={() => handleCancel(b.id)} style={{ fontSize: 12, color: '#EF4444', fontWeight: 600, background: 'none', border: '1px solid #FECACA', borderRadius: 100, padding: '3px 10px', cursor: 'pointer' }}>İptal Et</button>
+                                        )}
+                                        {awaitingConfirm && <button onClick={() => setCancelConfirm(null)} style={{ fontSize: 12, color: '#888', fontWeight: 600, background: 'none', border: '1px solid #E0E0E0', borderRadius: 100, padding: '3px 10px', cursor: 'pointer' }}>Vazgeç</button>}
+                                      </div>
+                                      <div style={{ fontSize: 11, color: '#888', textAlign: 'right' }}>
+                                        24s+ tam iade · 12-24s yarım iade · 12s- iptal yok
+                                      </div>
+                                    </div>
                                   )}
-                                  {awaitingConfirm && <button onClick={() => setCancelConfirm(null)} style={{ fontSize: 12, color: '#888', fontWeight: 600, background: 'none', border: '1px solid #E0E0E0', borderRadius: 100, padding: '3px 10px', cursor: 'pointer' }}>Vazgeç</button>}
                                 </div>
                               )}
                             </div>
