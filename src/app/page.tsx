@@ -188,8 +188,10 @@ export default function Home() {
   const hasActiveFilter = filters.category || filters.date || filters.neighborhoodId || filters.search
 
   const filtered = allItems.filter(c => {
-    const matchCat = activeCategory === null || c.category === categories.find(x => x.id === activeCategory)?.name
-    return matchCat
+    const activeCatName = filters.category || (activeCategory ? categories.find(x => x.id === activeCategory)?.name : null)
+    const matchCat = !activeCatName || c.category === activeCatName
+    const matchSearch = !filters.search || c.title?.toLowerCase().includes(filters.search.toLowerCase()) || (c.venue as string)?.toLowerCase().includes(filters.search.toLowerCase())
+    return matchCat && matchSearch
   })
 
   const handleCategoryTabClick = (catId: number | null) => {
