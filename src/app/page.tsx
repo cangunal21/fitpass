@@ -287,7 +287,14 @@ export default function Home() {
 
           <select
             value={filters.category}
-            onChange={e => setFilters(f => ({ ...f, category: e.target.value }))}
+            onChange={e => {
+              const catName = e.target.value
+              const cat = categories.find(c => c.name === catName)
+              setActiveCategory(cat ? cat.id : null)
+              const newFilters = { ...filters, category: catName }
+              setFilters(newFilters)
+              fetchSessions(newFilters)
+            }}
             style={{ padding: '9px 12px', borderRadius: 10, border: '1.5px solid #E5E5E5', fontSize: 13, color: filters.category ? '#1a1a1a' : '#888', outline: 'none', cursor: 'pointer', background: '#fff' }}
           >
             <option value="">Kategori</option>
@@ -299,10 +306,11 @@ export default function Home() {
           <select
             value={filters.neighborhoodId}
             onChange={e => setFilters(f => ({ ...f, neighborhoodId: e.target.value }))}
-            style={{ padding: '9px 12px', borderRadius: 10, border: '1.5px solid #E5E5E5', fontSize: 13, color: filters.neighborhoodId ? '#1a1a1a' : '#888', outline: 'none', cursor: 'pointer', background: '#fff' }}
+            style={{ padding: '9px 12px', borderRadius: 10, border: '1.5px solid #E5E5E5', fontSize: 13, color: filters.neighborhoodId ? '#1a1a1a' : '#888', outline: 'none', cursor: 'pointer', background: '#fff', maxHeight: 300 }}
+            size={1}
           >
             <option value="">İlçe</option>
-            {neighborhoods.map(n => (
+            {[...neighborhoods].sort((a, b) => a.name.localeCompare(b.name, 'tr')).map(n => (
               <option key={n.id} value={String(n.id)}>{n.name}</option>
             ))}
           </select>
