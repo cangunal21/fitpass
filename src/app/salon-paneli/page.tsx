@@ -245,7 +245,7 @@ export default function SalonPaneliPage() {
 
   if (loading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: '#888' }}>Yükleniyor...</div>
 
-  const categories = ['Yoga', 'Pilates', 'Boks', 'Padel', 'Halı Saha', 'Basketbol', 'HIIT', 'Dans', 'Yüzme', 'Crossfit', 'Diğer']
+  const categories = ['Yoga', 'Pilates', 'Boks', 'Padel', 'Halı Saha', 'Basketbol', 'HIIT', 'Dans', 'Yüzme', 'Crossfit', 'Binicilik', 'Diğer']
   const showInstructor = !NO_INSTRUCTOR_CATEGORIES.includes(classForm.category)
 
   return (

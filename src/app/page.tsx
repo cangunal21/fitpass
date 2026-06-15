@@ -20,18 +20,21 @@ const categories = [
   { id: 8, name: 'Dans', icon: 'dance', color: '#9333EA' },
   { id: 9, name: 'Yüzme', icon: 'swimming', color: '#0891B2' },
   { id: 10, name: 'Crossfit', icon: 'strength', color: '#4B5563' },
+  { id: 11, name: 'Binicilik', icon: 'equestrian', color: '#92400E' },
 ]
 
 const categoryIconMap: Record<string, string> = {
   'Yoga': 'yoga', 'Pilates': 'pilates', 'Boks': 'boxing',
   'HIIT': 'hiit', 'Halı Saha': 'football', 'Basketbol': 'basketball',
   'Padel': 'padel', 'Dans': 'dance', 'Yüzme': 'swimming', 'Crossfit': 'strength',
+  'Binicilik': 'equestrian',
 }
 
 const categoryColorMap: Record<string, string> = {
   'Yoga': '#C4A882', 'Pilates': '#C9849A', 'Boks': '#DC2626',
   'Padel': '#EAB308', 'Halı Saha': '#16A34A', 'Basketbol': '#C2501F',
   'HIIT': '#F97316', 'Dans': '#9333EA', 'Yüzme': '#0891B2', 'Crossfit': '#4B5563',
+  'Binicilik': '#92400E',
 }
 
 function getCategoryIcon(name: string): string {

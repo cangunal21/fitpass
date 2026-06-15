@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Building2, AlertCircle } from 'lucide-react'
 
-const SPORT_OPTIONS = ['Yoga', 'Pilates', 'Boks', 'HIIT', 'Halı Saha', 'Basketbol', 'Padel', 'Dans', 'Yüzme', 'Crossfit', 'Diğer']
+const SPORT_OPTIONS = ['Yoga', 'Pilates', 'Boks', 'HIIT', 'Halı Saha', 'Basketbol', 'Padel', 'Dans', 'Yüzme', 'Crossfit', 'Binicilik', 'Diğer']
 
 export default function SalonGirisPage() {
   const router = useRouter()

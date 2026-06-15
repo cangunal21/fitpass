@@ -9,7 +9,7 @@ import {
   IconSwimming,
 } from '@tabler/icons-react'
 import { PiBoxingGlove } from 'react-icons/pi'
-import { FaRunning } from 'react-icons/fa'
+import { FaRunning, FaHorse } from 'react-icons/fa'
 import { GrYoga } from 'react-icons/gr'
 import { TbYoga } from 'react-icons/tb'
 
@@ -29,6 +29,8 @@ const iconMap: Record<string, React.ComponentType<any>> = {
   weightlifting: Dumbbell,
   strength: Dumbbell,
   crossfit: Dumbbell,
+  equestrian: FaHorse,
+  binicilik: FaHorse,
   // Rozetler
   target: Target,
   heart: Heart,
