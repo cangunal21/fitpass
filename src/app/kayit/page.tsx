@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { api, saveToken, saveUser } from '@/lib/api'
+import { AlertCircle } from 'lucide-react'
 
 export default function KayitPage() {
   const router = useRouter()
@@ -43,54 +44,95 @@ export default function KayitPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f8f8f8', display: 'flex', flexDirection: 'column' }}>
-      <nav style={{ backgroundColor: '#fff', borderBottom: '1px solid #eee', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 1px 8px rgba(0,0,0,0.06)' }}>
-        <Link href="/" style={{ fontSize: 22, fontWeight: 800, color: '#FF385C', letterSpacing: -0.5, textDecoration: 'none' }}>fitpass</Link>
-        <Link href="/giris" style={{ padding: '8px 18px', borderRadius: 24, border: '1px solid #ddd', background: '#fff', fontSize: 14, fontWeight: 500, color: '#333', textDecoration: 'none' }}>Giriş Yap</Link>
-      </nav>
+    <div style={{ minHeight: '100vh', display: 'flex', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+      {/* Sol panel */}
+      <div style={{ flex: 1, background: 'linear-gradient(145deg, #4F46E5 0%, #6366F1 50%, #818CF8 100%)', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '60px', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: -80, right: -80, width: 300, height: 300, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+        <div style={{ position: 'absolute', bottom: -60, left: -60, width: 240, height: 240, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
+        <Link href="/" style={{ fontSize: 28, fontWeight: 800, color: '#fff', textDecoration: 'none', marginBottom: 48, display: 'block' }}>şipşakspor</Link>
+        <h2 style={{ fontSize: 36, fontWeight: 800, color: '#fff', marginBottom: 16, lineHeight: 1.2 }}>Spor hayatın<br />başlıyor</h2>
+        <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.8)', lineHeight: 1.7, maxWidth: 320 }}>
+          Yoga'dan boksa, halı sahadan pilates'e — İstanbul'un en iyi spor derslerini tek platformda keşfet.
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 40 }}>
+          {['Ücretsiz hesap oluştur', 'Sınırsız keşfet ve rezervasyon yap', 'İstediğin zaman iptal et'].map((t, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, color: '#fff' }}>
+              <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700 }}>✓</div>
+              <span style={{ fontSize: 14, fontWeight: 500, opacity: 0.9 }}>{t}</span>
+            </div>
+          ))}
+        </div>
+      </div>
 
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px' }}>
-        <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '40px 36px', width: '100%', maxWidth: 460, boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
-          <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <div style={{ fontSize: 36, marginBottom: 8 }}>🏃</div>
-            <h1 style={{ fontSize: 24, fontWeight: 800, color: '#1a1a1a', marginBottom: 6 }}>Fitpass'e Katıl</h1>
-            <p style={{ fontSize: 14, color: '#888' }}>İstanbul'un en iyi sporlarına tek platformdan eriş</p>
+      {/* Sağ panel */}
+      <div style={{ width: 520, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '60px 48px', backgroundColor: '#fff', overflowY: 'auto' }}>
+        <div style={{ marginBottom: 32 }}>
+          <h1 style={{ fontSize: 28, fontWeight: 800, color: '#111', marginBottom: 8 }}>Hesap oluştur</h1>
+          <p style={{ fontSize: 15, color: '#888' }}>Birkaç saniyede başla, ücretsiz</p>
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* İsim + Kullanıcı adı yan yana */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={labelStyle}>Ad Soyad</label>
+              <input name="fullName" type="text" placeholder="Adın Soyadın" value={form.fullName} onChange={handleChange} required style={inputStyle} />
+            </div>
+            <div>
+              <label style={labelStyle}>Kullanıcı Adı</label>
+              <input name="username" type="text" placeholder="kullaniciadi" value={form.username} onChange={handleChange} required style={inputStyle} />
+            </div>
           </div>
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {[
-              { label: 'Ad Soyad', name: 'fullName', type: 'text', placeholder: 'Adın Soyadın' },
-              { label: 'Kullanıcı Adı', name: 'username', type: 'text', placeholder: 'kullaniciadi' },
-              { label: 'E-posta', name: 'email', type: 'email', placeholder: 'ornek@email.com' },
-              { label: 'Telefon', name: 'phone', type: 'tel', placeholder: '05XX XXX XX XX' },
-              { label: 'Şifre', name: 'password', type: 'password', placeholder: 'En az 6 karakter' },
-              { label: 'Şifre Tekrar', name: 'passwordConfirm', type: 'password', placeholder: 'Şifreni tekrar gir' },
-            ].map(field => (
-              <div key={field.name}>
-                <label style={{ fontSize: 13, fontWeight: 600, color: '#444', display: 'block', marginBottom: 6 }}>{field.label}</label>
-                <input name={field.name} type={field.type} placeholder={field.placeholder} value={form[field.name as keyof typeof form]} onChange={handleChange} required={field.name !== 'phone'} style={inputStyle} />
-              </div>
-            ))}
+          <div>
+            <label style={labelStyle}>E-posta adresi</label>
+            <input name="email" type="email" placeholder="ornek@email.com" value={form.email} onChange={handleChange} required style={inputStyle} />
+          </div>
 
-            {error && (
-              <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#DC2626' }}>
-                ⚠️ {error}
-              </div>
-            )}
+          <div>
+            <label style={labelStyle}>Telefon <span style={{ fontWeight: 400, color: '#bbb' }}>(isteğe bağlı)</span></label>
+            <input name="phone" type="tel" placeholder="05XX XXX XX XX" value={form.phone} onChange={handleChange} style={inputStyle} />
+          </div>
 
-            <button type="submit" disabled={loading} style={{ marginTop: 6, padding: '14px', borderRadius: 14, border: 'none', background: loading ? '#ccc' : '#FF385C', color: '#fff', fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer' }}>
-              {loading ? 'Kaydediliyor...' : 'Kayıt Ol'}
-            </button>
-          </form>
+          {/* Şifre yan yana */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={labelStyle}>Şifre</label>
+              <input name="password" type="password" placeholder="En az 6 karakter" value={form.password} onChange={handleChange} required style={inputStyle} />
+            </div>
+            <div>
+              <label style={labelStyle}>Şifre Tekrar</label>
+              <input name="passwordConfirm" type="password" placeholder="••••••••" value={form.passwordConfirm} onChange={handleChange} required style={inputStyle} />
+            </div>
+          </div>
 
-          <p style={{ textAlign: 'center', marginTop: 24, fontSize: 13, color: '#888' }}>
+          {error && (
+            <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 12, padding: '12px 16px', fontSize: 13, color: '#DC2626', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <AlertCircle size={14} /> {error}
+            </div>
+          )}
+
+          <button type="submit" disabled={loading} style={{ marginTop: 4, padding: '14px', borderRadius: 12, border: 'none', background: loading ? '#A5B4FC' : '#4F46E5', color: '#fff', fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', transition: 'background 0.15s' }}>
+            {loading ? 'Hesap oluşturuluyor...' : 'Kayıt Ol'}
+          </button>
+        </form>
+
+        <div style={{ textAlign: 'center', marginTop: 28, paddingTop: 28, borderTop: '1px solid #F0F0F0' }}>
+          <p style={{ fontSize: 14, color: '#888' }}>
             Zaten hesabın var mı?{' '}
-            <Link href="/giris" style={{ color: '#FF385C', fontWeight: 600, textDecoration: 'none' }}>Giriş Yap</Link>
+            <Link href="/giris" style={{ color: '#4F46E5', fontWeight: 700, textDecoration: 'none' }}>Giriş Yap</Link>
           </p>
+        </div>
+
+        <div style={{ marginTop: 20, textAlign: 'center' }}>
+          <Link href="/salon-giris" style={{ fontSize: 13, color: '#aaa', textDecoration: 'none', fontWeight: 500 }}>
+            Salon sahibi misiniz? →
+          </Link>
         </div>
       </div>
     </div>
   )
 }
 
-const inputStyle: React.CSSProperties = { width: '100%', padding: '12px 16px', borderRadius: 12, border: '1.5px solid #e5e5e5', fontSize: 14, outline: 'none', backgroundColor: '#fafafa', color: '#1a1a1a' }
+const labelStyle: React.CSSProperties = { fontSize: 13, fontWeight: 600, color: '#444', display: 'block', marginBottom: 7 }
+const inputStyle: React.CSSProperties = { width: '100%', padding: '13px 16px', borderRadius: 12, border: '1.5px solid #E8E8E8', fontSize: 14, outline: 'none', backgroundColor: '#FAFAFA', color: '#111', boxSizing: 'border-box', transition: 'border-color 0.15s' }

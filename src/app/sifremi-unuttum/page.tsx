@@ -2,32 +2,25 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { api, saveToken, saveUser } from '@/lib/api'
+import { api } from '@/lib/api'
 import { AlertCircle } from 'lucide-react'
 
-export default function GirisPage() {
-  const router = useRouter()
-  const [form, setForm] = useState({ email: '', password: '' })
+export default function SifremiUnuttumPage() {
+  const [email, setEmail] = useState('')
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
-    setError('')
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setError('')
     try {
-      const res = await api.login({ email: form.email, password: form.password })
-      if (res.error) { setError(res.error); setLoading(false); return }
-      saveToken(res.token)
-      saveUser(res.user)
-      router.push('/')
+      await api.forgotPassword(email)
+      setSuccess(true)
     } catch {
       setError('Bağlantı hatası. Lütfen tekrar dene.')
+    } finally {
       setLoading(false)
     }
   }
@@ -56,48 +49,46 @@ export default function GirisPage() {
       {/* Sağ panel */}
       <div style={{ width: 480, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '60px 48px', backgroundColor: '#fff' }}>
         <div style={{ marginBottom: 36 }}>
-          <h1 style={{ fontSize: 28, fontWeight: 800, color: '#111', marginBottom: 8 }}>Tekrar hoş geldin</h1>
-          <p style={{ fontSize: 15, color: '#888' }}>Hesabına giriş yap, derslerini bul</p>
+          <h1 style={{ fontSize: 28, fontWeight: 800, color: '#111', marginBottom: 8 }}>Şifremi Unuttum</h1>
+          <p style={{ fontSize: 15, color: '#888' }}>E-posta adresini gir, sana sıfırlama linki gönderelim</p>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div>
-            <label style={labelStyle}>E-posta adresi</label>
-            <input name="email" type="email" placeholder="ornek@email.com" value={form.email} onChange={handleChange} required style={inputStyle} />
-          </div>
-          <div>
-            <label style={labelStyle}>Şifre</label>
-            <input name="password" type="password" placeholder="••••••••" value={form.password} onChange={handleChange} required style={inputStyle} />
-            <div style={{ textAlign: 'right', marginTop: 4 }}>
-              <Link href="/sifremi-unuttum" style={{ fontSize: 13, color: '#4F46E5', textDecoration: 'none', fontWeight: 500 }}>
-                Şifremi unuttum
-              </Link>
+        {success ? (
+          <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: '20px 24px', fontSize: 15, color: '#166534', lineHeight: 1.6 }}>
+            Email gönderildi, kutunu kontrol et
+            <div style={{ marginTop: 20 }}>
+              <Link href="/giris" style={{ fontSize: 14, color: '#4F46E5', fontWeight: 700, textDecoration: 'none' }}>← Giriş sayfasına dön</Link>
             </div>
           </div>
-
-          {error && (
-            <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 12, padding: '12px 16px', fontSize: 13, color: '#DC2626', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <AlertCircle size={14} /> {error}
+        ) : (
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div>
+              <label style={labelStyle}>E-posta adresi</label>
+              <input
+                type="email"
+                placeholder="ornek@email.com"
+                value={email}
+                onChange={e => { setEmail(e.target.value); setError('') }}
+                required
+                style={inputStyle}
+              />
             </div>
-          )}
 
-          <button type="submit" disabled={loading} style={{ marginTop: 4, padding: '14px', borderRadius: 12, border: 'none', background: loading ? '#A5B4FC' : '#4F46E5', color: '#fff', fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', transition: 'background 0.15s' }}>
-            {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
-          </button>
-        </form>
+            {error && (
+              <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 12, padding: '12px 16px', fontSize: 13, color: '#DC2626', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <AlertCircle size={14} /> {error}
+              </div>
+            )}
 
-        <div style={{ textAlign: 'center', marginTop: 28, paddingTop: 28, borderTop: '1px solid #F0F0F0' }}>
-          <p style={{ fontSize: 14, color: '#888' }}>
-            Hesabın yok mu?{' '}
-            <Link href="/kayit" style={{ color: '#4F46E5', fontWeight: 700, textDecoration: 'none' }}>Kayıt Ol</Link>
-          </p>
-        </div>
+            <button type="submit" disabled={loading} style={{ marginTop: 4, padding: '14px', borderRadius: 12, border: 'none', background: loading ? '#A5B4FC' : '#4F46E5', color: '#fff', fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', transition: 'background 0.15s' }}>
+              {loading ? 'Gönderiliyor...' : 'Sıfırlama Linki Gönder'}
+            </button>
 
-        <div style={{ marginTop: 20, textAlign: 'center' }}>
-          <Link href="/salon-giris" style={{ fontSize: 13, color: '#aaa', textDecoration: 'none', fontWeight: 500 }}>
-            Salon sahibi misiniz? →
-          </Link>
-        </div>
+            <div style={{ textAlign: 'center', marginTop: 8 }}>
+              <Link href="/giris" style={{ fontSize: 14, color: '#4F46E5', fontWeight: 600, textDecoration: 'none' }}>← Giriş sayfasına dön</Link>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   )

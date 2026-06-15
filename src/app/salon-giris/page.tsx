@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { Building2, AlertCircle } from 'lucide-react'
 
 export default function SalonGirisPage() {
   const router = useRouter()
@@ -61,14 +62,14 @@ export default function SalonGirisPage() {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8f8f8', display: 'flex', flexDirection: 'column' }}>
       <nav style={{ backgroundColor: '#fff', borderBottom: '1px solid #eee', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 1px 8px rgba(0,0,0,0.06)' }}>
-        <Link href="/" style={{ fontSize: 22, fontWeight: 800, color: '#FF385C', letterSpacing: -0.5, textDecoration: 'none' }}>fitpass</Link>
+        <Link href="/" style={{ fontSize: 22, fontWeight: 800, color: '#4F46E5', letterSpacing: -0.5, textDecoration: 'none' }}>şipşakspor</Link>
         <Link href="/giris" style={{ padding: '8px 18px', borderRadius: 24, border: '1px solid #ddd', background: '#fff', fontSize: 14, fontWeight: 500, color: '#333', textDecoration: 'none' }}>Kullanıcı Girişi</Link>
       </nav>
 
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px' }}>
         <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '40px 36px', width: '100%', maxWidth: 460, boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
           <div style={{ textAlign: 'center', marginBottom: 28 }}>
-            <div style={{ fontSize: 36, marginBottom: 8 }}>🏢</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}><Building2 size={36} /></div>
             <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1a1a1a', marginBottom: 6 }}>Salon Paneli</h1>
             <p style={{ fontSize: 14, color: '#888' }}>Salonunuzu yönetin, derslerinizi ekleyin</p>
           </div>
@@ -91,7 +92,7 @@ export default function SalonGirisPage() {
                 <label style={labelStyle}>Şifre</label>
                 <input name="password" type="password" placeholder="Şifreniz" value={form.password} onChange={handleChange} required style={inputStyle} />
               </div>
-              {error && <div style={errorStyle}>⚠️ {error}</div>}
+              {error && <div style={{ ...errorStyle, display: 'flex', alignItems: 'center', gap: 8 }}><AlertCircle size={14} /> {error}</div>}
               <button type="submit" disabled={loading} style={btnStyle(loading)}>
                 {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
               </button>
@@ -118,7 +119,7 @@ export default function SalonGirisPage() {
                 <label style={labelStyle}>Şifre</label>
                 <input name="password" type="password" placeholder="En az 6 karakter" value={form.password} onChange={handleChange} required style={inputStyle} />
               </div>
-              {error && <div style={errorStyle}>⚠️ {error}</div>}
+              {error && <div style={{ ...errorStyle, display: 'flex', alignItems: 'center', gap: 8 }}><AlertCircle size={14} /> {error}</div>}
               <button type="submit" disabled={loading} style={btnStyle(loading)}>
                 {loading ? 'Kaydediliyor...' : 'Başvuru Gönder'}
               </button>
@@ -136,4 +137,4 @@ export default function SalonGirisPage() {
 const labelStyle: React.CSSProperties = { fontSize: 13, fontWeight: 600, color: '#444', display: 'block', marginBottom: 6 }
 const inputStyle: React.CSSProperties = { width: '100%', padding: '12px 16px', borderRadius: 12, border: '1.5px solid #e5e5e5', fontSize: 14, outline: 'none', backgroundColor: '#fafafa', color: '#1a1a1a', boxSizing: 'border-box' }
 const errorStyle: React.CSSProperties = { backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#DC2626' }
-const btnStyle = (loading: boolean): React.CSSProperties => ({ marginTop: 6, padding: '14px', borderRadius: 14, border: 'none', background: loading ? '#ccc' : '#FF385C', color: '#fff', fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer' })
+const btnStyle = (loading: boolean): React.CSSProperties => ({ marginTop: 6, padding: '14px', borderRadius: 14, border: 'none', background: loading ? '#ccc' : '#4F46E5', color: '#fff', fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer' })

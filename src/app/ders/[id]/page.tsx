@@ -1,139 +1,281 @@
 'use client'
 
-'use client'
-
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { mockClasses, mockVenues, mockInstructors } from '@/lib/mockData'
 import Navbar from '@/components/Navbar'
-import { getToken, getUser } from '@/lib/api'
+import { api, getToken, getUser } from '@/lib/api'
+import { MapPin, Calendar, Clock, Timer, Users, ShieldCheck, Flame, AlertCircle, X } from 'lucide-react'
+import { SportIconBox } from '@/lib/sportIcons'
+
+const categoryColorMap: Record<string, string> = {
+  'Yoga': '#C4A882', 'Pilates': '#C9849A', 'Boks': '#DC2626',
+  'Padel': '#EAB308', 'Halı Saha': '#16A34A', 'Basketbol': '#C2501F',
+  'HIIT': '#F97316', 'Dans': '#9333EA', 'Yüzme': '#0891B2', 'Crossfit': '#4B5563',
+}
+
+const categoryIconMap: Record<string, string> = {
+  'Yoga': 'yoga', 'Pilates': 'pilates', 'Boks': 'boxing',
+  'HIIT': 'hiit', 'Halı Saha': 'football', 'Basketbol': 'basketball',
+  'Padel': 'padel', 'Dans': 'dance', 'Yüzme': 'swimming', 'Crossfit': 'strength',
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapSessionToDisplay(session: any) {
+  return {
+    id: session.id,
+    title: session.title,
+    venueId: session.venueId,
+    venue: session.venueName,
+    venueAddress: session.venueAddress || '',
+    neighborhood: session.neighborhood,
+    category: session.category,
+    icon: categoryIconMap[session.category] || 'hiit',
+    color: session.categoryColor || categoryColorMap[session.category] || '#4F46E5',
+    basePrice: session.basePrice,
+    spots: session.availableSpots,
+    rating: session.rating || 4.5,
+    totalReviews: session.totalReviews || 0,
+    time: new Date(session.startsAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+    date: new Date(session.startsAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' }),
+    duration: `${session.durationMinutes} dk`,
+    sessionId: session.id,
+    instructorName: session.instructorName || '',
+    instructorId: session.instructorId,
+    // fields not available from API — provide defaults so card still renders
+    description: '',
+    amenities: [] as string[],
+    isRealSession: true,
+  }
+}
+
+type DisplayClass = ReturnType<typeof mapSessionToDisplay> | (typeof mockClasses[0] & { sessionId?: number; isRealSession?: boolean })
 
 export default function DersDetay() {
   const params = useParams()
-  const cls = mockClasses.find(c => c.id === Number(params.id)) || mockClasses[0]
-  const venue = mockVenues.find(v => v.id === cls.venueId)!
-  const instructor = mockInstructors.find(i => i.id === cls.instructorId)
+  const [cls, setCls] = useState<DisplayClass | null>(null)
+  const [loading, setLoading] = useState(true)
   const [showBooking, setShowBooking] = useState(false)
 
+  useEffect(() => {
+    async function fetchSession() {
+      const id = Number(params.id)
+      try {
+        const result = await api.getSessionById(id)
+        if (result?.session) {
+          setCls(mapSessionToDisplay(result.session))
+          return
+        }
+      } catch {
+        // fall through to mock
+      }
+      // fallback to mock
+      const mock = mockClasses.find(c => c.id === id) || mockClasses[0]
+      setCls({ ...mock, isRealSession: false })
+      setLoading(false)
+    }
+    fetchSession().finally(() => setLoading(false))
+  }, [params.id])
+
+  if (loading || !cls) {
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: '#FAFAFA', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+        <Navbar />
+        <div style={{ maxWidth: 1080, margin: '0 auto', padding: '32px 24px' }}>
+          <div style={{ background: '#F0F0F0', borderRadius: 24, height: 300 }} />
+        </div>
+      </div>
+    )
+  }
+
+  const isReal = (cls as { isRealSession?: boolean }).isRealSession
+
+  // For mock data, find venue and instructor from mock arrays
+  const venue = !isReal ? mockVenues.find(v => v.id === cls.venueId) || mockVenues[0] : null
+  const instructor = !isReal ? mockInstructors.find(i => i.id === (cls as typeof mockClasses[0]).instructorId) : null
+
+  // For real session — instructor name inline, venue info from session
+  const venueName = isReal ? (cls as ReturnType<typeof mapSessionToDisplay>).venue : venue?.name || ''
+  const venueAddress = isReal ? (cls as ReturnType<typeof mapSessionToDisplay>).venueAddress : venue?.address || ''
+  const venueId = cls.venueId
+
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f8f8f8' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#FAFAFA', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
       <Navbar />
 
-      <div style={{ maxWidth: 1000, margin: '0 auto', padding: '32px 24px', display: 'grid', gridTemplateColumns: '1fr 340px', gap: 28, alignItems: 'start' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#888', fontSize: 14, textDecoration: 'none', fontWeight: 500 }}>← Geri Dön</Link>
+      <div style={{ maxWidth: 1080, margin: '0 auto', padding: '32px 24px' }}>
+        <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#666', fontSize: 14, textDecoration: 'none', fontWeight: 500, marginBottom: 28 }}>
+          ← Tüm dersler
+        </Link>
 
-          <div style={{ backgroundColor: '#fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.07)' }}>
-            <div style={{ background: cls.color + '18', padding: '28px 28px 24px', borderBottom: '1px solid ' + cls.color + '22' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div>
-                  <div style={{ fontSize: 44, marginBottom: 10 }}>{cls.icon}</div>
-                  <h1 style={{ fontSize: 26, fontWeight: 800, color: '#1a1a1a', marginBottom: 4 }}>{cls.title}</h1>
-                  <Link href={`/venue/${venue.id}`} style={{ fontSize: 15, color: '#FF385C', textDecoration: 'none', fontWeight: 600 }}>{venue.name}</Link>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
-                    <span style={{ fontSize: 14, color: '#F59E0B', fontWeight: 700 }}>★ {cls.rating}</span>
-                    <span style={{ fontSize: 13, color: '#999' }}>({cls.totalReviews} değerlendirme)</span>
-                    <span style={{ fontSize: 13, color: '#999' }}>· 📍 {cls.neighborhood}</span>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 28, alignItems: 'start' }}>
+          {/* Sol kolon */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+            {/* Hero kart */}
+            <div style={{ backgroundColor: '#fff', borderRadius: 24, overflow: 'hidden', border: '1px solid #F0F0F0' }}>
+              <div style={{ background: `linear-gradient(135deg, ${cls.color}20 0%, ${cls.color}08 100%)`, padding: '36px 32px 28px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ marginBottom: 14 }}><SportIconBox name={cls.icon} bgColor={cls.color + '20'} iconColor={cls.color} boxSize={64} borderRadius={18} size={30} /></div>
+                    <h1 style={{ fontSize: 30, fontWeight: 800, color: '#111', marginBottom: 6, letterSpacing: -0.5 }}>{cls.title}</h1>
+                    {venueId ? (
+                      <Link href={`/venue/${venueId}`} style={{ fontSize: 15, color: '#4F46E5', textDecoration: 'none', fontWeight: 600 }}>{venueName}</Link>
+                    ) : (
+                      <span style={{ fontSize: 15, color: '#4F46E5', fontWeight: 600 }}>{venueName}</span>
+                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
+                      <span style={{ fontSize: 14, color: '#F59E0B', fontWeight: 700 }}>★ {cls.rating}</span>
+                      <span style={{ fontSize: 13, color: '#999' }}>({cls.totalReviews} değerlendirme)</span>
+                      <span style={{ fontSize: 13, color: '#bbb' }}>·</span>
+                      <span style={{ fontSize: 13, color: '#888', display: 'inline-flex', alignItems: 'center', gap: 4 }}><MapPin size={14} /> {cls.neighborhood}</span>
+                    </div>
+                  </div>
+                  <div style={{ background: cls.color, color: '#fff', borderRadius: 16, padding: '14px 20px', textAlign: 'center', flexShrink: 0, marginLeft: 20 }}>
+                    <div style={{ fontSize: 26, fontWeight: 800 }}>₺{cls.basePrice}</div>
+                    <div style={{ fontSize: 12, opacity: 0.85, marginTop: 2 }}>kişi başı</div>
                   </div>
                 </div>
-                <div style={{ background: cls.color, color: '#fff', borderRadius: 14, padding: '10px 18px', textAlign: 'center' }}>
-                  <div style={{ fontSize: 22, fontWeight: 800 }}>₺{cls.basePrice}</div>
-                  <div style={{ fontSize: 11, opacity: 0.85 }}>kişi başı</div>
-                </div>
               </div>
-            </div>
-            <div style={{ padding: '20px 28px', display: 'flex', gap: 24, flexWrap: 'wrap' }}>
-              {[
-                { label: 'Tarih', value: `📅 ${cls.date}` },
-                { label: 'Saat', value: `🕐 ${cls.time}` },
-                { label: 'Süre', value: `⏱ ${cls.duration}` },
-                { label: 'Kapasite', value: `🪑 ${cls.spots} yer kaldı / ${cls.capacity}` },
-              ].map((item, i) => (
-                <div key={i}>
-                  <div style={{ fontSize: 11, color: '#999', fontWeight: 600, marginBottom: 2, textTransform: 'uppercase' }}>{item.label}</div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: item.label === 'Kapasite' && cls.spots <= 3 ? '#EF4444' : '#1a1a1a' }}>{item.value}</div>
-                </div>
-              ))}
-            </div>
-          </div>
 
-          <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px 28px', boxShadow: '0 2px 12px rgba(0,0,0,0.07)' }}>
-            <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a1a1a', marginBottom: 12 }}>Ders Hakkında</h2>
-            <p style={{ fontSize: 14, color: '#555', lineHeight: 1.7 }}>{cls.description}</p>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginTop: 20, marginBottom: 12 }}>Dahil Olanlar</h3>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {cls.amenities.map((a, i) => (
-                <span key={i} style={{ padding: '6px 14px', backgroundColor: '#f0fdf4', color: '#16a34a', borderRadius: 20, fontSize: 13, fontWeight: 500 }}>✓ {a}</span>
-              ))}
-            </div>
-          </div>
-
-          {instructor && (
-            <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px 28px', boxShadow: '0 2px 12px rgba(0,0,0,0.07)' }}>
-              <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a1a1a', marginBottom: 16 }}>Eğitmen</h2>
-              <Link href={`/instructor/${instructor.id}`} style={{ textDecoration: 'none' }}>
-                <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', cursor: 'pointer' }}>
-                  <div style={{ width: 60, height: 60, borderRadius: '50%', background: instructor.color + '30', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, flexShrink: 0 }}>{instructor.icon}</div>
-                  <div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: '#FF385C', marginBottom: 2 }}>{instructor.fullName}</div>
-                    <div style={{ fontSize: 13, color: '#F59E0B', fontWeight: 600, marginBottom: 6 }}>★ {instructor.avgRating} · {instructor.totalReviews} değerlendirme</div>
-                    <div style={{ fontSize: 13, color: '#888', marginBottom: 6 }}>{instructor.specialty}</div>
-                    <p style={{ fontSize: 13, color: '#666', lineHeight: 1.6 }}>{instructor.bio}</p>
+              <div style={{ padding: '20px 32px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, borderTop: '1px solid #F5F5F5' }}>
+                {[
+                  { icon: <Calendar size={18} />, label: 'Tarih', value: cls.date },
+                  { icon: <Clock size={18} />, label: 'Saat', value: cls.time },
+                  { icon: <Timer size={18} />, label: 'Süre', value: cls.duration },
+                  { icon: <Users size={18} />, label: 'Kontenjan', value: `${cls.spots} yer kaldı` },
+                ].map((item, i) => (
+                  <div key={i} style={{ padding: '12px 14px', backgroundColor: '#FAFAFA', borderRadius: 12 }}>
+                    <div style={{ marginBottom: 6 }}>{item.icon}</div>
+                    <div style={{ fontSize: 11, color: '#aaa', fontWeight: 600, textTransform: 'uppercase', marginBottom: 3 }}>{item.label}</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: i === 3 && cls.spots <= 3 ? '#EF4444' : '#111' }}>{item.value}</div>
                   </div>
-                </div>
-              </Link>
+                ))}
+              </div>
             </div>
-          )}
 
-          <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px 28px', boxShadow: '0 2px 12px rgba(0,0,0,0.07)' }}>
-            <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a1a1a', marginBottom: 12 }}>Salon</h2>
-            <Link href={`/venue/${venue.id}`} style={{ textDecoration: 'none' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px', backgroundColor: '#f9f9f9', borderRadius: 14, cursor: 'pointer' }}>
-                <div style={{ fontSize: 32, width: 52, height: 52, background: venue.color + '20', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{venue.coverEmoji}</div>
-                <div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: '#FF385C' }}>{venue.name}</div>
-                  <div style={{ fontSize: 13, color: '#888' }}>📍 {venue.address}</div>
-                  <div style={{ fontSize: 13, color: '#F59E0B', fontWeight: 600 }}>★ {venue.avgRating} · {venue.totalReviews} değerlendirme</div>
-                </div>
-              </div>
-            </Link>
-          </div>
-        </div>
+            {/* Açıklama */}
+            {'description' in cls && (cls as typeof mockClasses[0]).description && (
+              <div style={{ backgroundColor: '#fff', borderRadius: 24, padding: '28px 32px', border: '1px solid #F0F0F0' }}>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111', marginBottom: 14 }}>Ders Hakkında</h2>
+                <p style={{ fontSize: 15, color: '#555', lineHeight: 1.8 }}>{(cls as typeof mockClasses[0]).description}</p>
 
-        <div style={{ position: 'sticky', top: 80 }}>
-          <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px', boxShadow: '0 4px 24px rgba(0,0,0,0.1)' }}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: '#1a1a1a', marginBottom: 4 }}>₺{cls.basePrice}<span style={{ fontSize: 14, fontWeight: 400, color: '#999' }}> / kişi</span></div>
-            <div style={{ fontSize: 13, color: '#F59E0B', fontWeight: 600, marginBottom: 20 }}>★ {cls.rating} · {cls.totalReviews} değerlendirme</div>
-            <div style={{ backgroundColor: '#f9f9f9', borderRadius: 14, padding: '14px 16px', marginBottom: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-                <span style={{ fontSize: 13, color: '#555' }}>📅 Tarih</span>
-                <span style={{ fontSize: 13, fontWeight: 600 }}>{cls.date}</span>
-              </div>
-              <div style={{ height: 1, backgroundColor: '#eee', marginBottom: 10 }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 13, color: '#555' }}>🕐 Saat</span>
-                <span style={{ fontSize: 13, fontWeight: 600 }}>{cls.time}</span>
-              </div>
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                <span style={{ fontSize: 13, color: '#555' }}>Ders ücreti</span>
-                <span style={{ fontSize: 13 }}>₺{cls.basePrice}</span>
-              </div>
-              <div style={{ height: 1, backgroundColor: '#eee', margin: '12px 0' }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 14, fontWeight: 700 }}>Toplam</span>
-                <span style={{ fontSize: 14, fontWeight: 700 }}>₺{cls.basePrice}</span>
-              </div>
-            </div>
-            <button onClick={() => setShowBooking(true)} style={{ width: '100%', padding: '14px', borderRadius: 14, border: 'none', background: '#FF385C', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', marginBottom: 12 }}>Rezervasyon Yap</button>
-            <p style={{ textAlign: 'center', fontSize: 12, color: '#999' }}>🔒 12 saat öncesine kadar %50 iade garantisi</p>
-            {cls.spots <= 3 && (
-              <div style={{ marginTop: 12, padding: '12px 14px', backgroundColor: '#fff9f0', borderRadius: 12, border: '1px solid #fed7aa' }}>
-                <p style={{ fontSize: 12, color: '#92400e', textAlign: 'center' }}>🔥 Son <strong>{cls.spots} yer</strong> kaldı!</p>
+                {'amenities' in cls && Array.isArray((cls as typeof mockClasses[0]).amenities) && (cls as typeof mockClasses[0]).amenities.length > 0 && (
+                  <>
+                    <h3 style={{ fontSize: 16, fontWeight: 700, color: '#111', marginTop: 24, marginBottom: 14 }}>Dahil Olanlar</h3>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {(cls as typeof mockClasses[0]).amenities.map((a, i) => (
+                        <span key={i} style={{ padding: '7px 16px', backgroundColor: '#F0FDF4', color: '#16A34A', borderRadius: 100, fontSize: 13, fontWeight: 500 }}>✓ {a}</span>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             )}
+
+            {/* Eğitmen */}
+            {instructor && (
+              <div style={{ backgroundColor: '#fff', borderRadius: 24, padding: '28px 32px', border: '1px solid #F0F0F0' }}>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111', marginBottom: 20 }}>Eğitmen</h2>
+                <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start' }}>
+                  <SportIconBox name={instructor.icon} bgColor={instructor.color + '30'} iconColor={instructor.color} boxSize={64} borderRadius={32} size={28} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 17, fontWeight: 700, color: '#111', marginBottom: 4 }}>{instructor.fullName}</div>
+                    <div style={{ fontSize: 13, color: '#F59E0B', fontWeight: 600, marginBottom: 6 }}>★ {instructor.avgRating} · {instructor.totalReviews} değerlendirme</div>
+                    <div style={{ display: 'inline-block', fontSize: 12, fontWeight: 600, color: '#6366F1', background: '#EEF2FF', padding: '3px 10px', borderRadius: 20, marginBottom: 10 }}>{instructor.specialty}</div>
+                    <p style={{ fontSize: 14, color: '#666', lineHeight: 1.7 }}>{instructor.bio}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Real session instructor (inline) */}
+            {isReal && (cls as ReturnType<typeof mapSessionToDisplay>).instructorName && (
+              <div style={{ backgroundColor: '#fff', borderRadius: 24, padding: '28px 32px', border: '1px solid #F0F0F0' }}>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111', marginBottom: 16 }}>Eğitmen</h2>
+                <div style={{ fontSize: 16, fontWeight: 600, color: '#111' }}>{(cls as ReturnType<typeof mapSessionToDisplay>).instructorName}</div>
+              </div>
+            )}
+
+            {/* Salon */}
+            <div style={{ backgroundColor: '#fff', borderRadius: 24, padding: '28px 32px', border: '1px solid #F0F0F0' }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111', marginBottom: 16 }}>Salon</h2>
+              {venue ? (
+                <Link href={`/venue/${venue.id}`} style={{ textDecoration: 'none' }}>
+                  <div
+                    style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px', backgroundColor: '#FAFAFA', borderRadius: 16, cursor: 'pointer', transition: 'background 0.15s' }}
+                    onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.backgroundColor = '#F5F5F5'}
+                    onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.backgroundColor = '#FAFAFA'}
+                  >
+                    <SportIconBox name={venue.coverEmoji} bgColor={venue.color + '20'} iconColor={venue.color} boxSize={56} borderRadius={16} size={28} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: '#4F46E5' }}>{venue.name}</div>
+                      <div style={{ fontSize: 13, color: '#888', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={14} /> {venue.address}</div>
+                      <div style={{ fontSize: 13, color: '#F59E0B', fontWeight: 600, marginTop: 4 }}>★ {venue.avgRating} · {venue.totalReviews} değerlendirme</div>
+                    </div>
+                    <span style={{ fontSize: 18, color: '#ccc' }}>→</span>
+                  </div>
+                </Link>
+              ) : (
+                <div style={{ padding: '16px', backgroundColor: '#FAFAFA', borderRadius: 16 }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#4F46E5' }}>{venueName}</div>
+                  {venueAddress && <div style={{ fontSize: 13, color: '#888', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={14} /> {venueAddress}</div>}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Sağ sticky panel */}
+          <div style={{ position: 'sticky', top: 88 }}>
+            <div style={{ backgroundColor: '#fff', borderRadius: 24, padding: '28px', border: '1px solid #F0F0F0', boxShadow: '0 8px 40px rgba(0,0,0,0.1)' }}>
+              <div style={{ marginBottom: 20 }}>
+                <span style={{ fontSize: 28, fontWeight: 800, color: '#111' }}>₺{cls.basePrice}</span>
+                <span style={{ fontSize: 14, fontWeight: 400, color: '#999', marginLeft: 4 }}> / kişi</span>
+                <div style={{ fontSize: 13, color: '#F59E0B', fontWeight: 600, marginTop: 4 }}>★ {cls.rating} · {cls.totalReviews} değerlendirme</div>
+              </div>
+
+              <div style={{ backgroundColor: '#FAFAFA', borderRadius: 16, overflow: 'hidden', marginBottom: 20, border: '1px solid #F0F0F0' }}>
+                <div style={{ padding: '14px 16px', display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 13, color: '#666', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Calendar size={16} /> Tarih</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{cls.date}</span>
+                </div>
+                <div style={{ height: 1, backgroundColor: '#F0F0F0' }} />
+                <div style={{ padding: '14px 16px', display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 13, color: '#666', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Clock size={16} /> Saat</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{cls.time}</span>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <span style={{ fontSize: 14, color: '#555' }}>Ders ücreti</span>
+                  <span style={{ fontSize: 14, color: '#111' }}>₺{cls.basePrice}</span>
+                </div>
+                <div style={{ height: 1, backgroundColor: '#F0F0F0', margin: '14px 0' }} />
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>Toplam</span>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>₺{cls.basePrice}</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowBooking(true)}
+                style={{ width: '100%', padding: '15px', borderRadius: 14, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', marginBottom: 14, transition: 'background 0.15s' }}
+                onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = '#4338CA'}
+                onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = '#4F46E5'}
+              >
+                Rezervasyon Yap
+              </button>
+
+              <p style={{ textAlign: 'center', fontSize: 12, color: '#bbb', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><ShieldCheck size={14} /> 12 saat öncesine kadar ücretsiz iptal</p>
+
+              {cls.spots <= 3 && (
+                <div style={{ marginTop: 14, padding: '12px 14px', backgroundColor: '#FFF7ED', borderRadius: 12, border: '1px solid #FED7AA' }}>
+                  <p style={{ fontSize: 12, color: '#92400E', textAlign: 'center', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><Flame size={12} /> Son <strong>{cls.spots} yer</strong> kaldı!</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -143,10 +285,12 @@ export default function DersDetay() {
   )
 }
 
-function BookingModal({ cls, onClose }: { cls: typeof mockClasses[0], onClose: () => void }) {
+function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void }) {
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const sessionId = (cls as { sessionId?: number }).sessionId
 
   const handleConfirm = async () => {
     const token = getToken()
@@ -161,20 +305,34 @@ function BookingModal({ cls, onClose }: { cls: typeof mockClasses[0], onClose: (
     setError('')
 
     try {
-      // MVP: rezervasyonu localStorage'a kaydet (backend session entegrasyonu sonra)
-      const booking = {
-        id: Date.now(),
-        classId: cls.id,
-        classTitle: cls.title,
-        classIcon: cls.icon,
-        date: cls.date,
-        time: cls.time,
-        price: cls.basePrice,
-        status: 'confirmed',
-        createdAt: new Date().toISOString(),
+      if (sessionId) {
+        // Real API booking
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/bookings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ sessionId, bookingType: 'class' }),
+        })
+        const data = await res.json()
+        if (!res.ok) {
+          setError(data?.error || data?.message || 'Bir hata oluştu, tekrar dene.')
+          return
+        }
+      } else {
+        // Mock fallback — save to localStorage
+        const booking = {
+          id: Date.now(),
+          classId: cls.id,
+          classTitle: cls.title,
+          classIcon: cls.icon,
+          date: cls.date,
+          time: cls.time,
+          price: cls.basePrice,
+          status: 'confirmed',
+          createdAt: new Date().toISOString(),
+        }
+        const existing = JSON.parse(localStorage.getItem('fitpass_bookings') || '[]')
+        localStorage.setItem('fitpass_bookings', JSON.stringify([booking, ...existing]))
       }
-      const existing = JSON.parse(localStorage.getItem('fitpass_bookings') || '[]')
-      localStorage.setItem('fitpass_bookings', JSON.stringify([booking, ...existing]))
       setStep(2)
     } catch {
       setError('Bir hata oluştu, tekrar dene.')
@@ -184,48 +342,63 @@ function BookingModal({ cls, onClose }: { cls: typeof mockClasses[0], onClose: (
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-      <div style={{ backgroundColor: '#fff', borderRadius: 24, width: '100%', maxWidth: 480, padding: '32px', position: 'relative', maxHeight: '90vh', overflowY: 'auto' }}>
-        <button onClick={onClose} style={{ position: 'absolute', top: 16, right: 16, background: '#f5f5f5', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', fontSize: 16 }}>×</button>
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, backdropFilter: 'blur(4px)' }}>
+      <div style={{ backgroundColor: '#fff', borderRadius: 24, width: '100%', maxWidth: 460, padding: '32px', position: 'relative', boxShadow: '0 24px 80px rgba(0,0,0,0.2)' }}>
+        <button onClick={onClose} style={{ position: 'absolute', top: 16, right: 16, background: '#F5F5F5', border: 'none', borderRadius: '50%', width: 36, height: 36, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666' }}><X size={18} /></button>
 
         {step === 1 && (
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>Rezervasyonu Onayla</h2>
-            <p style={{ fontSize: 13, color: '#888', marginBottom: 24 }}>Ders detaylarını kontrol et</p>
-            <div style={{ backgroundColor: '#f9f9f9', borderRadius: 16, padding: '18px', marginBottom: 20 }}>
-              <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 12 }}>
-                <div style={{ fontSize: 32 }}>{cls.icon}</div>
+            <h2 style={{ fontSize: 22, fontWeight: 800, color: '#111', marginBottom: 6 }}>Rezervasyonu Onayla</h2>
+            <p style={{ fontSize: 14, color: '#888', marginBottom: 28 }}>Ders detaylarını kontrol et ve onayla</p>
+
+            <div style={{ backgroundColor: '#FAFAFA', borderRadius: 18, padding: '20px', marginBottom: 20, border: '1px solid #F0F0F0' }}>
+              <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 16 }}>
+                <SportIconBox name={cls.icon} bgColor={cls.color + '20'} iconColor={cls.color} boxSize={56} borderRadius={14} size={26} />
                 <div>
-                  <div style={{ fontSize: 15, fontWeight: 700 }}>{cls.title}</div>
-                  <div style={{ fontSize: 13, color: '#666' }}>{cls.date} · {cls.time}</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>{cls.title}</div>
+                  <div style={{ fontSize: 13, color: '#888', marginTop: 3 }}>{cls.date} · {cls.time}</div>
                 </div>
               </div>
-              <div style={{ borderTop: '1px solid #eee', paddingTop: 12, display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 14, fontWeight: 700 }}>Toplam</span>
-                <span style={{ fontSize: 14, fontWeight: 700, color: '#FF385C' }}>₺{cls.basePrice}</span>
+              <div style={{ height: 1, backgroundColor: '#EBEBEB', marginBottom: 14 }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>Toplam</span>
+                <span style={{ fontSize: 18, fontWeight: 800, color: '#4F46E5' }}>₺{cls.basePrice}</span>
               </div>
             </div>
-            <div style={{ backgroundColor: '#FFF9F0', borderRadius: 12, padding: '12px 14px', marginBottom: 20, fontSize: 12, color: '#92400e' }}>
-              🔒 12 saat öncesine kadar %50 iade garantisi
+
+            <div style={{ backgroundColor: '#FFF7ED', borderRadius: 12, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#92400E', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <ShieldCheck size={14} /> 12 saat öncesine kadar ücretsiz iptal
             </div>
-            {error && <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#DC2626', marginBottom: 16 }}>⚠️ {error}</div>}
-            <button onClick={handleConfirm} disabled={loading} style={{ width: '100%', padding: '14px', borderRadius: 14, border: 'none', background: loading ? '#ccc' : '#FF385C', color: '#fff', fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer' }}>
-              {loading ? 'İşleniyor...' : 'Rezervasyonu Onayla ✓'}
+
+            {error && (
+              <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 12, padding: '12px 16px', fontSize: 13, color: '#DC2626', marginBottom: 16, display: 'flex', gap: 8, alignItems: 'center' }}>
+                <AlertCircle size={14} /> {error}
+              </div>
+            )}
+
+            <button
+              onClick={handleConfirm}
+              disabled={loading}
+              style={{ width: '100%', padding: '15px', borderRadius: 14, border: 'none', background: loading ? '#A5B4FC' : '#4F46E5', color: '#fff', fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer' }}
+            >
+              {loading ? 'İşleniyor...' : 'Rezervasyonu Onayla →'}
             </button>
           </div>
         )}
 
         {step === 2 && (
-          <div style={{ textAlign: 'center', padding: '20px 0' }}>
-            <div style={{ fontSize: 64, marginBottom: 16 }}>🎉</div>
-            <h2 style={{ fontSize: 22, fontWeight: 800, color: '#1a1a1a', marginBottom: 8 }}>Rezervasyon Tamam!</h2>
-            <p style={{ fontSize: 14, color: '#666', marginBottom: 24, lineHeight: 1.6 }}><strong>{cls.title}</strong> dersine başarıyla kayıt oldun. Seni bekliyoruz!</p>
-            <button onClick={onClose} style={{ width: '100%', padding: '14px', borderRadius: 14, border: 'none', background: '#FF385C', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>Harika! 🚀</button>
+          <div style={{ textAlign: 'center', padding: '24px 0' }}>
+            <div style={{ fontSize: 72, marginBottom: 20 }}>🎉</div>
+            <h2 style={{ fontSize: 24, fontWeight: 800, color: '#111', marginBottom: 10 }}>Rezervasyon Tamam!</h2>
+            <p style={{ fontSize: 15, color: '#666', marginBottom: 28, lineHeight: 1.7 }}>
+              <strong>{cls.title}</strong> dersine başarıyla kayıt oldun.<br />Seni bekliyoruz!
+            </p>
+            <button onClick={onClose} style={{ width: '100%', padding: '15px', borderRadius: 14, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+              Harika! 🚀
+            </button>
           </div>
         )}
       </div>
     </div>
   )
 }
-
-const inputStyle: React.CSSProperties = { width: '100%', padding: '12px 16px', borderRadius: 12, border: '1.5px solid #e5e5e5', fontSize: 14, outline: 'none', backgroundColor: '#fafafa', color: '#1a1a1a' }

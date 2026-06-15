@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { mockDropInSlots, mockVenues } from '@/lib/mockData'
 import Navbar from '@/components/Navbar'
+import { Calendar, Clock, Timer, MapPin, User, CreditCard, ShieldCheck, AlertCircle } from 'lucide-react'
+import { SportIconBox } from '@/lib/sportIcons'
 
 export default function DropInPage() {
   const params = useParams()
@@ -32,7 +34,7 @@ export default function DropInPage() {
                   <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 6 }}>{slot.title}</h1>
                   <Link href={`/venue/${venue.id}`} style={{ fontSize: 14, opacity: 0.9, color: '#fff', textDecoration: 'underline' }}>{venue.name} · {slot.neighborhood}</Link>
                 </div>
-                <div style={{ fontSize: 52 }}>{slot.icon}</div>
+                <SportIconBox name={slot.icon} bgColor="rgba(255,255,255,0.2)" iconColor="#fff" boxSize={72} borderRadius={20} size={36} />
               </div>
               <div style={{ marginTop: 20 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
@@ -47,14 +49,14 @@ export default function DropInPage() {
             </div>
             <div style={{ padding: '20px 24px', display: 'flex', gap: 24, flexWrap: 'wrap' }}>
               {[
-                { label: 'Tarih', value: `📅 ${slot.date}` },
-                { label: 'Saat', value: `🕐 ${slot.time} - ${slot.endsAt}` },
-                { label: 'Süre', value: `⏱ ${slot.duration}` },
-                { label: 'Kişi Başı', value: `₺${slot.pricePerPerson}` },
+                { label: 'Tarih', value: slot.date, icon: <Calendar size={14} /> },
+                { label: 'Saat', value: `${slot.time} - ${slot.endsAt}`, icon: <Clock size={14} /> },
+                { label: 'Süre', value: slot.duration, icon: <Timer size={14} /> },
+                { label: 'Kişi Başı', value: `₺${slot.pricePerPerson}`, icon: null },
               ].map((item, i) => (
                 <div key={i}>
                   <div style={{ fontSize: 11, color: '#999', fontWeight: 600, marginBottom: 2, textTransform: 'uppercase' }}>{item.label}</div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: i === 3 ? slot.color : '#1a1a1a' }}>{item.value}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: i === 3 ? slot.color : '#1a1a1a', display: 'flex', alignItems: 'center', gap: 4 }}>{item.icon}{item.value}</div>
                 </div>
               ))}
             </div>
@@ -77,9 +79,9 @@ export default function DropInPage() {
                           onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.backgroundColor = '#f9f9f9'}
                           onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.backgroundColor = 'transparent'}
                         >
-                          <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>👤</div>
+                          <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><User size={16} /></div>
                           <div>
-                            <div style={{ fontSize: 13, fontWeight: 600, color: '#FF385C' }}>@{p.username}</div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: '#4F46E5' }}>@{p.username}</div>
                             <div style={{ fontSize: 11, color: p.tierColor, fontWeight: 600 }}>{p.tier}</div>
                           </div>
                         </div>
@@ -102,15 +104,15 @@ export default function DropInPage() {
             <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a1a1a', marginBottom: 12 }}>Saha</h2>
             <Link href={`/venue/${venue.id}`} style={{ textDecoration: 'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px', backgroundColor: '#f9f9f9', borderRadius: 14, cursor: 'pointer' }}>
-                <div style={{ fontSize: 32, width: 52, height: 52, background: venue.color + '20', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{venue.coverEmoji}</div>
+                <SportIconBox name={venue.coverEmoji} bgColor={venue.color + '20'} iconColor={venue.color} boxSize={52} borderRadius={14} size={24} />
                 <div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: '#FF385C' }}>{venue.name}</div>
-                  <div style={{ fontSize: 13, color: '#888' }}>📍 {venue.address}</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: '#4F46E5' }}>{venue.name}</div>
+                  <div style={{ fontSize: 13, color: '#888', display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={14} /> {venue.address}</div>
                 </div>
               </div>
             </Link>
             <div style={{ marginTop: 14, padding: '12px 14px', backgroundColor: '#FFFBEB', borderRadius: 12, border: '1px solid #FDE68A' }}>
-              <p style={{ fontSize: 12, color: '#92400E' }}>⚠️ Bu etkinlik <strong>{venue.name}</strong> tarafından düzenlenmektedir. Fitpass yalnızca booking altyapısını sağlar.</p>
+              <p style={{ fontSize: 12, color: '#92400E', display: 'flex', alignItems: 'center', gap: 6 }}><AlertCircle size={14} /> Bu etkinlik <strong>{venue.name}</strong> tarafından düzenlenmektedir. Şipşakspor yalnızca booking altyapısını sağlar.</p>
             </div>
           </div>
         </div>
@@ -144,8 +146,8 @@ export default function DropInPage() {
             <button onClick={() => selectedTeam && setShowJoin(true)} style={{ width: '100%', padding: '14px', borderRadius: 14, border: 'none', background: selectedTeam ? slot.color : '#ddd', color: '#fff', fontSize: 15, fontWeight: 700, cursor: selectedTeam ? 'pointer' : 'not-allowed', marginBottom: 12 }}>
               {selectedTeam ? `Takım ${selectedTeam}'ye Katıl` : 'Takım Seç'}
             </button>
-            <p style={{ textAlign: 'center', fontSize: 12, color: '#999' }}>💳 Maç dolunca ödeme çekilir</p>
-            <p style={{ textAlign: 'center', fontSize: 12, color: '#999', marginTop: 4 }}>🔒 Dolmazsa tam iade garantisi</p>
+            <p style={{ textAlign: 'center', fontSize: 12, color: '#999', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><CreditCard size={14} /> Maç dolunca ödeme çekilir</p>
+            <p style={{ textAlign: 'center', fontSize: 12, color: '#999', marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><ShieldCheck size={14} /> Dolmazsa tam iade garantisi</p>
           </div>
         </div>
       </div>
@@ -170,7 +172,7 @@ function JoinModal({ slot, team, onClose, step, setStep }: { slot: typeof mockDr
           <div>
             <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 24 }}>Katılımı Onayla</h2>
             <div style={{ backgroundColor: '#f9f9f9', borderRadius: 16, padding: '16px', marginBottom: 20 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>{slot.icon} {slot.title}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}><SportIconBox name={slot.icon} bgColor={slot.color + '18'} iconColor={slot.color} boxSize={28} borderRadius={8} size={16} /> {slot.title}</div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}><span style={{ fontSize: 13, color: '#555' }}>Takım</span><span style={{ fontSize: 13, fontWeight: 600 }}>{team === 'A' ? '🔵 Takım A' : '🔴 Takım B'}</span></div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}><span style={{ fontSize: 13, color: '#555' }}>Saat</span><span style={{ fontSize: 13, fontWeight: 600 }}>{slot.time}</span></div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ fontSize: 13, color: '#555' }}>Ücret</span><span style={{ fontSize: 13, fontWeight: 700, color: slot.color }}>₺{slot.pricePerPerson}</span></div>
@@ -198,7 +200,7 @@ function JoinModal({ slot, team, onClose, step, setStep }: { slot: typeof mockDr
 
         {step === 3 && (
           <div style={{ textAlign: 'center', padding: '16px 0' }}>
-            <div style={{ fontSize: 60, marginBottom: 16 }}>{slot.icon}</div>
+            <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}><SportIconBox name={slot.icon} bgColor={slot.color + '18'} iconColor={slot.color} boxSize={80} borderRadius={24} size={40} /></div>
             <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 8 }}>Lobiye Katıldın!</h2>
             <p style={{ fontSize: 14, color: '#666', marginBottom: 24, lineHeight: 1.6 }}><strong>{team === 'A' ? '🔵 Takım A' : '🔴 Takım B'}</strong> takımındasın.<br />Maç dolunca ₺{slot.pricePerPerson} kartından çekilecek.</p>
             <button onClick={onClose} style={{ width: '100%', padding: '14px', borderRadius: 14, border: 'none', background: slot.color, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>Harika! 🎉</button>

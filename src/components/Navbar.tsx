@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { getUser, removeToken, removeUser } from '@/lib/api'
 import { useRouter } from 'next/navigation'
+import { User, LogOut } from 'lucide-react'
 
 export default function Navbar() {
   const router = useRouter()
@@ -23,38 +24,49 @@ export default function Navbar() {
   }
 
   return (
-    <nav style={{ backgroundColor: '#fff', borderBottom: '1px solid #eee', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 1px 8px rgba(0,0,0,0.06)' }}>
-      <Link href="/" style={{ fontSize: 22, fontWeight: 800, color: '#FF385C', letterSpacing: -0.5, textDecoration: 'none' }}>fitpass</Link>
+    <nav style={{ backgroundColor: '#fff', borderBottom: '1px solid #F0F0F0', padding: '0 24px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
+      <Link href="/" style={{ fontSize: 24, fontWeight: 800, color: '#4F46E5', letterSpacing: -0.5, textDecoration: 'none' }}>şipşakspor</Link>
 
-      {user ? (
-        <div style={{ position: 'relative' }}>
-          <button
-            onClick={() => setShowMenu(!showMenu)}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 14px', borderRadius: 24, border: '1.5px solid #eee', background: '#fff', cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#333' }}
-          >
-            <div style={{ width: 28, height: 28, borderRadius: '50%', backgroundColor: '#FF385C', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12, fontWeight: 700 }}>
-              {user.fullName.charAt(0).toUpperCase()}
-            </div>
-            {user.fullName.split(' ')[0]}
-          </button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {user ? (
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowMenu(!showMenu)}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 14px 7px 8px', borderRadius: 100, border: '1.5px solid #EBEBEB', background: '#fff', cursor: 'pointer' }}
+            >
+              <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg, #4F46E5, #6366F1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 13, fontWeight: 700 }}>
+                {user.fullName.charAt(0).toUpperCase()}
+              </div>
+              <span style={{ fontSize: 14, fontWeight: 600, color: '#333' }}>{user.fullName.split(' ')[0]}</span>
+            </button>
 
-          {showMenu && (
-            <div style={{ position: 'absolute', right: 0, top: 44, backgroundColor: '#fff', borderRadius: 16, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', border: '1px solid #eee', minWidth: 180, zIndex: 200, overflow: 'hidden' }}>
-              <Link href={`/profil/${user.username}`} onClick={() => setShowMenu(false)} style={{ display: 'block', padding: '12px 18px', fontSize: 14, color: '#333', textDecoration: 'none', fontWeight: 500, borderBottom: '1px solid #f5f5f5' }}>
-                👤 Profilim
-              </Link>
-              <button onClick={handleLogout} style={{ display: 'block', width: '100%', padding: '12px 18px', fontSize: 14, color: '#EF4444', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500 }}>
-                🚪 Çıkış Yap
-              </button>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Link href="/giris" style={{ padding: '8px 18px', borderRadius: 24, border: '1px solid #ddd', background: '#fff', fontSize: 14, fontWeight: 500, color: '#333', textDecoration: 'none' }}>Giriş Yap</Link>
-          <Link href="/kayit" style={{ padding: '8px 18px', borderRadius: 24, border: 'none', background: '#FF385C', fontSize: 14, fontWeight: 600, color: '#fff', textDecoration: 'none' }}>Kayıt Ol</Link>
-        </div>
-      )}
+            {showMenu && (
+              <div style={{ position: 'absolute', right: 0, top: 52, backgroundColor: '#fff', borderRadius: 16, boxShadow: '0 8px 40px rgba(0,0,0,0.14)', border: '1px solid #F0F0F0', minWidth: 200, zIndex: 200, overflow: 'hidden' }}>
+                <div style={{ padding: '14px 16px', borderBottom: '1px solid #F5F5F5' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{user.fullName}</div>
+                  <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>@{user.username}</div>
+                </div>
+                <Link href={`/profil/${user.username}`} onClick={() => setShowMenu(false)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', fontSize: 14, color: '#333', textDecoration: 'none', fontWeight: 500, backgroundColor: 'transparent' }}>
+                  <User size={16} /> Profilim
+                </Link>
+                <div style={{ height: 1, backgroundColor: '#F5F5F5' }} />
+                <button onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', fontSize: 14, color: '#4F46E5', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500 }}>
+                  <LogOut size={14} /> Çıkış Yap
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <Link href="/giris" style={{ padding: '9px 18px', borderRadius: 100, border: '1.5px solid #EBEBEB', background: '#fff', fontSize: 14, fontWeight: 600, color: '#333', textDecoration: 'none' }}>
+              Giriş Yap
+            </Link>
+            <Link href="/kayit" style={{ padding: '9px 18px', borderRadius: 100, border: 'none', background: '#4F46E5', fontSize: 14, fontWeight: 600, color: '#fff', textDecoration: 'none' }}>
+              Kayıt Ol
+            </Link>
+          </div>
+        )}
+      </div>
     </nav>
   )
 }

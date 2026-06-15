@@ -49,6 +49,49 @@ export const api = {
     })
     return res.json()
   },
+
+  async getSessions() {
+    const res = await fetch(`${API_URL}/api/public/sessions`)
+    return res.json()
+  },
+
+  async getSessionById(id: number) {
+    const res = await fetch(`${API_URL}/api/public/sessions/${id}`)
+    return res.json()
+  },
+
+  async getVenues() {
+    const res = await fetch(`${API_URL}/api/public/venues`)
+    return res.json()
+  },
+
+  async getVenueById(id: number) {
+    const res = await fetch(`${API_URL}/api/public/venues/${id}`)
+    return res.json()
+  },
+
+  async getCategories() {
+    const res = await fetch(`${API_URL}/api/public/categories`)
+    return res.json()
+  },
+
+  forgotPassword: async (email: string) => {
+    const res = await fetch(`${API_URL}/api/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    })
+    return res.json()
+  },
+
+  resetPassword: async (token: string, password: string) => {
+    const res = await fetch(`${API_URL}/api/auth/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, password }),
+    })
+    return res.json()
+  },
 }
 
 export const saveToken = (token: string) => localStorage.setItem('fitpass_token', token)

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { mockInstructors, mockVenues, mockClasses } from '@/lib/mockData'
 import Navbar from '@/components/Navbar'
+import { MapPin, Calendar, Star, User } from 'lucide-react'
 
 export default function InstructorPage() {
   const params = useParams()
@@ -40,8 +41,8 @@ export default function InstructorPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', backgroundColor: '#f9f9f9', borderRadius: 14, cursor: 'pointer' }}>
                 <div style={{ fontSize: 24 }}>{venue.coverEmoji}</div>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#FF385C' }}>{venue.name}</div>
-                  <div style={{ fontSize: 12, color: '#999' }}>📍 {venue.neighborhood}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#4F46E5' }}>{venue.name}</div>
+                  <div style={{ fontSize: 12, color: '#999', display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} /> {venue.neighborhood}</div>
                 </div>
               </div>
             </Link>
@@ -51,7 +52,7 @@ export default function InstructorPage() {
         {/* Dersler */}
         {classes.length > 0 && (
           <div style={{ marginBottom: 20 }}>
-            <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a1a1a', marginBottom: 14 }}>📅 Verdiği Dersler</h2>
+            <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a1a1a', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}><Calendar size={17} /> Verdiği Dersler</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {classes.map(cls => (
                 <Link key={cls.id} href={`/ders/${cls.id}`} style={{ textDecoration: 'none' }}>
@@ -78,13 +79,13 @@ export default function InstructorPage() {
         )}
 
         {/* Yorumlar */}
-        <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a1a1a', marginBottom: 14 }}>⭐ Değerlendirmeler</h2>
+        <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a1a1a', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}><Star size={17} /> Değerlendirmeler</h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {mockReviews.map(r => (
             <div key={r.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '18px 22px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 34, height: 34, borderRadius: '50%', backgroundColor: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>👤</div>
+                  <div style={{ width: 34, height: 34, borderRadius: '50%', backgroundColor: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><User size={16} /></div>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>Anonim Kullanıcı</div>
                     <div style={{ fontSize: 11, color: '#999' }}>{r.date}</div>
