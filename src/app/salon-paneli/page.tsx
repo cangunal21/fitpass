@@ -3,25 +3,51 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Building2, Clock, BookOpen, Calendar, Ticket, AlertCircle, User, Check } from 'lucide-react'
+import { Building2, Clock, BookOpen, Calendar, Ticket, AlertCircle, User, Check, ChevronDown, ChevronUp, Plus } from 'lucide-react'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+
+const NO_INSTRUCTOR_CATEGORIES = ['Padel', 'Halı Saha', 'Basketbol']
+const DROP_IN_SPORTS = ['Basketbol', 'Padel', 'Halı Saha']
+const DROP_IN_FORMATS: Record<string, string[]> = {
+  'Basketbol': ['4v4 Yarım Saha', '5v5 Tam Saha'],
+  'Padel': ['1v1', '2v2'],
+  'Halı Saha': ['6v6', '7v7'],
+}
 
 export default function SalonPaneliPage() {
   const router = useRouter()
   const [venue, setVenue] = useState<any>(null)
-  const [activeTab, setActiveTab] = useState<'dersler' | 'hocalar' | 'rezervasyonlar' | 'ders-ekle'>('dersler')
+  const [activeTab, setActiveTab] = useState<'dersler' | 'hocalar' | 'rezervasyonlar' | 'dropin'>('dersler')
   const [bookings, setBookings] = useState<any[]>([])
   const [instructors, setInstructors] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [classForm, setClassForm] = useState({ title: '', category: '', basePrice: '', duration: '', capacity: '', description: '', instructorId: '' })
+
+  // Inline class form state
+  const [showClassForm, setShowClassForm] = useState(false)
+  const [classForm, setClassForm] = useState({ title: '', category: '', basePrice: '', duration: '60', capacity: '', instructorId: '' })
   const [classError, setClassError] = useState('')
   const [classSuccess, setClassSuccess] = useState('')
-  const [sessionForms, setSessionForms] = useState<Record<number, { date: string; time: string; capacity: string }>>({})
+
+  // Session forms
+  const [sessionForms, setSessionForms] = useState<Record<number, { date: string; time: string; capacity: string; instructorId: string }>>({})
   const [sessionSuccess, setSessionSuccess] = useState<Record<number, string>>({})
+
+  // Instructor form
   const [instructorForm, setInstructorForm] = useState({ fullName: '', specialty: '', bio: '', avatarUrl: '', phone: '', email: '' })
   const [instructorError, setInstructorError] = useState('')
   const [instructorSuccess, setInstructorSuccess] = useState('')
+
+  // Drop-in state
+  const [dropInSlots, setDropInSlots] = useState<any[]>([])
+  const [dropInForm, setDropInForm] = useState({ sport: '', format: '', date: '', time: '', totalPlayers: '', pricePerPerson: '', visibility: 'open', privateCode: '' })
+  const [dropInError, setDropInError] = useState('')
+  const [dropInSuccess, setDropInSuccess] = useState('')
+
+  const formatSessionDate = (date: string) => {
+    if (!date) return ''
+    return new Date(date).toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  }
 
   useEffect(() => {
     const token = localStorage.getItem('fitpass_venue_token')
@@ -56,10 +82,19 @@ export default function SalonPaneliPage() {
     setInstructors(data.instructors || [])
   }
 
+  const fetchDropInSlots = async () => {
+    const token = localStorage.getItem('fitpass_venue_token')!
+    const res = await fetch(`${API_URL}/api/venue/dropin`, { headers: { Authorization: `Bearer ${token}` } })
+    const data = await res.json()
+    setDropInSlots(data.slots || [])
+  }
+
   const handleTabChange = (tab: typeof activeTab) => {
     setActiveTab(tab)
     if (tab === 'rezervasyonlar') fetchBookings()
-    if (tab === 'hocalar' || tab === 'ders-ekle') fetchInstructors()
+    if (tab === 'hocalar') fetchInstructors()
+    if (tab === 'dersler') fetchInstructors()
+    if (tab === 'dropin') fetchDropInSlots()
   }
 
   const handleAddInstructor = async (e: React.FormEvent) => {
@@ -97,9 +132,10 @@ export default function SalonPaneliPage() {
     const data = await res.json()
     if (data.error) { setClassError(data.error); return }
     setClassSuccess('Ders başarıyla eklendi!')
-    setClassForm({ title: '', category: '', basePrice: '', duration: '', capacity: '', description: '', instructorId: '' })
+    setClassForm({ title: '', category: '', basePrice: '', duration: '60', capacity: '', instructorId: '' })
+    setShowClassForm(false)
     fetchVenue(token)
-    setTimeout(() => setActiveTab('dersler'), 1500)
+    setTimeout(() => setClassSuccess(''), 2500)
   }
 
   const handleAddSession = async (classId: number) => {
@@ -113,16 +149,34 @@ export default function SalonPaneliPage() {
     })
     const data = await res.json()
     if (!data.error) {
-      setSessionSuccess({ ...sessionSuccess, [classId]: 'Seans eklendi!' })
-      setSessionForms({ ...sessionForms, [classId]: { date: '', time: '', capacity: '' } })
+      setSessionSuccess(prev => ({ ...prev, [classId]: `${formatSessionDate(form.date)} saat ${form.time} — ${form.capacity} kişi kapasiteli seans eklendi!` }))
+      setSessionForms(prev => ({ ...prev, [classId]: { date: '', time: '', capacity: '', instructorId: '' } }))
       fetchVenue(token)
-      setTimeout(() => setSessionSuccess(prev => ({ ...prev, [classId]: '' })), 2000)
+      setTimeout(() => setSessionSuccess(prev => ({ ...prev, [classId]: '' })), 3000)
     }
+  }
+
+  const handleAddDropIn = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setDropInError(''); setDropInSuccess('')
+    const token = localStorage.getItem('fitpass_venue_token')!
+    const res = await fetch(`${API_URL}/api/venue/dropin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(dropInForm),
+    })
+    const data = await res.json()
+    if (data.error) { setDropInError(data.error); return }
+    setDropInSuccess('Drop-in slot oluşturuldu!')
+    setDropInForm({ sport: '', format: '', date: '', time: '', totalPlayers: '', pricePerPerson: '', visibility: 'open', privateCode: '' })
+    fetchDropInSlots()
+    setTimeout(() => setDropInSuccess(''), 3000)
   }
 
   if (loading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: '#888' }}>Yükleniyor...</div>
 
   const categories = ['Yoga', 'Pilates', 'Boks', 'Padel', 'Halı Saha', 'Basketbol', 'HIIT', 'Dans', 'Yüzme', 'Crossfit', 'Diğer']
+  const showInstructor = !NO_INSTRUCTOR_CATEGORIES.includes(classForm.category)
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8f8f8' }}>
@@ -160,9 +214,9 @@ export default function SalonPaneliPage() {
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 4, backgroundColor: '#eee', borderRadius: 16, padding: 4, marginBottom: 24, width: 'fit-content' }}>
           {([
-            { key: 'dersler', label: 'Derslerim' },
+            { key: 'dersler', label: 'Dersler & Seanslar' },
             { key: 'hocalar', label: 'Hocalarım' },
-            { key: 'ders-ekle', label: '+ Ders Ekle' },
+            { key: 'dropin', label: 'Drop-In' },
             { key: 'rezervasyonlar', label: 'Rezervasyonlar' },
           ] as const).map(tab => (
             <button key={tab.key} onClick={() => handleTabChange(tab.key)} style={{ padding: '10px 20px', borderRadius: 12, border: 'none', background: activeTab === tab.key ? '#fff' : 'transparent', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: activeTab === tab.key ? '#1a1a1a' : '#888', boxShadow: activeTab === tab.key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
@@ -171,76 +225,150 @@ export default function SalonPaneliPage() {
           ))}
         </div>
 
-        {/* DERSLER */}
+        {/* DERSLER & SEANSLAR */}
         {activeTab === 'dersler' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+            {/* + Yeni Ders Ekle button */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => { setShowClassForm(v => !v); setClassError(''); setClassSuccess('') }}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 20px', borderRadius: 12, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+              >
+                <Plus size={16} /> Yeni Ders Ekle {showClassForm ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </button>
+            </div>
+
+            {/* Inline class form */}
+            {showClassForm && (
+              <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '28px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', border: '2px solid #4F46E5' }}>
+                <h3 style={{ fontSize: 16, fontWeight: 800, color: '#1a1a1a', marginBottom: 20 }}>Yeni Ders</h3>
+                <form onSubmit={handleAddClass} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                    <div>
+                      <label style={labelStyle}>Ders Adı *</label>
+                      <input type="text" placeholder="Vinyasa Flow Yoga" value={classForm.title} onChange={e => setClassForm({ ...classForm, title: e.target.value })} required style={inputStyle} />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Kategori *</label>
+                      <select value={classForm.category} onChange={e => setClassForm({ ...classForm, category: e.target.value, instructorId: '' })} required style={inputStyle}>
+                        <option value="">Seçin</option>
+                        {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Fiyat (₺) *</label>
+                      <input type="number" placeholder="350" value={classForm.basePrice} onChange={e => setClassForm({ ...classForm, basePrice: e.target.value })} required style={inputStyle} />
+                    </div>
+                    {showInstructor && (
+                      <div>
+                        <label style={labelStyle}>Hoca (opsiyonel)</label>
+                        <select value={classForm.instructorId} onChange={e => setClassForm({ ...classForm, instructorId: e.target.value })} style={inputStyle}>
+                          <option value="">Hoca seçin</option>
+                          {instructors.map((inst: any) => (
+                            <option key={inst.id} value={inst.id}>{inst.fullName} — {inst.specialty}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                  {classError && <div style={{ ...errorStyle, display: 'flex', alignItems: 'center', gap: 8 }}><AlertCircle size={14} /> {classError}</div>}
+                  {classSuccess && <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#16a34a' }}>✓ {classSuccess}</div>}
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <button type="button" onClick={() => setShowClassForm(false)} style={{ flex: 1, padding: '12px', borderRadius: 12, border: '1.5px solid #eee', background: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: '#555' }}>İptal</button>
+                    <button type="submit" style={{ flex: 2, padding: '12px', borderRadius: 12, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Dersi Kaydet</button>
+                  </div>
+                </form>
+              </div>
+            )}
+
             {(!venue?.classes || venue.classes.length === 0) ? (
               <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '40px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}><BookOpen size={48} /></div>
                 <div style={{ fontSize: 16, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>Henüz ders eklemediniz</div>
-                <button onClick={() => setActiveTab('ders-ekle')} style={{ padding: '12px 24px', borderRadius: 14, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>+ İlk Dersi Ekle</button>
+                <button onClick={() => setShowClassForm(true)} style={{ padding: '12px 24px', borderRadius: 14, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>+ İlk Dersi Ekle</button>
               </div>
-            ) : venue.classes.map((cls: any) => (
-              <div key={cls.id} style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-                  <div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: '#1a1a1a', marginBottom: 4 }}>{cls.title}</div>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <span style={{ fontSize: 12, backgroundColor: '#f0f0f0', padding: '3px 10px', borderRadius: 20, color: '#555' }}>{cls.category}</span>
-                      <span style={{ fontSize: 12, backgroundColor: cls.isActive ? '#F0FDF4' : '#FEF2F2', padding: '3px 10px', borderRadius: 20, color: cls.isActive ? '#16a34a' : '#DC2626', fontWeight: 600 }}>{cls.isActive ? '● Aktif' : '● Pasif'}</span>
+            ) : venue.classes.map((cls: any) => {
+              const needsInstructor = !NO_INSTRUCTOR_CATEGORIES.includes(cls.category)
+              return (
+                <div key={cls.id} style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+                    <div>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: '#1a1a1a', marginBottom: 4 }}>{cls.title}</div>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <span style={{ fontSize: 12, backgroundColor: '#f0f0f0', padding: '3px 10px', borderRadius: 20, color: '#555' }}>{cls.category}</span>
+                        <span style={{ fontSize: 12, backgroundColor: cls.isActive ? '#F0FDF4' : '#FEF2F2', padding: '3px 10px', borderRadius: 20, color: cls.isActive ? '#16a34a' : '#DC2626', fontWeight: 600 }}>{cls.isActive ? '● Aktif' : '● Pasif'}</span>
+                      </div>
                     </div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: '#4F46E5' }}>₺{cls.basePrice}</div>
                   </div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: '#4F46E5' }}>₺{cls.basePrice}</div>
-                </div>
 
-                <div style={{ fontSize: 13, color: '#888', marginBottom: 16 }}>
-                  {cls.sessions?.length || 0} seans · {cls.sessions?.reduce((acc: number, s: any) => acc + (s._count?.bookings || 0), 0) || 0} rezervasyon
-                </div>
-
-                {/* Seans Ekle */}
-                <div style={{ backgroundColor: '#f9f9f9', borderRadius: 14, padding: '16px' }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#555', marginBottom: 12 }}>+ Yeni Seans Ekle</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 8, alignItems: 'end' }}>
-                    <div>
-                      <label style={{ fontSize: 11, color: '#888', display: 'block', marginBottom: 4 }}>Tarih</label>
-                      <input type="date" value={sessionForms[cls.id]?.date || ''} onChange={e => setSessionForms({ ...sessionForms, [cls.id]: { ...sessionForms[cls.id], date: e.target.value } })} style={{ width: '100%', padding: '8px 10px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', boxSizing: 'border-box' as const }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: 11, color: '#888', display: 'block', marginBottom: 4 }}>Saat</label>
-                      <input type="time" value={sessionForms[cls.id]?.time || ''} onChange={e => setSessionForms({ ...sessionForms, [cls.id]: { ...sessionForms[cls.id], time: e.target.value } })} style={{ width: '100%', padding: '8px 10px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', boxSizing: 'border-box' as const }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: 11, color: '#888', display: 'block', marginBottom: 4 }}>Kapasite</label>
-                      <input type="number" placeholder="15" value={sessionForms[cls.id]?.capacity || ''} onChange={e => setSessionForms({ ...sessionForms, [cls.id]: { ...sessionForms[cls.id], capacity: e.target.value } })} style={{ width: '100%', padding: '8px 10px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', boxSizing: 'border-box' as const }} />
-                    </div>
-                    <button onClick={() => handleAddSession(cls.id)} style={{ padding: '8px 16px', borderRadius: 10, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' as const }}>Ekle</button>
+                  <div style={{ fontSize: 13, color: '#888', marginBottom: 16 }}>
+                    {cls.sessions?.length || 0} seans · {cls.sessions?.reduce((acc: number, s: any) => acc + (s._count?.bookings || 0), 0) || 0} rezervasyon
                   </div>
-                  {sessionSuccess[cls.id] && <div style={{ fontSize: 12, color: '#10B981', fontWeight: 600, marginTop: 8 }}>✓ {sessionSuccess[cls.id]}</div>}
-                </div>
 
-                {/* Seanslar */}
-                {cls.sessions && cls.sessions.length > 0 && (
-                  <div style={{ marginTop: 12 }}>
-                    <div style={{ fontSize: 12, color: '#888', fontWeight: 600, marginBottom: 8 }}>MEVCUT SEANSLAR</div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                      {cls.sessions.map((s: any) => (
-                        <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', backgroundColor: '#f5f5f5', borderRadius: 10, fontSize: 13 }}>
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Calendar size={13} /> {new Date(s.startsAt).toLocaleDateString('tr-TR')} · <Clock size={13} /> {new Date(s.startsAt).toLocaleTimeString('tr-TR', {hour:'2-digit',minute:'2-digit'})}</span>
-                          <span style={{ color: '#888' }}>{s._count?.bookings || 0}/{s.availableSpots} kişi</span>
+                  {/* Seans Ekle */}
+                  <div style={{ backgroundColor: '#f9f9f9', borderRadius: 14, padding: '18px 20px' }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#555', marginBottom: 14 }}>+ Yeni Seans Ekle</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: needsInstructor ? '1.2fr 1fr 1fr 1fr auto' : '1.4fr 1fr 1fr auto', gap: 12, alignItems: 'end' }}>
+                      <div>
+                        <label style={{ fontSize: 11, color: '#888', display: 'block', marginBottom: 4 }}>Tarih</label>
+                        <input type="date" value={sessionForms[cls.id]?.date || ''} onChange={e => setSessionForms(prev => ({ ...prev, [cls.id]: { ...prev[cls.id], date: e.target.value } }))} style={{ width: '100%', padding: '9px 10px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', boxSizing: 'border-box' as const, backgroundColor: '#fff' }} />
+                        {sessionForms[cls.id]?.date && (
+                          <div style={{ fontSize: 11, color: '#6366f1', fontWeight: 600, marginTop: 4 }}>{formatSessionDate(sessionForms[cls.id].date)}</div>
+                        )}
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 11, color: '#888', display: 'block', marginBottom: 4 }}>Saat</label>
+                        <input type="time" value={sessionForms[cls.id]?.time || ''} onChange={e => setSessionForms(prev => ({ ...prev, [cls.id]: { ...prev[cls.id], time: e.target.value } }))} style={{ width: '100%', padding: '9px 10px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', boxSizing: 'border-box' as const, backgroundColor: '#fff' }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 11, color: '#888', display: 'block', marginBottom: 4 }}>Kontenjan</label>
+                        <input type="number" placeholder="15" value={sessionForms[cls.id]?.capacity || ''} onChange={e => setSessionForms(prev => ({ ...prev, [cls.id]: { ...prev[cls.id], capacity: e.target.value } }))} style={{ width: '100%', padding: '9px 10px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', boxSizing: 'border-box' as const, backgroundColor: '#fff' }} />
+                      </div>
+                      {needsInstructor && (
+                        <div>
+                          <label style={{ fontSize: 11, color: '#888', display: 'block', marginBottom: 4 }}>Hoca</label>
+                          <select value={sessionForms[cls.id]?.instructorId || ''} onChange={e => setSessionForms(prev => ({ ...prev, [cls.id]: { ...prev[cls.id], instructorId: e.target.value } }))} style={{ width: '100%', padding: '9px 10px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', boxSizing: 'border-box' as const, backgroundColor: '#fff' }}>
+                            <option value="">Seçin</option>
+                            {instructors.map((inst: any) => (
+                              <option key={inst.id} value={inst.id}>{inst.fullName}</option>
+                            ))}
+                          </select>
                         </div>
-                      ))}
+                      )}
+                      <button onClick={() => handleAddSession(cls.id)} style={{ padding: '9px 18px', borderRadius: 10, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' as const, alignSelf: 'end' }}>Ekle</button>
                     </div>
+                    {sessionSuccess[cls.id] && (
+                      <div style={{ fontSize: 12, color: '#10B981', fontWeight: 600, marginTop: 10, backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 8, padding: '8px 12px' }}>
+                        ✓ {sessionSuccess[cls.id]}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            ))}
+
+                  {/* Seanslar */}
+                  {cls.sessions && cls.sessions.length > 0 && (
+                    <div style={{ marginTop: 12 }}>
+                      <div style={{ fontSize: 12, color: '#888', fontWeight: 600, marginBottom: 8 }}>MEVCUT SEANSLAR</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {cls.sessions.map((s: any) => (
+                          <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', backgroundColor: '#f5f5f5', borderRadius: 10, fontSize: 13 }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Calendar size={13} /> {new Date(s.startsAt).toLocaleDateString('tr-TR')} · <Clock size={13} /> {new Date(s.startsAt).toLocaleTimeString('tr-TR', {hour:'2-digit',minute:'2-digit'})}</span>
+                            <span style={{ color: '#888' }}>{s._count?.bookings || 0}/{s.availableSpots} kişi</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
 
         {/* HOCALAR */}
         {activeTab === 'hocalar' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'start' }}>
-            {/* Hoca listesi */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1a1a1a', margin: 0 }}>Mevcut Hocalar</h3>
               {instructors.length === 0 ? (
@@ -263,7 +391,6 @@ export default function SalonPaneliPage() {
               ))}
             </div>
 
-            {/* Hoca ekle formu */}
             <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
               <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1a1a1a', marginBottom: 20 }}>Yeni Hoca Ekle</h3>
               <form onSubmit={handleAddInstructor} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -299,53 +426,83 @@ export default function SalonPaneliPage() {
           </div>
         )}
 
-        {/* DERS EKLE */}
-        {activeTab === 'ders-ekle' && (
-          <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '32px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-            <h2 style={{ fontSize: 18, fontWeight: 800, color: '#1a1a1a', marginBottom: 24 }}>Yeni Ders Ekle</h2>
-            <form onSubmit={handleAddClass} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <div>
-                  <label style={labelStyle}>Ders Adı</label>
-                  <input name="title" type="text" placeholder="Vinyasa Flow Yoga" value={classForm.title} onChange={e => setClassForm({ ...classForm, title: e.target.value })} required style={inputStyle} />
+        {/* DROP-IN */}
+        {activeTab === 'dropin' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {/* Create form */}
+            <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '28px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+              <h3 style={{ fontSize: 16, fontWeight: 800, color: '#1a1a1a', marginBottom: 20 }}>Yeni Drop-In Slot Oluştur</h3>
+              <form onSubmit={handleAddDropIn} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                  <div>
+                    <label style={labelStyle}>Spor *</label>
+                    <select value={dropInForm.sport} onChange={e => setDropInForm({ ...dropInForm, sport: e.target.value, format: '' })} required style={inputStyle}>
+                      <option value="">Seçin</option>
+                      {DROP_IN_SPORTS.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Format *</label>
+                    <select value={dropInForm.format} onChange={e => setDropInForm({ ...dropInForm, format: e.target.value })} required style={inputStyle} disabled={!dropInForm.sport}>
+                      <option value="">Seçin</option>
+                      {(DROP_IN_FORMATS[dropInForm.sport] || []).map(f => <option key={f} value={f}>{f}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Tarih *</label>
+                    <input type="date" value={dropInForm.date} onChange={e => setDropInForm({ ...dropInForm, date: e.target.value })} required style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Saat *</label>
+                    <input type="time" value={dropInForm.time} onChange={e => setDropInForm({ ...dropInForm, time: e.target.value })} required style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Kişi Başı Fiyat (₺) *</label>
+                    <input type="number" placeholder="200" value={dropInForm.pricePerPerson} onChange={e => setDropInForm({ ...dropInForm, pricePerPerson: e.target.value })} required style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Görünürlük</label>
+                    <select value={dropInForm.visibility} onChange={e => setDropInForm({ ...dropInForm, visibility: e.target.value })} style={inputStyle}>
+                      <option value="open">Açık</option>
+                      <option value="private">Özel</option>
+                    </select>
+                  </div>
+                  {dropInForm.visibility === 'private' && (
+                    <div style={{ gridColumn: '1 / -1' }}>
+                      <label style={labelStyle}>Özel Kod *</label>
+                      <input type="text" placeholder="Katılım kodu" value={dropInForm.privateCode} onChange={e => setDropInForm({ ...dropInForm, privateCode: e.target.value })} style={inputStyle} />
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <label style={labelStyle}>Kategori</label>
-                  <select name="category" value={classForm.category} onChange={e => setClassForm({ ...classForm, category: e.target.value })} required style={inputStyle}>
-                    <option value="">Seçin</option>
-                    {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
+                {dropInError && <div style={{ ...errorStyle, display: 'flex', alignItems: 'center', gap: 8 }}><AlertCircle size={14} /> {dropInError}</div>}
+                {dropInSuccess && <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#16a34a' }}>✓ {dropInSuccess}</div>}
+                <button type="submit" style={{ padding: '13px', borderRadius: 12, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Slot Oluştur</button>
+              </form>
+            </div>
+
+            {/* Existing slots */}
+            <div>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#555', marginBottom: 12 }}>Mevcut Drop-In Slotlar</h3>
+              {dropInSlots.length === 0 ? (
+                <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '32px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', color: '#aaa', fontSize: 14 }}>
+                  Henüz drop-in slot oluşturulmadı.
                 </div>
-                <div>
-                  <label style={labelStyle}>Fiyat (₺)</label>
-                  <input name="basePrice" type="number" placeholder="350" value={classForm.basePrice} onChange={e => setClassForm({ ...classForm, basePrice: e.target.value })} required style={inputStyle} />
+              ) : dropInSlots.map((slot: any) => (
+                <div key={slot.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '18px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 4 }}>{slot.title}</div>
+                    <div style={{ fontSize: 12, color: '#888', display: 'flex', gap: 12 }}>
+                      <span><Calendar size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />{new Date(slot.startsAt).toLocaleDateString('tr-TR')} · {new Date(slot.startsAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span>{slot.currentPlayers}/{slot.totalPlayers} oyuncu</span>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: '#4F46E5' }}>₺{slot.pricePerPerson}<span style={{ fontSize: 12, fontWeight: 400, color: '#999' }}>/kişi</span></div>
+                    <span style={{ fontSize: 11, fontWeight: 700, backgroundColor: slot.status === 'open' ? '#F0FDF4' : '#FEF2F2', color: slot.status === 'open' ? '#16a34a' : '#DC2626', padding: '3px 10px', borderRadius: 20 }}>{slot.status === 'open' ? '● Açık' : '● Kapalı'}</span>
+                  </div>
                 </div>
-                <div>
-                  <label style={labelStyle}>Süre (dakika)</label>
-                  <input name="duration" type="number" placeholder="60" value={classForm.duration} onChange={e => setClassForm({ ...classForm, duration: e.target.value })} required style={inputStyle} />
-                </div>
-                <div>
-                  <label style={labelStyle}>Kapasite (kişi)</label>
-                  <input name="capacity" type="number" placeholder="15" value={classForm.capacity} onChange={e => setClassForm({ ...classForm, capacity: e.target.value })} required style={inputStyle} />
-                </div>
-                <div>
-                  <label style={labelStyle}>Hoca (opsiyonel)</label>
-                  <select value={classForm.instructorId} onChange={e => setClassForm({ ...classForm, instructorId: e.target.value })} style={inputStyle}>
-                    <option value="">Hoca seçin</option>
-                    {instructors.map((inst: any) => (
-                      <option key={inst.id} value={inst.id}>{inst.fullName} — {inst.specialty}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label style={labelStyle}>Açıklama (opsiyonel)</label>
-                <textarea name="description" placeholder="Ders hakkında kısa açıklama..." value={classForm.description} onChange={e => setClassForm({ ...classForm, description: e.target.value })} rows={3} style={{ ...inputStyle, resize: 'vertical' as const }} />
-              </div>
-              {classError && <div style={{ ...errorStyle, display: 'flex', alignItems: 'center', gap: 8 }}><AlertCircle size={14} /> {classError}</div>}
-              {classSuccess && <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#16a34a' }}>✓ {classSuccess}</div>}
-              <button type="submit" style={{ padding: '14px', borderRadius: 14, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>Dersi Ekle</button>
-            </form>
+              ))}
+            </div>
           </div>
         )}
 

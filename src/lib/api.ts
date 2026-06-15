@@ -75,6 +75,19 @@ export const api = {
     return res.json()
   },
 
+  async getDropInSlots() {
+    const res = await fetch(`${API_URL}/api/public/dropin`)
+    return res.json()
+  },
+
+  async joinDropIn(token: string, slotId: number) {
+    const res = await fetch(`${API_URL}/api/bookings/dropin/${slotId}/join`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    })
+    return res.json()
+  },
+
   forgotPassword: async (email: string) => {
     const res = await fetch(`${API_URL}/api/auth/forgot-password`, {
       method: 'POST',
