@@ -155,9 +155,9 @@ export const api = {
     }).then(r => r.json()),
 }
 
-export const saveToken = (token: string) => localStorage.setItem('fitpass_token', token)
-export const getToken = () => localStorage.getItem('fitpass_token')
-export const removeToken = () => localStorage.removeItem('fitpass_token')
-export const saveUser = (user: object) => localStorage.setItem('fitpass_user', JSON.stringify(user))
-export const getUser = () => { const u = localStorage.getItem('fitpass_user'); return u ? JSON.parse(u) : null }
-export const removeUser = () => localStorage.removeItem('fitpass_user')
+export const saveToken = (token: string) => { if (typeof window !== 'undefined') localStorage.setItem('fitpass_token', token) }
+export const getToken = () => typeof window !== 'undefined' ? localStorage.getItem('fitpass_token') : null
+export const removeToken = () => { if (typeof window !== 'undefined') localStorage.removeItem('fitpass_token') }
+export const saveUser = (user: object) => { if (typeof window !== 'undefined') localStorage.setItem('fitpass_user', JSON.stringify(user)) }
+export const getUser = () => { if (typeof window === 'undefined') return null; const u = localStorage.getItem('fitpass_user'); return u ? JSON.parse(u) : null }
+export const removeUser = () => { if (typeof window !== 'undefined') localStorage.removeItem('fitpass_user') }
