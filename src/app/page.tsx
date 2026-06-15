@@ -217,12 +217,12 @@ export default function Home() {
       <Navbar />
 
       {/* Hero / Search */}
-      <div style={{ background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 50%, #818CF8 100%)', padding: '48px 24px 56px' }}>
+      <div className="hero-section" style={{ background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 50%, #818CF8 100%)', padding: '48px 24px 56px' }}>
         <div style={{ maxWidth: 680, margin: '0 auto', textAlign: 'center' }}>
-          <h1 style={{ fontSize: 40, fontWeight: 800, color: '#fff', marginBottom: 10, letterSpacing: -1, lineHeight: 1.15 }}>
+          <h1 className="hero-title" style={{ fontSize: 40, fontWeight: 800, color: '#fff', marginBottom: 10, letterSpacing: -1, lineHeight: 1.15 }}>
             İstanbul'un en iyi<br />spor derslerini keşfet
           </h1>
-          <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.85)', marginBottom: 28, fontWeight: 400 }}>
+          <p className="hero-subtitle" style={{ fontSize: 16, color: 'rgba(255,255,255,0.85)', marginBottom: 28, fontWeight: 400 }}>
             Yoga'dan halı sahaya, Pilates'ten boksa — tek platformdan rezervasyon yap
           </p>
           <div style={{ position: 'relative', maxWidth: 560, margin: '0 auto' }}>
@@ -249,9 +249,10 @@ export default function Home() {
       {/* Kategoriler */}
       <div style={{ backgroundColor: '#fff', borderBottom: '1px solid #F0F0F0', padding: '0 24px' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', overflowX: 'auto' }}>
-          <div style={{ display: 'flex', gap: 2, padding: '4px 0', minWidth: 'max-content' }}>
+          <div className="category-tabs" style={{ display: 'flex', gap: 2, padding: '4px 0', minWidth: 'max-content' }}>
             <button
               onClick={() => handleCategoryTabClick(null)}
+              className="category-tab-item"
               style={{ padding: '16px 20px', border: 'none', background: 'transparent', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: activeCategory === null ? '#4F46E5' : '#666', borderBottom: activeCategory === null ? '2px solid #4F46E5' : '2px solid transparent', transition: 'all 0.15s', whiteSpace: 'nowrap' }}
             >
               Tümü
@@ -260,6 +261,7 @@ export default function Home() {
               <button
                 key={cat.id}
                 onClick={() => handleCategoryTabClick(activeCategory === cat.id ? null : cat.id)}
+                className="category-tab-item"
                 style={{ padding: '16px 20px', border: 'none', background: 'transparent', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: activeCategory === cat.id ? cat.color : '#666', borderBottom: activeCategory === cat.id ? `2px solid ${cat.color}` : '2px solid transparent', transition: 'all 0.15s', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}
               >
                 <SportIcon name={cat.icon} size={16} color={activeCategory === cat.id ? cat.color : '#666'} />{cat.name}
@@ -271,7 +273,7 @@ export default function Home() {
 
       {/* Filter Bar */}
       <div style={{ backgroundColor: '#fff', borderBottom: '1px solid #F0F0F0', padding: '12px 24px 0' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', paddingBottom: 12 }}>
+        <div className="filter-bar" style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', paddingBottom: 12 }}>
           <div style={{ position: 'relative', flex: '1 1 200px' }}>
             <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#aaa' }} />
             <input
@@ -312,7 +314,7 @@ export default function Home() {
             style={{ padding: '9px 12px', borderRadius: 10, border: '1.5px solid #E5E5E5', fontSize: 13, color: filters.date ? '#1a1a1a' : '#888', outline: 'none', cursor: 'pointer', background: '#fff' }}
           />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
+          <div className="filter-sort" style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
             <span style={{ fontSize: 13, color: '#888', fontWeight: 500, whiteSpace: 'nowrap' }}>Sırala:</span>
             <select
               value={sort}
@@ -343,7 +345,7 @@ export default function Home() {
         </div>
 
         {/* Time filter pills */}
-        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 12 }}>
+        <div className="time-filters" style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 12 }}>
           {([
             { key: 'all', label: 'Tümü' },
             { key: 'today', label: 'Bugün' },
@@ -353,6 +355,7 @@ export default function Home() {
             <button
               key={tf.key}
               onClick={() => setTimeFilter(tf.key)}
+              className="time-filter-item"
               style={{ padding: '8px 18px', borderRadius: 100, border: timeFilter === tf.key ? 'none' : '1.5px solid #E5E5E5', background: timeFilter === tf.key ? '#4F46E5' : '#fff', color: timeFilter === tf.key ? '#fff' : '#555', fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
             >
               {tf.label}
@@ -362,7 +365,7 @@ export default function Home() {
       </div>
 
       {/* İçerik */}
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 24px' }}>
+      <div className="page-container" style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <div>
             {loading ? (
@@ -385,7 +388,7 @@ export default function Home() {
         </div>
 
         {loading ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
+          <div className="cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} style={{ backgroundColor: '#fff', borderRadius: 20, overflow: 'hidden', border: '1px solid #F0F0F0' }}>
                 <div style={{ background: '#F0F0F0', height: 130, animation: 'pulse 1.5s ease-in-out infinite' }} />
@@ -398,7 +401,7 @@ export default function Home() {
             ))}
           </div>
         ) : activeView === 'list' ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
+          <div className="cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
             {filtered.map(item => {
               const href = item.isDropIn ? `/dropin/${item.id}` : `/ders/${item.id}`
               const price = item.isDropIn ? ('pricePerPerson' in item ? item.pricePerPerson : item.basePrice) : item.basePrice

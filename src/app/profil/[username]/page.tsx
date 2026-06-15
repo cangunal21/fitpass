@@ -179,7 +179,7 @@ export default function ProfilPage() {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#FAFAFA', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
         <Navbar />
-        <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px' }}>
+        <div className="page-container" style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px' }}>
           <div style={{ backgroundColor: '#fff', borderRadius: 24, overflow: 'hidden', border: '1px solid #F0F0F0', marginBottom: 20 }}>
             <div style={{ height: 120, background: 'linear-gradient(135deg, #E0E0E0 0%, #EBEBEB 100%)' }} />
             <div style={{ padding: '0 32px 28px' }}>
@@ -215,7 +215,7 @@ export default function ProfilPage() {
     <div style={{ minHeight: '100vh', backgroundColor: '#FAFAFA', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
       <Navbar />
 
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px' }}>
+      <div className="page-container" style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px' }}>
         <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#666', fontSize: 14, textDecoration: 'none', fontWeight: 500, marginBottom: 28 }}>
           ← Ana sayfa
         </Link>
@@ -301,7 +301,7 @@ export default function ProfilPage() {
           </div>
 
           {/* İstatistik satırı */}
-          <div style={{ borderTop: '1px solid #F5F5F5', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
+          <div className="stats-grid" style={{ borderTop: '1px solid #F5F5F5', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
             {[
               { label: 'Toplam Ders', value: displayTotalLessons, icon: <BookOpen size={20} /> },
               { label: 'Bu Ay', value: isOwnProfile && meData ? '-' : mockUser.stats.thisMonth, icon: <Calendar size={20} /> },
@@ -352,10 +352,11 @@ export default function ProfilPage() {
         )}
 
         {/* Tabs */}
-        <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '4px', border: '1px solid #F0F0F0', display: 'inline-flex', gap: 2, marginBottom: 20, flexWrap: 'wrap' }}>
+        <div className="profile-tabs" style={{ backgroundColor: '#fff', borderRadius: 16, padding: '4px', border: '1px solid #F0F0F0', display: 'inline-flex', gap: 2, marginBottom: 20, flexWrap: 'wrap' }}>
           {tabs.map(tab => (
             <button
               key={tab.key}
+              className="profile-tab-item"
               onClick={() => {
                 setActiveTab(tab.key as any)
                 if (tab.key === 'favoriler') {

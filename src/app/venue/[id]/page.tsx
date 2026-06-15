@@ -124,7 +124,7 @@ export default function VenuePage() {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#FAFAFA', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
         <Navbar />
-        <div style={{ maxWidth: 1000, margin: '0 auto', padding: '32px 24px' }}>
+        <div className="page-container" style={{ maxWidth: 1000, margin: '0 auto', padding: '32px 24px' }}>
           <div style={{ backgroundColor: '#fff', borderRadius: 24, overflow: 'hidden', border: '1px solid #F0F0F0', marginBottom: 20 }}>
             <div style={{ height: 180, background: 'linear-gradient(135deg, #E0E0E0 0%, #EBEBEB 100%)' }} />
             <div style={{ padding: '28px 32px' }}>
@@ -176,14 +176,14 @@ export default function VenuePage() {
     <div style={{ minHeight: '100vh', backgroundColor: '#FAFAFA', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
       <Navbar />
 
-      <div style={{ maxWidth: 1000, margin: '0 auto', padding: '32px 24px' }}>
+      <div className="page-container" style={{ maxWidth: 1000, margin: '0 auto', padding: '32px 24px' }}>
         <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#666', fontSize: 14, textDecoration: 'none', fontWeight: 500, marginBottom: 28 }}>
           ← Tüm dersler
         </Link>
 
         {/* Hero kartı */}
         <div style={{ backgroundColor: '#fff', borderRadius: 24, overflow: 'hidden', border: '1px solid #F0F0F0', marginBottom: 20 }}>
-          <div style={{
+          <div className="venue-hero" style={{
             height: 220,
             background: venue.coverImageUrl
               ? `url(${venue.coverImageUrl}) center/cover no-repeat`
@@ -302,11 +302,12 @@ export default function VenuePage() {
         </div>
 
         {/* Tabs */}
-        <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '4px', border: '1px solid #F0F0F0', display: 'inline-flex', gap: 2, marginBottom: 20 }}>
+        <div className="profile-tabs" style={{ backgroundColor: '#fff', borderRadius: 16, padding: '4px', border: '1px solid #F0F0F0', display: 'inline-flex', gap: 2, marginBottom: 20 }}>
           {tabs.map(tab => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
+              className="profile-tab-item"
               style={{ padding: '10px 22px', borderRadius: 12, border: 'none', background: activeTab === tab.key ? '#4F46E5' : 'transparent', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: activeTab === tab.key ? '#fff' : '#888', transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 6 }}
             >
               {tab.label}

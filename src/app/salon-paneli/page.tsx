@@ -277,7 +277,7 @@ export default function SalonPaneliPage() {
         </div>
       </nav>
 
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px' }}>
+      <div className="page-container" style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px' }}>
         {!venue?.isApproved && (
           <div style={{ backgroundColor: '#FEF9C3', border: '1px solid #FDE68A', borderRadius: 16, padding: '16px 20px', marginBottom: 24, fontSize: 14, color: '#92400e' }}>
             <Clock size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 6 }} /><strong>Salonunuz onay bekliyor.</strong> Onaylandıktan sonra dersleriniz yayınlanacak. Onay süreci genellikle 1-2 iş günü sürmektedir.
@@ -285,7 +285,7 @@ export default function SalonPaneliPage() {
         )}
 
         {/* İstatistikler */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 28 }}>
+        <div className="stats-grid stats-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 28 }}>
           {[
             { label: 'Toplam Ders', value: venue?.classes?.length || 0, icon: <BookOpen size={28} />, color: '#8B5CF6' },
             { label: 'Toplam Seans', value: venue?.classes?.reduce((acc: number, c: any) => acc + (c.sessions?.length || 0), 0) || 0, icon: <Calendar size={28} />, color: '#3B82F6' },
@@ -300,7 +300,7 @@ export default function SalonPaneliPage() {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: 'flex', gap: 4, backgroundColor: '#eee', borderRadius: 16, padding: 4, marginBottom: 24, width: 'fit-content' }}>
+        <div className="salon-tabs" style={{ display: 'flex', gap: 4, backgroundColor: '#eee', borderRadius: 16, padding: 4, marginBottom: 24, width: 'fit-content' }}>
           {([
             { key: 'dersler', label: 'Dersler & Seanslar' },
             { key: 'hocalar', label: 'Hocalarım' },
@@ -308,7 +308,7 @@ export default function SalonPaneliPage() {
             { key: 'dropin', label: 'Drop-In' },
             { key: 'rezervasyonlar', label: 'Rezervasyonlar' },
           ] as const).map(tab => (
-            <button key={tab.key} onClick={() => handleTabChange(tab.key)} style={{ padding: '10px 20px', borderRadius: 12, border: 'none', background: activeTab === tab.key ? '#fff' : 'transparent', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: activeTab === tab.key ? '#1a1a1a' : '#888', boxShadow: activeTab === tab.key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
+            <button key={tab.key} onClick={() => handleTabChange(tab.key)} className="salon-tab-item" style={{ padding: '10px 20px', borderRadius: 12, border: 'none', background: activeTab === tab.key ? '#fff' : 'transparent', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: activeTab === tab.key ? '#1a1a1a' : '#888', boxShadow: activeTab === tab.key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
               {tab.label}
             </button>
           ))}
@@ -333,7 +333,7 @@ export default function SalonPaneliPage() {
               <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '28px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', border: '2px solid #4F46E5' }}>
                 <h3 style={{ fontSize: 16, fontWeight: 800, color: '#1a1a1a', marginBottom: 20 }}>Yeni Ders</h3>
                 <form onSubmit={handleAddClass} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                  <div className="form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                     <div>
                       <label style={labelStyle}>Ders Adı *</label>
                       <input type="text" placeholder="Vinyasa Flow Yoga" value={classForm.title} onChange={e => setClassForm({ ...classForm, title: e.target.value })} required style={inputStyle} />
@@ -529,7 +529,7 @@ export default function SalonPaneliPage() {
 
         {/* HOCALAR */}
         {activeTab === 'hocalar' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'start' }}>
+          <div className="instructor-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'start' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1a1a1a', margin: 0 }}>Mevcut Hocalar</h3>
               {instructors.length === 0 ? (
@@ -666,7 +666,7 @@ export default function SalonPaneliPage() {
             <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '28px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
               <h3 style={{ fontSize: 16, fontWeight: 800, color: '#1a1a1a', marginBottom: 20 }}>Yeni Drop-In Slot Oluştur</h3>
               <form onSubmit={handleAddDropIn} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <div className="dropin-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                   <div>
                     <label style={labelStyle}>Spor *</label>
                     <select value={dropInForm.sport} onChange={e => setDropInForm({ ...dropInForm, sport: e.target.value, format: '' })} required style={inputStyle}>

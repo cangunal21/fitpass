@@ -24,7 +24,7 @@ export default function Navbar() {
   }
 
   return (
-    <nav style={{ backgroundColor: '#fff', borderBottom: '1px solid #F0F0F0', padding: '0 24px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
+    <nav style={{ backgroundColor: '#fff', borderBottom: '1px solid #F0F0F0', padding: '0 16px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
       <Link href="/" style={{ fontSize: 24, fontWeight: 800, color: '#4F46E5', letterSpacing: -0.5, textDecoration: 'none' }}>şipşakspor</Link>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
