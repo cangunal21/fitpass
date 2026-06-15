@@ -458,13 +458,33 @@ export default function Home() {
                             <div style={{ fontSize: 11, color: '#EF4444', fontWeight: 600, marginTop: 2 }}>{item.spots} yer kaldı</div>
                           )}
                         </div>
-                        <button
-                          onClick={e => handleCardBookingClick(e, item)}
-                          disabled={isFull}
-                          style={{ padding: '9px 18px', borderRadius: 12, border: 'none', background: isFull ? '#D1D5DB' : '#111', color: isFull ? '#9CA3AF' : '#fff', fontSize: 13, fontWeight: 700, cursor: isFull ? 'not-allowed' : 'pointer' }}
-                        >
-                          {isFull ? 'Dolu' : item.isDropIn ? 'Katıl' : 'Rezervasyon'}
-                        </button>
+                        {isFull ? (
+                          <button
+                            onClick={async (e) => {
+                              e.preventDefault()
+                              const token = localStorage.getItem('fitpass_token')
+                              if (!token) { router.push(`/giris?redirect=/`); return }
+                              const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+                              const res = await fetch(`${API_URL}/api/waitlist/sessions/${item.sessionId || item.id}`, {
+                                method: 'POST',
+                                headers: { Authorization: `Bearer ${token}` }
+                              })
+                              const data = await res.json()
+                              if (data.error) { alert(data.error); return }
+                              alert('Bekleme listesine eklendiniz! Yer açılınca email ile bildirileceksiniz.')
+                            }}
+                            style={{ padding: '9px 18px', borderRadius: 12, border: '1.5px solid #F59E0B', background: '#FFFBEB', color: '#D97706', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                          >
+                            🔔 Bekleme Listesi
+                          </button>
+                        ) : (
+                          <button
+                            onClick={e => handleCardBookingClick(e, item)}
+                            style={{ padding: '9px 18px', borderRadius: 12, border: 'none', background: '#111', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                          >
+                            {item.isDropIn ? 'Katıl' : 'Rezervasyon'}
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
