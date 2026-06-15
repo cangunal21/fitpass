@@ -5,39 +5,46 @@ import Link from 'next/link'
 import { Lock, User, Building2, Ticket, Clock } from 'lucide-react'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
-const ADMIN_SECRET = process.env.NEXT_PUBLIC_ADMIN_SECRET || 'fitpass-admin-2024'
-
-const headers = { 'Content-Type': 'application/json', 'x-admin-secret': ADMIN_SECRET }
-
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false)
   const [password, setPassword] = useState('')
+  const [loginError, setLoginError] = useState('')
   const [activeTab, setActiveTab] = useState<'stats' | 'venues' | 'users' | 'bookings'>('venues')
   const [stats, setStats] = useState<any>(null)
   const [venues, setVenues] = useState<any[]>([])
   const [users, setUsers] = useState<any[]>([])
   const [bookings, setBookings] = useState<any[]>([])
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (password === ADMIN_SECRET) setAuthed(true)
-    else alert('Hatalı şifre!')
+    setLoginError('')
+    // Şifreyi backend'e gönder, doğrulama orada yapılır
+    const res = await fetch(`${API_URL}/api/admin/stats`, {
+      headers: { 'Content-Type': 'application/json', 'x-admin-secret': password }
+    })
+    if (res.ok) {
+      setAuthed(true)
+    } else {
+      setLoginError('Hatalı şifre!')
+    }
   }
+
+  const getHeaders = () => ({ 'Content-Type': 'application/json', 'x-admin-secret': password })
 
   useEffect(() => {
     if (!authed) return
-    fetch(`${API_URL}/api/admin/stats`, { headers }).then(r => r.json()).then(d => setStats(d.stats))
-    fetch(`${API_URL}/api/admin/venues`, { headers }).then(r => r.json()).then(d => setVenues(d.venues || []))
+    fetch(`${API_URL}/api/admin/stats`, { headers: getHeaders() }).then(r => r.json()).then(d => setStats(d.stats))
+    fetch(`${API_URL}/api/admin/venues`, { headers: getHeaders() }).then(r => r.json()).then(d => setVenues(d.venues || []))
   }, [authed])
 
   const fetchUsers = async () => {
-    const res = await fetch(`${API_URL}/api/admin/users`, { headers })
+    const res = await fetch(`${API_URL}/api/admin/users`, { headers: getHeaders() })
     const data = await res.json()
     setUsers(data.users || [])
   }
 
   const fetchBookings = async () => {
-    const res = await fetch(`${API_URL}/api/admin/bookings`, { headers })
+    const res = await fetch(`${API_URL}/api/admin/bookings`, { headers: getHeaders() })
     const data = await res.json()
     setBookings(data.bookings || [])
   }
@@ -51,7 +58,7 @@ export default function AdminPage() {
   const handleApprove = async (id: number, approve: boolean) => {
     await fetch(`${API_URL}/api/admin/venues/${id}/approve`, {
       method: 'PUT',
-      headers,
+      headers: getHeaders(),
       body: JSON.stringify({ approve }),
     })
     setVenues(prev => prev.map(v => v.id === id ? { ...v, isApproved: approve } : v))
@@ -66,7 +73,8 @@ export default function AdminPage() {
             <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1a1a1a' }}>Admin Paneli</h1>
           </div>
           <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <input type="password" placeholder="Admin şifresi" value={password} onChange={e => setPassword(e.target.value)} style={inputStyle} />
+            <input type="password" placeholder="Admin şifresi" value={password} onChange={e => { setPassword(e.target.value); setLoginError('') }} style={inputStyle} />
+            {loginError && <div style={{ color: '#DC2626', fontSize: 13, textAlign: 'center' }}>{loginError}</div>}
             <button type="submit" style={{ padding: '14px', borderRadius: 14, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>Giriş</button>
           </form>
         </div>
