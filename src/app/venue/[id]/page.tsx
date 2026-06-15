@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { mockVenues, mockClasses, mockInstructors } from '@/lib/mockData'
 import Navbar from '@/components/Navbar'
 import { MapPin, Calendar, User, Star, Clock, Timer, Flame } from 'lucide-react'
@@ -12,9 +12,12 @@ import { api } from '@/lib/api'
 
 export default function VenuePage() {
   const params = useParams()
+  const router = useRouter()
   const id = Number(params.id)
 
   const [venue, setVenue] = useState<any>(null)
+  const [isFavorite, setIsFavorite] = useState(false)
+  const [favLoading, setFavLoading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'dersler' | 'hocalar' | 'yorumlar'>('dersler')
   const [reviews, setReviews] = useState<any[]>([])
@@ -42,6 +45,28 @@ export default function VenuePage() {
       setVenue({ _isMock: true, ...mock })
     }).finally(() => setLoading(false))
   }, [id])
+
+  useEffect(() => {
+    if (!venue?.id || venue._isMock) return
+    const token = localStorage.getItem('fitpass_token')
+    if (!token) return
+    fetch(`${API_URL}/api/favorites/status/${venue.id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).then(r => r.json()).then(d => setIsFavorite(d.isFavorite || false))
+  }, [venue])
+
+  const handleToggleFavorite = async () => {
+    const token = localStorage.getItem('fitpass_token')
+    if (!token) { router.push(`/giris?redirect=/venue/${id}`); return }
+    setFavLoading(true)
+    const method = isFavorite ? 'DELETE' : 'POST'
+    const res = await fetch(`${API_URL}/api/favorites/${venue.id}`, {
+      method,
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (res.ok) setIsFavorite(!isFavorite)
+    setFavLoading(false)
+  }
 
   useEffect(() => {
     if (activeTab === 'yorumlar' && venue?.id && !venue._isMock) {
@@ -82,7 +107,16 @@ export default function VenuePage() {
     setReviewSuccess('Yorumunuz eklendi!')
     setShowReviewForm(false)
     fetch(`${API_URL}/api/reviews/venue/${venue.id}`)
-      .then(r => r.json()).then(d => setReviews(d.reviews || []))
+      .then(r => r.json())
+      .then(d => {
+        const updatedReviews = d.reviews || []
+        setReviews(updatedReviews)
+        // Update local avgRating
+        if (updatedReviews.length > 0) {
+          const avg = updatedReviews.reduce((sum: number, r: any) => sum + r.rating, 0) / updatedReviews.length
+          setVenue((prev: any) => prev ? { ...prev, avgRating: Math.round(avg * 10) / 10, totalReviews: updatedReviews.length } : prev)
+        }
+      })
   }
 
   // Loading skeleton
@@ -173,8 +207,8 @@ export default function VenuePage() {
                 </div>
                 {isMock && <p style={{ fontSize: 14, color: '#888', marginBottom: 10, fontWeight: 500 }}>{venue.category}</p>}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span style={{ fontSize: 14, color: '#F59E0B', fontWeight: 700 }}>★ {avgRating}</span>
-                  <span style={{ fontSize: 13, color: '#999' }}>({totalReviews} değerlendirme)</span>
+                  <span style={{ fontSize: 14, color: '#F59E0B', fontWeight: 700 }}>★ {venue.avgRating ?? avgRating}</span>
+                  <span style={{ fontSize: 13, color: '#999' }}>({venue.totalReviews ?? totalReviews} değerlendirme)</span>
                   {neighborhoodName && (
                     <>
                       <span style={{ fontSize: 13, color: '#bbb' }}>·</span>
@@ -183,6 +217,22 @@ export default function VenuePage() {
                   )}
                 </div>
               </div>
+              {!isMock && (
+                <button
+                  onClick={handleToggleFavorite}
+                  disabled={favLoading}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '8px 16px', borderRadius: 12,
+                    border: isFavorite ? 'none' : '1.5px solid #e5e5e5',
+                    background: isFavorite ? '#FEF2F2' : '#fff',
+                    color: isFavorite ? '#DC2626' : '#666',
+                    fontSize: 13, fontWeight: 700, cursor: 'pointer'
+                  }}
+                >
+                  {isFavorite ? '❤️ Favoride' : '🤍 Favoriye Ekle'}
+                </button>
+              )}
             </div>
 
             {description && (

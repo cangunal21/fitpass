@@ -12,7 +12,7 @@ import { SportIcon, SportIconBox } from '@/lib/sportIcons'
 import AvatarUpload from '@/components/AvatarUpload'
 import { getInitialsAvatar } from '@/lib/cloudinary'
 
-type OwnTab = 'aktivite' | 'rezervasyonlar' | 'hesap' | 'ödeme'
+type OwnTab = 'aktivite' | 'rezervasyonlar' | 'hesap' | 'ödeme' | 'favoriler'
 type PublicTab = 'aktivite' | 'arkadaşlar' | 'istatistik'
 
 export default function ProfilPage() {
@@ -29,6 +29,7 @@ export default function ProfilPage() {
   const [loadingBookings, setLoadingBookings] = useState(isOwnProfile)
   const [cancelConfirm, setCancelConfirm] = useState<number | null>(null)
   const [cancelError, setCancelError] = useState<string | null>(null)
+  const [favorites, setFavorites] = useState<any[]>([])
 
   // Public profile data
   const [publicData, setPublicData] = useState<any>(null)
@@ -162,6 +163,7 @@ export default function ProfilPage() {
     { key: 'rezervasyonlar', label: <><Ticket size={15} style={{ marginRight: 5 }} />Aktivitelerim</> },
     { key: 'hesap', label: <><User size={15} style={{ marginRight: 5 }} />Hesap Bilgilerim</> },
     { key: 'ödeme', label: <><CreditCard size={15} style={{ marginRight: 5 }} />Ödeme Bilgilerim</> },
+    { key: 'favoriler', label: <><Heart size={15} style={{ marginRight: 5 }} />Favori Salonlar</> },
   ]
 
   const publicTabs: { key: PublicTab; label: ReactNode }[] = [
@@ -356,6 +358,19 @@ export default function ProfilPage() {
               key={tab.key}
               onClick={() => {
                 setActiveTab(tab.key as any)
+                if (tab.key === 'favoriler') {
+                  if (isOwnProfile) {
+                    const token = localStorage.getItem('fitpass_token')
+                    if (token) {
+                      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/favorites/my`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                      }).then(r => r.json()).then(d => setFavorites(d.favorites || []))
+                    }
+                  } else {
+                    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/favorites/user/${username}`)
+                      .then(r => r.json()).then(d => setFavorites(d.favorites || []))
+                  }
+                }
                 if (tab.key === 'arkadaşlar' && !socialLoaded) {
                   Promise.all([
                     api.getFollowers(username),
@@ -743,6 +758,35 @@ export default function ProfilPage() {
             </div>
             <div style={{ fontSize: 18, fontWeight: 700, color: '#111', marginBottom: 10 }}>Ödeme Yöntemi</div>
             <div style={{ fontSize: 14, color: '#888', maxWidth: 320, margin: '0 auto' }}>Ödeme yöntemi ekleme özelliği çok yakında geliyor.</div>
+          </div>
+        )}
+
+        {/* Favori Salonlar */}
+        {activeTab === 'favoriler' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {favorites.length === 0 ? (
+              <div style={{ textAlign: 'center', color: '#aaa', padding: '40px 0', fontSize: 14 }}>
+                {isOwnProfile ? 'Henüz favori salon eklemediniz.' : 'Favori salon yok.'}
+              </div>
+            ) : favorites.map((v: any) => (
+              <a key={v.id} href={`/venue/${v.id}`} style={{ textDecoration: 'none' }}>
+                <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', gap: 14, alignItems: 'center' }}>
+                  {v.coverImageUrl ? (
+                    <img src={v.coverImageUrl} style={{ width: 56, height: 56, borderRadius: 12, objectFit: 'cover', flexShrink: 0 }} alt="" />
+                  ) : (
+                    <div style={{ width: 56, height: 56, borderRadius: 12, backgroundColor: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>🏋️</div>
+                  )}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 3 }}>{v.name}</div>
+                    <div style={{ fontSize: 12, color: '#888' }}>{v.address}</div>
+                    <div style={{ fontSize: 12, color: '#F59E0B', fontWeight: 600, marginTop: 2 }}>
+                      ★ {v.avgRating?.toFixed(1) || '—'} · {v.totalReviews || 0} yorum
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 18, color: '#DC2626' }}>❤️</span>
+                </div>
+              </a>
+            ))}
           </div>
         )}
 

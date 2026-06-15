@@ -46,6 +46,10 @@ export default function SalonPaneliPage() {
   const [instructorError, setInstructorError] = useState('')
   const [instructorSuccess, setInstructorSuccess] = useState('')
 
+  const [editingSession, setEditingSession] = useState<number | null>(null)
+  const [editSessionForm, setEditSessionForm] = useState<{ date: string; time: string; capacity: string }>({ date: '', time: '', capacity: '' })
+  const [editSessionError, setEditSessionError] = useState('')
+
   const [deletingClass, setDeletingClass] = useState<number | null>(null)
   const [deletingSession, setDeletingSession] = useState<number | null>(null)
   const [deletingSlot, setDeletingSlot] = useState<number | null>(null)
@@ -212,6 +216,20 @@ export default function SalonPaneliPage() {
     const data = await res.json()
     setDeletingSession(null)
     if (data.error) { alert(data.error); return }
+    fetchVenue(token)
+  }
+
+  const handleEditSession = async (classId: number, sessionId: number) => {
+    setEditSessionError('')
+    const token = localStorage.getItem('fitpass_venue_token')!
+    const res = await fetch(`${API_URL}/api/venue/classes/${classId}/sessions/${sessionId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(editSessionForm)
+    })
+    const data = await res.json()
+    if (data.error) { setEditSessionError(data.error); return }
+    setEditingSession(null)
     fetchVenue(token)
   }
 
@@ -442,11 +460,43 @@ export default function SalonPaneliPage() {
                                 <span style={{ color: (s.bookings?.length || 0) > 0 ? '#4F46E5' : '#888', fontWeight: (s.bookings?.length || 0) > 0 ? 700 : 400 }}>
                                   {s.bookings?.length || 0}/{s.availableSpots} kişi {(s.bookings?.length || 0) > 0 ? '▾' : ''}
                                 </span>
+                                <button onClick={e => {
+                                  e.stopPropagation()
+                                  const d = new Date(s.startsAt)
+                                  const dateStr = d.toISOString().slice(0, 10)
+                                  const timeStr = d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }).replace('.', ':')
+                                  setEditingSession(s.id)
+                                  setEditSessionForm({ date: dateStr, time: timeStr, capacity: String(s.availableSpots) })
+                                  setEditSessionError('')
+                                }} style={{ padding: '3px 10px', borderRadius: 8, border: '1px solid #BFDBFE', background: '#EFF6FF', color: '#2563EB', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
+                                  Düzenle
+                                </button>
                                 <button onClick={e => { e.stopPropagation(); handleDeleteSession(cls.id, s.id) }} disabled={deletingSession === s.id} style={{ padding: '3px 10px', borderRadius: 8, border: '1px solid #FECACA', background: '#FEF2F2', color: '#DC2626', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
                                   {deletingSession === s.id ? '...' : 'Sil'}
                                 </button>
                               </div>
                             </div>
+                            {editingSession === s.id && (
+                              <div style={{ borderTop: '1px solid #e8e8e8', padding: '12px', backgroundColor: '#F8FAFF' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto auto', gap: 8, alignItems: 'end' }}>
+                                  <div>
+                                    <label style={{ fontSize: 11, color: '#888', display: 'block', marginBottom: 3 }}>Tarih</label>
+                                    <input type="date" value={editSessionForm.date} onChange={e => setEditSessionForm(f => ({ ...f, date: e.target.value }))} style={{ width: '100%', padding: '7px 8px', borderRadius: 8, border: '1.5px solid #e5e5e5', fontSize: 12, outline: 'none', boxSizing: 'border-box' as const }} />
+                                  </div>
+                                  <div>
+                                    <label style={{ fontSize: 11, color: '#888', display: 'block', marginBottom: 3 }}>Saat</label>
+                                    <input type="time" value={editSessionForm.time} onChange={e => setEditSessionForm(f => ({ ...f, time: e.target.value }))} style={{ width: '100%', padding: '7px 8px', borderRadius: 8, border: '1.5px solid #e5e5e5', fontSize: 12, outline: 'none', boxSizing: 'border-box' as const }} />
+                                  </div>
+                                  <div>
+                                    <label style={{ fontSize: 11, color: '#888', display: 'block', marginBottom: 3 }}>Kontenjan</label>
+                                    <input type="number" value={editSessionForm.capacity} onChange={e => setEditSessionForm(f => ({ ...f, capacity: e.target.value }))} style={{ width: '100%', padding: '7px 8px', borderRadius: 8, border: '1.5px solid #e5e5e5', fontSize: 12, outline: 'none', boxSizing: 'border-box' as const }} />
+                                  </div>
+                                  <button onClick={() => handleEditSession(cls.id, s.id)} style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Kaydet</button>
+                                  <button onClick={() => setEditingSession(null)} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #eee', background: '#fff', fontSize: 12, cursor: 'pointer', color: '#666' }}>İptal</button>
+                                </div>
+                                {editSessionError && <div style={{ fontSize: 12, color: '#DC2626', marginTop: 6 }}>{editSessionError}</div>}
+                              </div>
+                            )}
                             {expandedSession === s.id && s.bookings && s.bookings.length > 0 && (
                               <div style={{ borderTop: '1px solid #e8e8e8', padding: '8px 12px', backgroundColor: '#fff' }}>
                                 <div style={{ fontSize: 11, color: '#888', fontWeight: 700, marginBottom: 6 }}>KAYITLI KİŞİLER</div>
