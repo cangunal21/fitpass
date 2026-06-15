@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Building2, Clock, BookOpen, Calendar, Ticket, AlertCircle, User, Check, ChevronDown, ChevronUp, Plus } from 'lucide-react'
+import AvatarUpload from '@/components/AvatarUpload'
+import { getInitialsAvatar, uploadToCloudinary } from '@/lib/cloudinary'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
@@ -23,7 +25,7 @@ const FORMAT_PLAYERS: Record<string, number> = {
 export default function SalonPaneliPage() {
   const router = useRouter()
   const [venue, setVenue] = useState<any>(null)
-  const [activeTab, setActiveTab] = useState<'dersler' | 'hocalar' | 'rezervasyonlar' | 'dropin'>('dersler')
+  const [activeTab, setActiveTab] = useState<'dersler' | 'hocalar' | 'resimler' | 'rezervasyonlar' | 'dropin'>('dersler')
   const [bookings, setBookings] = useState<any[]>([])
   const [instructors, setInstructors] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -49,6 +51,14 @@ export default function SalonPaneliPage() {
   const [deletingSlot, setDeletingSlot] = useState<number | null>(null)
   const [expandedSession, setExpandedSession] = useState<number | null>(null)
 
+  // Venue images state
+  const [venueImages, setVenueImages] = useState<string[]>([])
+  const [coverImage, setCoverImage] = useState<string>('')
+  const [uploadingImage, setUploadingImage] = useState(false)
+
+  // New instructor avatar state
+  const [newInstructorAvatar, setNewInstructorAvatar] = useState('')
+
   // Drop-in state
   const [dropInSlots, setDropInSlots] = useState<any[]>([])
   const [dropInForm, setDropInForm] = useState({ sport: '', format: '', date: '', time: '', totalPlayers: '', pricePerPerson: '', visibility: 'open', privateCode: '' })
@@ -72,6 +82,8 @@ export default function SalonPaneliPage() {
       const data = await res.json()
       if (data.error) { router.push('/salon-giris'); return }
       setVenue(data.venue)
+      setVenueImages(data.venue?.images || [])
+      setCoverImage(data.venue?.coverImageUrl || '')
     } catch {
       router.push('/salon-giris')
     } finally {
@@ -108,6 +120,15 @@ export default function SalonPaneliPage() {
     if (tab === 'dropin') fetchDropInSlots()
   }
 
+  const saveVenueImages = async (images: string[], cover?: string) => {
+    const token = localStorage.getItem('fitpass_venue_token')!
+    await fetch(`${API_URL}/api/venue/images`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ images, coverImageUrl: cover ?? coverImage }),
+    })
+  }
+
   const handleAddInstructor = async (e: React.FormEvent) => {
     e.preventDefault()
     setInstructorError(''); setInstructorSuccess('')
@@ -121,6 +142,7 @@ export default function SalonPaneliPage() {
     if (data.error) { setInstructorError(data.error); return }
     setInstructorSuccess('Hoca başarıyla eklendi!')
     setInstructorForm({ fullName: '', specialty: '', bio: '', avatarUrl: '', phone: '', email: '' })
+    setNewInstructorAvatar('')
     fetchInstructors()
     setTimeout(() => setInstructorSuccess(''), 2000)
   }
@@ -264,6 +286,7 @@ export default function SalonPaneliPage() {
           {([
             { key: 'dersler', label: 'Dersler & Seanslar' },
             { key: 'hocalar', label: 'Hocalarım' },
+            { key: 'resimler', label: 'Salon Resimleri' },
             { key: 'dropin', label: 'Drop-In' },
             { key: 'rezervasyonlar', label: 'Rezervasyonlar' },
           ] as const).map(tab => (
@@ -466,9 +489,21 @@ export default function SalonPaneliPage() {
                 </div>
               ) : instructors.map((inst: any) => (
                 <div key={inst.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', gap: 14, alignItems: 'center' }}>
-                  <div style={{ width: 48, height: 48, borderRadius: '50%', backgroundColor: '#FFF0F3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
-                    {inst.avatarUrl ? <img src={inst.avatarUrl} style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover' }} alt="" /> : <User size={22} />}
-                  </div>
+                  <AvatarUpload
+                    currentUrl={inst.avatarUrl}
+                    name={inst.fullName}
+                    size={48}
+                    editable={true}
+                    onUpload={async (url) => {
+                      const token = localStorage.getItem('fitpass_venue_token')!
+                      await fetch(`${API_URL}/api/venue/instructors/${inst.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                        body: JSON.stringify({ avatarUrl: url }),
+                      })
+                      fetchInstructors()
+                    }}
+                  />
                   <div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>{inst.fullName}</div>
                     <div style={{ fontSize: 12, color: '#4F46E5', fontWeight: 600 }}>{inst.specialty}</div>
@@ -503,13 +538,73 @@ export default function SalonPaneliPage() {
                   <input type="email" placeholder="hoca@email.com" value={instructorForm.email} onChange={e => setInstructorForm({ ...instructorForm, email: e.target.value })} style={inputStyle} />
                 </div>
                 <div>
-                  <label style={labelStyle}>Fotoğraf URL (opsiyonel)</label>
-                  <input type="url" placeholder="https://..." value={instructorForm.avatarUrl} onChange={e => setInstructorForm({ ...instructorForm, avatarUrl: e.target.value })} style={inputStyle} />
+                  <label style={labelStyle}>Fotoğraf (opsiyonel)</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <AvatarUpload
+                      currentUrl={newInstructorAvatar || null}
+                      name={instructorForm.fullName || 'Hoca'}
+                      size={56}
+                      editable={true}
+                      onUpload={(url) => { setNewInstructorAvatar(url); setInstructorForm({ ...instructorForm, avatarUrl: url }) }}
+                    />
+                    <span style={{ fontSize: 12, color: '#888' }}>Fotoğraf yüklemek için tıkla</span>
+                  </div>
                 </div>
                 {instructorError && <div style={{ ...errorStyle, display: 'flex', alignItems: 'center', gap: 8 }}><AlertCircle size={14} /> {instructorError}</div>}
                 {instructorSuccess && <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#16a34a' }}>✓ {instructorSuccess}</div>}
                 <button type="submit" style={{ padding: '12px', borderRadius: 12, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Hoca Ekle</button>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* SALON RESİMLERİ */}
+        {activeTab === 'resimler' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {/* Cover image */}
+            <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 4 }}>Kapak Fotoğrafı</h3>
+              <p style={{ fontSize: 13, color: '#888', marginBottom: 16 }}>Salonunuzun ana sayfada görünen büyük fotoğrafı</p>
+              <div style={{ position: 'relative', width: '100%', height: 200, borderRadius: 14, overflow: 'hidden', backgroundColor: '#f0f0f0', cursor: 'pointer' }}
+                onClick={() => { const inp = document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.onchange = async (e) => { const file = (e.target as HTMLInputElement).files?.[0]; if (!file) return; setUploadingImage(true); try { const url = await uploadToCloudinary(file); setCoverImage(url); await saveVenueImages(venueImages, url); } catch { alert('Yüklenemedi.') } finally { setUploadingImage(false) } }; inp.click() }}>
+                {coverImage ? (
+                  <img src={coverImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="kapak" />
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 8 }}>
+                    <span style={{ fontSize: 32 }}>🏋️</span>
+                    <span style={{ fontSize: 13, color: '#aaa' }}>Kapak fotoğrafı eklemek için tıkla</span>
+                  </div>
+                )}
+                {uploadingImage && (
+                  <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700 }}>Yükleniyor...</div>
+                )}
+              </div>
+            </div>
+
+            {/* Gallery */}
+            <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 4 }}>Galeri</h3>
+              <p style={{ fontSize: 13, color: '#888', marginBottom: 16 }}>Salonunuzu tanıtan ek fotoğraflar (max 10)</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+                {venueImages.map((img, idx) => (
+                  <div key={idx} style={{ position: 'relative', aspectRatio: '1', borderRadius: 12, overflow: 'hidden', backgroundColor: '#f0f0f0' }}>
+                    <img src={img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+                    <button
+                      onClick={async () => { const newImgs = venueImages.filter((_, i) => i !== idx); setVenueImages(newImgs); await saveVenueImages(newImgs) }}
+                      style={{ position: 'absolute', top: 6, right: 6, width: 24, height: 24, borderRadius: '50%', border: 'none', backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >✕</button>
+                  </div>
+                ))}
+                {venueImages.length < 10 && (
+                  <div
+                    onClick={() => { const inp = document.createElement('input'); inp.type='file'; inp.accept='image/*'; (inp as any).multiple=true; inp.onchange = async (e) => { const files = Array.from((e.target as HTMLInputElement).files || []); setUploadingImage(true); try { const urls = await Promise.all(files.slice(0, 10 - venueImages.length).map((f: File) => uploadToCloudinary(f))); const newImgs = [...venueImages, ...urls]; setVenueImages(newImgs); await saveVenueImages(newImgs); } catch { alert('Yüklenemedi.') } finally { setUploadingImage(false) } }; inp.click() }}
+                    style={{ aspectRatio: '1', borderRadius: 12, border: '2px dashed #d0d0d0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', gap: 6, color: '#aaa' }}
+                  >
+                    <span style={{ fontSize: 28 }}>+</span>
+                    <span style={{ fontSize: 12 }}>Fotoğraf Ekle</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -628,9 +723,14 @@ export default function SalonPaneliPage() {
               </div>
             ) : bookings.map((b: any) => (
               <div key={b.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>{b.user?.fullName}</div>
-                  <div style={{ fontSize: 12, color: '#888' }}>{b.session?.class?.title} · {b.session?.startsAt ? new Date(b.session.startsAt).toLocaleDateString('tr-TR') : ''}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {(() => { const { initials, color } = getInitialsAvatar(b.user?.fullName || '?'); return (
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: '#fff', flexShrink: 0 }}>{initials}</div>
+                  )})()}
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>{b.user?.fullName}</div>
+                    <div style={{ fontSize: 12, color: '#888' }}>{b.session?.class?.title} · {b.session?.startsAt ? new Date(b.session.startsAt).toLocaleDateString('tr-TR') : ''}</div>
+                  </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#4F46E5' }}>₺{b.finalAmount}</div>

@@ -9,6 +9,8 @@ import { api, getUser, getToken } from '@/lib/api'
 import type { ReactNode } from 'react'
 import { User, Users, Ticket, Award, ClipboardList, BarChart2, BookOpen, Calendar, Flame, Dumbbell, Heart, Building, MapPin, Gift, Medal, Check, X, Lock, CreditCard } from 'lucide-react'
 import { SportIcon, SportIconBox } from '@/lib/sportIcons'
+import AvatarUpload from '@/components/AvatarUpload'
+import { getInitialsAvatar } from '@/lib/cloudinary'
 
 type OwnTab = 'aktivite' | 'rezervasyonlar' | 'hesap' | 'ödeme'
 type PublicTab = 'aktivite' | 'arkadaşlar' | 'istatistik'
@@ -217,7 +219,24 @@ export default function ProfilPage() {
 
           <div style={{ padding: '0 32px 28px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
-              <div style={{ marginTop: -40, width: 80, height: 80, borderRadius: '50%', background: 'linear-gradient(135deg, #F5F5F5, #EBEBEB)', border: '4px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.1)' }}><User size={36} /></div>
+              <div style={{ marginTop: -40 }}>
+                <AvatarUpload
+                  currentUrl={isOwnProfile ? meData?.avatarUrl : pubUser?.avatarUrl}
+                  name={displayName || '?'}
+                  size={96}
+                  editable={isOwnProfile}
+                  onUpload={async (url) => {
+                    const token = localStorage.getItem('fitpass_token')
+                    if (!token) return
+                    await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/auth/profile`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                      body: JSON.stringify({ avatarUrl: url }),
+                    })
+                    setMeData((prev: any) => prev ? { ...prev, avatarUrl: url } : prev)
+                  }}
+                />
+              </div>
               {!isOwnProfile && (
                 <button
                   onClick={async () => {
@@ -610,8 +629,17 @@ export default function ProfilPage() {
                     </select>
                   </div>
                   <div>
-                    <label style={{ fontSize: 13, fontWeight: 600, color: '#444', display: 'block', marginBottom: 6 }}>Profil Fotoğrafı URL <span style={{ color: '#bbb', fontWeight: 400 }}>(opsiyonel)</span></label>
-                    <input type="url" placeholder="https://..." value={editForm.avatarUrl} onChange={e => setEditForm(f => ({ ...f, avatarUrl: e.target.value }))} style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid #E5E5E5', fontSize: 14, outline: 'none', boxSizing: 'border-box' as const }} />
+                    <label style={{ fontSize: 13, fontWeight: 600, color: '#444', display: 'block', marginBottom: 6 }}>Profil Fotoğrafı <span style={{ color: '#bbb', fontWeight: 400 }}>(opsiyonel)</span></label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <AvatarUpload
+                        currentUrl={editForm.avatarUrl || null}
+                        name={editForm.fullName || meData?.fullName || '?'}
+                        size={56}
+                        editable={true}
+                        onUpload={(url) => setEditForm(f => ({ ...f, avatarUrl: url }))}
+                      />
+                      <span style={{ fontSize: 12, color: '#888' }}>Fotoğraf yüklemek için tıkla</span>
+                    </div>
                   </div>
                   {editError && <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#DC2626' }}>{editError}</div>}
                   {editSaved && <div style={{ fontSize: 13, color: '#10B981', fontWeight: 600 }}>Kaydedildi ✓</div>}
