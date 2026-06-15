@@ -14,6 +14,11 @@ const DROP_IN_FORMATS: Record<string, string[]> = {
   'Padel': ['1v1', '2v2'],
   'Halı Saha': ['6v6', '7v7'],
 }
+const FORMAT_PLAYERS: Record<string, number> = {
+  '4v4 Yarım Saha': 8, '5v5 Tam Saha': 10,
+  '1v1': 2, '2v2': 4,
+  '6v6': 12, '7v7': 14,
+}
 
 export default function SalonPaneliPage() {
   const router = useRouter()
@@ -32,11 +37,17 @@ export default function SalonPaneliPage() {
   // Session forms
   const [sessionForms, setSessionForms] = useState<Record<number, { date: string; time: string; capacity: string; instructorId: string }>>({})
   const [sessionSuccess, setSessionSuccess] = useState<Record<number, string>>({})
+  const [sessionError, setSessionError] = useState<Record<number, string>>({})
 
   // Instructor form
   const [instructorForm, setInstructorForm] = useState({ fullName: '', specialty: '', bio: '', avatarUrl: '', phone: '', email: '' })
   const [instructorError, setInstructorError] = useState('')
   const [instructorSuccess, setInstructorSuccess] = useState('')
+
+  const [deletingClass, setDeletingClass] = useState<number | null>(null)
+  const [deletingSession, setDeletingSession] = useState<number | null>(null)
+  const [deletingSlot, setDeletingSlot] = useState<number | null>(null)
+  const [expandedSession, setExpandedSession] = useState<number | null>(null)
 
   // Drop-in state
   const [dropInSlots, setDropInSlots] = useState<any[]>([])
@@ -142,18 +153,55 @@ export default function SalonPaneliPage() {
     const token = localStorage.getItem('fitpass_venue_token')!
     const form = sessionForms[classId]
     if (!form?.date || !form?.time || !form?.capacity) return
+    setSessionError(prev => ({ ...prev, [classId]: '' }))
     const res = await fetch(`${API_URL}/api/venue/classes/${classId}/sessions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify(form),
     })
     const data = await res.json()
-    if (!data.error) {
+    if (data.error) {
+      setSessionError(prev => ({ ...prev, [classId]: data.error }))
+      setTimeout(() => setSessionError(prev => ({ ...prev, [classId]: '' })), 5000)
+    } else {
       setSessionSuccess(prev => ({ ...prev, [classId]: `${formatSessionDate(form.date)} saat ${form.time} — ${form.capacity} kişi kapasiteli seans eklendi!` }))
       setSessionForms(prev => ({ ...prev, [classId]: { date: '', time: '', capacity: '', instructorId: '' } }))
       fetchVenue(token)
       setTimeout(() => setSessionSuccess(prev => ({ ...prev, [classId]: '' })), 3000)
     }
+  }
+
+  const handleDeleteClass = async (classId: number) => {
+    if (!confirm('Bu dersi ve tüm seanslarını silmek istediğinize emin misiniz?')) return
+    const token = localStorage.getItem('fitpass_venue_token')!
+    setDeletingClass(classId)
+    const res = await fetch(`${API_URL}/api/venue/classes/${classId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+    const data = await res.json()
+    setDeletingClass(null)
+    if (data.error) { alert(data.error); return }
+    fetchVenue(token)
+  }
+
+  const handleDeleteSession = async (classId: number, sessionId: number) => {
+    if (!confirm('Bu seansı silmek istediğinize emin misiniz?')) return
+    const token = localStorage.getItem('fitpass_venue_token')!
+    setDeletingSession(sessionId)
+    const res = await fetch(`${API_URL}/api/venue/classes/${classId}/sessions/${sessionId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+    const data = await res.json()
+    setDeletingSession(null)
+    if (data.error) { alert(data.error); return }
+    fetchVenue(token)
+  }
+
+  const handleDeleteSlot = async (slotId: number) => {
+    if (!confirm('Bu drop-in slotu silmek istediğinize emin misiniz?')) return
+    const token = localStorage.getItem('fitpass_venue_token')!
+    setDeletingSlot(slotId)
+    const res = await fetch(`${API_URL}/api/venue/dropin/${slotId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+    const data = await res.json()
+    setDeletingSlot(null)
+    if (data.error) { alert(data.error); return }
+    fetchDropInSlots()
   }
 
   const handleAddDropIn = async (e: React.FormEvent) => {
@@ -300,7 +348,12 @@ export default function SalonPaneliPage() {
                         <span style={{ fontSize: 12, backgroundColor: cls.isActive ? '#F0FDF4' : '#FEF2F2', padding: '3px 10px', borderRadius: 20, color: cls.isActive ? '#16a34a' : '#DC2626', fontWeight: 600 }}>{cls.isActive ? '● Aktif' : '● Pasif'}</span>
                       </div>
                     </div>
-                    <div style={{ fontSize: 18, fontWeight: 800, color: '#4F46E5' }}>₺{cls.basePrice}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: '#4F46E5' }}>₺{cls.basePrice}</div>
+                      <button onClick={() => handleDeleteClass(cls.id)} disabled={deletingClass === cls.id} style={{ padding: '5px 14px', borderRadius: 10, border: '1px solid #FECACA', background: '#FEF2F2', color: '#DC2626', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
+                        {deletingClass === cls.id ? '...' : 'Dersi Sil'}
+                      </button>
+                    </div>
                   </div>
 
                   <div style={{ fontSize: 13, color: '#888', marginBottom: 16 }}>
@@ -344,6 +397,11 @@ export default function SalonPaneliPage() {
                         ✓ {sessionSuccess[cls.id]}
                       </div>
                     )}
+                    {sessionError[cls.id] && (
+                      <div style={{ fontSize: 12, color: '#DC2626', fontWeight: 600, marginTop: 10, backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: '8px 12px' }}>
+                        ✗ {sessionError[cls.id]}
+                      </div>
+                    )}
                   </div>
 
                   {/* Seanslar */}
@@ -352,9 +410,39 @@ export default function SalonPaneliPage() {
                       <div style={{ fontSize: 12, color: '#888', fontWeight: 600, marginBottom: 8 }}>MEVCUT SEANSLAR</div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         {cls.sessions.map((s: any) => (
-                          <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', backgroundColor: '#f5f5f5', borderRadius: 10, fontSize: 13 }}>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Calendar size={13} /> {new Date(s.startsAt).toLocaleDateString('tr-TR')} · <Clock size={13} /> {new Date(s.startsAt).toLocaleTimeString('tr-TR', {hour:'2-digit',minute:'2-digit'})}</span>
-                            <span style={{ color: '#888' }}>{s._count?.bookings || 0}/{s.availableSpots} kişi</span>
+                          <div key={s.id} style={{ backgroundColor: '#f5f5f5', borderRadius: 10, overflow: 'hidden', fontSize: 13 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', cursor: 'pointer' }} onClick={() => setExpandedSession(expandedSession === s.id ? null : s.id)}>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                <Calendar size={13} /> {new Date(s.startsAt).toLocaleDateString('tr-TR')} · <Clock size={13} /> {new Date(s.startsAt).toLocaleTimeString('tr-TR', {hour:'2-digit',minute:'2-digit'})}
+                              </span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <span style={{ color: (s.bookings?.length || 0) > 0 ? '#4F46E5' : '#888', fontWeight: (s.bookings?.length || 0) > 0 ? 700 : 400 }}>
+                                  {s.bookings?.length || 0}/{s.availableSpots} kişi {(s.bookings?.length || 0) > 0 ? '▾' : ''}
+                                </span>
+                                <button onClick={e => { e.stopPropagation(); handleDeleteSession(cls.id, s.id) }} disabled={deletingSession === s.id} style={{ padding: '3px 10px', borderRadius: 8, border: '1px solid #FECACA', background: '#FEF2F2', color: '#DC2626', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
+                                  {deletingSession === s.id ? '...' : 'Sil'}
+                                </button>
+                              </div>
+                            </div>
+                            {expandedSession === s.id && s.bookings && s.bookings.length > 0 && (
+                              <div style={{ borderTop: '1px solid #e8e8e8', padding: '8px 12px', backgroundColor: '#fff' }}>
+                                <div style={{ fontSize: 11, color: '#888', fontWeight: 700, marginBottom: 6 }}>KAYITLI KİŞİLER</div>
+                                {s.bookings.map((bk: any) => (
+                                  <div key={bk.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', borderBottom: '1px solid #f5f5f5' }}>
+                                    <div style={{ width: 28, height: 28, borderRadius: '50%', backgroundColor: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#4F46E5' }}>
+                                      {bk.user?.fullName?.[0] || '?'}
+                                    </div>
+                                    <span style={{ fontSize: 13, color: '#1a1a1a', fontWeight: 600 }}>{bk.user?.fullName || 'Kullanıcı'}</span>
+                                    <span style={{ fontSize: 11, color: bk.status === 'confirmed' ? '#10B981' : '#EF4444', fontWeight: 600, marginLeft: 'auto' }}>
+                                      {bk.status === 'confirmed' ? '✓ Onaylı' : '✗ İptal'}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {expandedSession === s.id && (!s.bookings || s.bookings.length === 0) && (
+                              <div style={{ borderTop: '1px solid #e8e8e8', padding: '8px 12px', fontSize: 12, color: '#aaa', backgroundColor: '#fff' }}>Henüz kayıt yok</div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -443,10 +531,17 @@ export default function SalonPaneliPage() {
                   </div>
                   <div>
                     <label style={labelStyle}>Format *</label>
-                    <select value={dropInForm.format} onChange={e => setDropInForm({ ...dropInForm, format: e.target.value })} required style={inputStyle} disabled={!dropInForm.sport}>
+                    <select value={dropInForm.format} onChange={e => {
+                      const fmt = e.target.value
+                      const players = FORMAT_PLAYERS[fmt] || 0
+                      setDropInForm({ ...dropInForm, format: fmt, totalPlayers: players ? String(players) : '' })
+                    }} required style={inputStyle} disabled={!dropInForm.sport}>
                       <option value="">Seçin</option>
                       {(DROP_IN_FORMATS[dropInForm.sport] || []).map(f => <option key={f} value={f}>{f}</option>)}
                     </select>
+                    {dropInForm.format && FORMAT_PLAYERS[dropInForm.format] && (
+                      <div style={{ fontSize: 12, color: '#888', marginTop: 5 }}>Toplam: {FORMAT_PLAYERS[dropInForm.format]} kişi</div>
+                    )}
                   </div>
                   <div>
                     <label style={labelStyle}>Tarih *</label>
@@ -495,10 +590,27 @@ export default function SalonPaneliPage() {
                       <span><Calendar size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />{new Date(slot.startsAt).toLocaleDateString('tr-TR')} · {new Date(slot.startsAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>
                       <span>{slot.currentPlayers}/{slot.totalPlayers} oyuncu</span>
                     </div>
+                    {slot.participants && slot.participants.length > 0 && (
+                      <div style={{ marginTop: 8 }}>
+                        <div style={{ fontSize: 11, color: '#888', fontWeight: 700, marginBottom: 4 }}>KATILIMCILAR</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                          {slot.participants.map((p: any) => (
+                            <span key={p.id} style={{ fontSize: 11, backgroundColor: '#EEF2FF', color: '#4F46E5', padding: '2px 10px', borderRadius: 20, fontWeight: 600 }}>
+                              {p.user?.fullName || 'Kullanıcı'}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: 16, fontWeight: 800, color: '#4F46E5' }}>₺{slot.pricePerPerson}<span style={{ fontSize: 12, fontWeight: 400, color: '#999' }}>/kişi</span></div>
-                    <span style={{ fontSize: 11, fontWeight: 700, backgroundColor: slot.status === 'open' ? '#F0FDF4' : '#FEF2F2', color: slot.status === 'open' ? '#16a34a' : '#DC2626', padding: '3px 10px', borderRadius: 20 }}>{slot.status === 'open' ? '● Açık' : '● Kapalı'}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, backgroundColor: slot.status === 'open' ? '#F0FDF4' : '#FEF2F2', color: slot.status === 'open' ? '#16a34a' : '#DC2626', padding: '3px 10px', borderRadius: 20 }}>{slot.status === 'open' ? '● Açık' : '● Kapalı'}</span>
+                      <button onClick={() => handleDeleteSlot(slot.id)} disabled={deletingSlot === slot.id} style={{ padding: '4px 12px', borderRadius: 8, border: '1px solid #FECACA', background: '#FEF2F2', color: '#DC2626', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
+                        {deletingSlot === slot.id ? '...' : 'Sil'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -521,7 +633,7 @@ export default function SalonPaneliPage() {
                   <div style={{ fontSize: 12, color: '#888' }}>{b.session?.class?.title} · {b.session?.startsAt ? new Date(b.session.startsAt).toLocaleDateString('tr-TR') : ''}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#4F46E5' }}>₺{b.totalPrice}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#4F46E5' }}>₺{b.finalAmount}</div>
                   <div style={{ fontSize: 11, color: b.status === 'confirmed' ? '#10B981' : '#EF4444', fontWeight: 600 }}>{b.status === 'confirmed' ? '✓ Onaylı' : '✗ İptal'}</div>
                 </div>
               </div>

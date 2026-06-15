@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { mockClasses, mockDropInSlots } from '@/lib/mockData'
 import Navbar from '@/components/Navbar'
-import { api } from '@/lib/api'
-import { Search, LayoutGrid, Map, Flame, Clock, Timer } from 'lucide-react'
+import { api, getToken, getUser } from '@/lib/api'
+import { Search, LayoutGrid, Map, Flame, Clock, Timer, X } from 'lucide-react'
 import { SportIcon, SportIconBox } from '@/lib/sportIcons'
 
 const categories = [
@@ -94,41 +95,119 @@ const mockClassItems: DisplayItem[] = mockClasses.map(c => ({ ...c, isDropIn: fa
 const mockDropInItems: DisplayItem[] = mockDropInSlots.map(d => ({ ...d, isDropIn: true, basePrice: d.pricePerPerson, spots: d.totalPlayers - d.currentPlayers, rating: 4.6, totalReviews: 50 }))
 
 export default function Home() {
+  const router = useRouter()
   const [activeCategory, setActiveCategory] = useState<number | null>(null)
   const [activeView, setActiveView] = useState<'list' | 'map'>('list')
-  const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [allItems, setAllItems] = useState<DisplayItem[]>([
     ...mockClassItems,
     ...mockDropInItems,
   ])
+  const [filters, setFilters] = useState({ category: '', date: '', neighborhoodId: '', search: '' })
+  const [timeFilter, setTimeFilter] = useState<'all' | 'today' | 'week' | 'weekend'>('all')
+  const [sort, setSort] = useState<'latest' | 'rating' | 'nearby'>('latest')
+  const [neighborhoods, setNeighborhoods] = useState<{ id: number; name: string }[]>([])
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [searchInput, setSearchInput] = useState('')
+
+  // Fetch neighborhoods on mount
+  useEffect(() => {
+    api.getNeighborhoods().then((r: any) => {
+      if (r?.neighborhoods) setNeighborhoods(r.neighborhoods)
+    }).catch(() => {})
+  }, [])
+
+  const getDateRange = (filter: string) => {
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1)
+    const nextWeek = new Date(today); nextWeek.setDate(today.getDate() + 7)
+    const dayOfWeek = today.getDay()
+    const daysUntilSat = (6 - dayOfWeek + 7) % 7 || 7
+    const saturday = new Date(today); saturday.setDate(today.getDate() + daysUntilSat)
+    const monday = new Date(saturday); monday.setDate(saturday.getDate() + 2)
+    if (filter === 'today') return { dateFrom: today.toISOString(), dateTo: tomorrow.toISOString() }
+    if (filter === 'week') return { dateFrom: today.toISOString(), dateTo: nextWeek.toISOString() }
+    if (filter === 'weekend') return { dateFrom: saturday.toISOString(), dateTo: monday.toISOString() }
+    return {}
+  }
+
+  const fetchSessions = useCallback(async (activeFilters: typeof filters, activeSortParam?: string, activeTimeFilter?: string) => {
+    setLoading(true)
+    try {
+      const params: Record<string, string> = {}
+      if (activeFilters.category) params.category = activeFilters.category
+      if (activeFilters.date) params.date = activeFilters.date
+      if (activeFilters.neighborhoodId) params.neighborhoodId = activeFilters.neighborhoodId
+      if (activeFilters.search) params.search = activeFilters.search
+      const sortParam = activeSortParam ?? sort
+      if (sortParam && sortParam !== 'latest') params.sort = sortParam
+      if (sortParam === 'nearby') {
+        const u = getUser()
+        if (u?.neighborhoodId) params.userNeighborhoodId = String(u.neighborhoodId)
+      }
+      const tf = activeTimeFilter ?? timeFilter
+      const dateRange = getDateRange(tf)
+      if ((dateRange as any).dateFrom) params.dateFrom = (dateRange as any).dateFrom
+      if ((dateRange as any).dateTo) params.dateTo = (dateRange as any).dateTo
+
+      const result = await api.getSessions(Object.keys(params).length ? params : undefined)
+      const sessions: unknown[] = result?.sessions ?? []
+      if (Array.isArray(sessions) && sessions.length > 0) {
+        const mapped = sessions.map(mapSessionToItem)
+        setAllItems([...mapped, ...mockDropInItems])
+      } else {
+        setAllItems([...mockClassItems, ...mockDropInItems])
+      }
+    } catch {
+      setAllItems([...mockClassItems, ...mockDropInItems])
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        const result = await api.getSessions()
-        const sessions: unknown[] = result?.sessions ?? []
-        if (Array.isArray(sessions) && sessions.length > 0) {
-          const mapped = sessions.map(mapSessionToItem)
-          setAllItems([...mapped, ...mockDropInItems])
-        }
-        // else keep mock data already set as initial state
-      } catch {
-        // API unreachable — keep mock data
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchData()
-  }, [])
+    fetchSessions(filters, sort, timeFilter)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.category, filters.date, filters.neighborhoodId, sort, timeFilter])
+
+  // Debounce search
+  useEffect(() => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
+    searchDebounceRef.current = setTimeout(() => {
+      setFilters(f => ({ ...f, search: searchInput }))
+      fetchSessions({ ...filters, search: searchInput }, sort, timeFilter)
+    }, 400)
+    return () => { if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchInput])
+
+  const hasActiveFilter = filters.category || filters.date || filters.neighborhoodId || filters.search
 
   const filtered = allItems.filter(c => {
     const matchCat = activeCategory === null || c.category === categories.find(x => x.id === activeCategory)?.name
-    const matchSearch = c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      ('venue' in c && typeof c.venue === 'string' ? c.venue : '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.neighborhood.toLowerCase().includes(searchQuery.toLowerCase())
-    return matchCat && matchSearch
+    return matchCat
   })
+
+  const handleCategoryTabClick = (catId: number | null) => {
+    setActiveCategory(catId)
+    const catName = catId ? categories.find(x => x.id === catId)?.name || '' : ''
+    const newFilters = { ...filters, category: catName }
+    setFilters(newFilters)
+    fetchSessions(newFilters)
+  }
+
+  const handleCardBookingClick = (e: React.MouseEvent, item: DisplayItem) => {
+    e.preventDefault()
+    if (item.spots === 0) return
+    const token = getToken()
+    const user = getUser()
+    if (!token || !user) {
+      router.push('/giris?redirect=' + encodeURIComponent(item.isDropIn ? `/dropin/${item.id}` : `/ders/${item.id}`))
+      return
+    }
+    router.push(item.isDropIn ? `/dropin/${item.id}` : `/ders/${item.id}`)
+  }
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#FAFAFA', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
@@ -148,8 +227,8 @@ export default function Home() {
             <input
               type="text"
               placeholder="Spor, semt veya tesis ara..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              value={searchInput}
+              onChange={e => setSearchInput(e.target.value)}
               style={{ width: '100%', padding: '16px 20px 16px 52px', borderRadius: 100, border: 'none', fontSize: 15, outline: 'none', backgroundColor: '#fff', color: '#1a1a1a', boxShadow: '0 8px 32px rgba(0,0,0,0.15)', boxSizing: 'border-box' }}
             />
           </div>
@@ -169,7 +248,7 @@ export default function Home() {
         <div style={{ maxWidth: 1100, margin: '0 auto', overflowX: 'auto' }}>
           <div style={{ display: 'flex', gap: 2, padding: '4px 0', minWidth: 'max-content' }}>
             <button
-              onClick={() => setActiveCategory(null)}
+              onClick={() => handleCategoryTabClick(null)}
               style={{ padding: '16px 20px', border: 'none', background: 'transparent', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: activeCategory === null ? '#4F46E5' : '#666', borderBottom: activeCategory === null ? '2px solid #4F46E5' : '2px solid transparent', transition: 'all 0.15s', whiteSpace: 'nowrap' }}
             >
               Tümü
@@ -177,13 +256,105 @@ export default function Home() {
             {categories.map(cat => (
               <button
                 key={cat.id}
-                onClick={() => setActiveCategory(activeCategory === cat.id ? null : cat.id)}
+                onClick={() => handleCategoryTabClick(activeCategory === cat.id ? null : cat.id)}
                 style={{ padding: '16px 20px', border: 'none', background: 'transparent', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: activeCategory === cat.id ? cat.color : '#666', borderBottom: activeCategory === cat.id ? `2px solid ${cat.color}` : '2px solid transparent', transition: 'all 0.15s', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}
               >
                 <SportIcon name={cat.icon} size={16} color={activeCategory === cat.id ? cat.color : '#666'} />{cat.name}
               </button>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Filter Bar */}
+      <div style={{ backgroundColor: '#fff', borderBottom: '1px solid #F0F0F0', padding: '12px 24px 0' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', paddingBottom: 12 }}>
+          <div style={{ position: 'relative', flex: '1 1 200px' }}>
+            <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#aaa' }} />
+            <input
+              type="text"
+              placeholder="Ders veya salon ara..."
+              value={searchInput}
+              onChange={e => setSearchInput(e.target.value)}
+              style={{ width: '100%', padding: '9px 12px 9px 34px', borderRadius: 10, border: '1.5px solid #E5E5E5', fontSize: 13, outline: 'none', color: '#1a1a1a', boxSizing: 'border-box' }}
+            />
+          </div>
+
+          <select
+            value={filters.category}
+            onChange={e => setFilters(f => ({ ...f, category: e.target.value }))}
+            style={{ padding: '9px 12px', borderRadius: 10, border: '1.5px solid #E5E5E5', fontSize: 13, color: filters.category ? '#1a1a1a' : '#888', outline: 'none', cursor: 'pointer', background: '#fff' }}
+          >
+            <option value="">Kategori</option>
+            {categories.map(cat => (
+              <option key={cat.id} value={cat.name}>{cat.name}</option>
+            ))}
+          </select>
+
+          <select
+            value={filters.neighborhoodId}
+            onChange={e => setFilters(f => ({ ...f, neighborhoodId: e.target.value }))}
+            style={{ padding: '9px 12px', borderRadius: 10, border: '1.5px solid #E5E5E5', fontSize: 13, color: filters.neighborhoodId ? '#1a1a1a' : '#888', outline: 'none', cursor: 'pointer', background: '#fff' }}
+          >
+            <option value="">İlçe</option>
+            {neighborhoods.map(n => (
+              <option key={n.id} value={String(n.id)}>{n.name}</option>
+            ))}
+          </select>
+
+          <input
+            type="date"
+            value={filters.date}
+            onChange={e => setFilters(f => ({ ...f, date: e.target.value }))}
+            style={{ padding: '9px 12px', borderRadius: 10, border: '1.5px solid #E5E5E5', fontSize: 13, color: filters.date ? '#1a1a1a' : '#888', outline: 'none', cursor: 'pointer', background: '#fff' }}
+          />
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
+            <span style={{ fontSize: 13, color: '#888', fontWeight: 500, whiteSpace: 'nowrap' }}>Sırala:</span>
+            <select
+              value={sort}
+              onChange={e => setSort(e.target.value as typeof sort)}
+              style={{ padding: '9px 12px', borderRadius: 10, border: '1.5px solid #E5E5E5', fontSize: 13, color: '#1a1a1a', outline: 'none', cursor: 'pointer', background: '#fff' }}
+            >
+              <option value="latest">Tarihe Göre</option>
+              <option value="rating">Puana Göre</option>
+              <option value="nearby">Bana Yakın</option>
+            </select>
+          </div>
+
+          {hasActiveFilter && (
+            <button
+              onClick={() => {
+                setFilters({ category: '', date: '', neighborhoodId: '', search: '' })
+                setSearchInput('')
+                setActiveCategory(null)
+                setTimeFilter('all')
+                setSort('latest')
+                fetchSessions({ category: '', date: '', neighborhoodId: '', search: '' }, 'latest', 'all')
+              }}
+              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '9px 14px', borderRadius: 10, border: '1.5px solid #EEE', background: '#F5F5F5', fontSize: 13, color: '#666', cursor: 'pointer', fontWeight: 500 }}
+            >
+              <X size={14} /> Temizle
+            </button>
+          )}
+        </div>
+
+        {/* Time filter pills */}
+        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 12 }}>
+          {([
+            { key: 'all', label: 'Tümü' },
+            { key: 'today', label: 'Bugün' },
+            { key: 'week', label: 'Bu Hafta' },
+            { key: 'weekend', label: 'Bu Hafta Sonu' },
+          ] as const).map(tf => (
+            <button
+              key={tf.key}
+              onClick={() => setTimeFilter(tf.key)}
+              style={{ padding: '8px 18px', borderRadius: 100, border: timeFilter === tf.key ? 'none' : '1.5px solid #E5E5E5', background: timeFilter === tf.key ? '#4F46E5' : '#fff', color: timeFilter === tf.key ? '#fff' : '#555', fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
+            >
+              {tf.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -197,7 +368,7 @@ export default function Home() {
               <>
                 <span style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a' }}>{filtered.length} etkinlik</span>
                 {activeCategory && <span style={{ fontSize: 14, color: '#888', marginLeft: 8 }}>· {categories.find(c => c.id === activeCategory)?.name}</span>}
-                {searchQuery && <span style={{ fontSize: 14, color: '#888', marginLeft: 8 }}>· "{searchQuery}" için</span>}
+                {filters.search && <span style={{ fontSize: 14, color: '#888', marginLeft: 8 }}>· "{filters.search}" için</span>}
               </>
             )}
           </div>
@@ -228,11 +399,13 @@ export default function Home() {
             {filtered.map(item => {
               const href = item.isDropIn ? `/dropin/${item.id}` : `/ders/${item.id}`
               const price = item.isDropIn ? ('pricePerPerson' in item ? item.pricePerPerson : item.basePrice) : item.basePrice
+              const isFull = item.spots === 0
+              const isLowSpots = !isFull && item.spots <= 3
               return (
                 <Link key={item.id + (item.isDropIn ? '-drop' : '')} href={href} style={{ textDecoration: 'none' }}>
                   <div
-                    style={{ backgroundColor: '#fff', borderRadius: 20, overflow: 'hidden', border: '1px solid #F0F0F0', cursor: 'pointer', transition: 'all 0.2s' }}
-                    onMouseEnter={e => { const el = e.currentTarget as HTMLDivElement; el.style.transform = 'translateY(-4px)'; el.style.boxShadow = '0 16px 40px rgba(0,0,0,0.12)'; el.style.borderColor = '#E0E0E0' }}
+                    style={{ backgroundColor: '#fff', borderRadius: 20, overflow: 'hidden', border: '1px solid #F0F0F0', cursor: 'pointer', transition: 'all 0.2s', opacity: isFull ? 0.75 : 1 }}
+                    onMouseEnter={e => { if (!isFull) { const el = e.currentTarget as HTMLDivElement; el.style.transform = 'translateY(-4px)'; el.style.boxShadow = '0 16px 40px rgba(0,0,0,0.12)'; el.style.borderColor = '#E0E0E0' } }}
                     onMouseLeave={e => { const el = e.currentTarget as HTMLDivElement; el.style.transform = 'translateY(0)'; el.style.boxShadow = 'none'; el.style.borderColor = '#F0F0F0' }}
                   >
                     {/* Kart header - solid color */}
@@ -242,7 +415,12 @@ export default function Home() {
                           DROP-IN {'format' in item ? item.format : ''}
                         </span>
                       )}
-                      {item.spots <= 3 && (
+                      {isFull && (
+                        <span style={{ position: 'absolute', top: 12, left: 12, fontSize: 11, fontWeight: 700, color: '#fff', background: 'rgba(0,0,0,0.5)', padding: '3px 9px', borderRadius: 20 }}>
+                          DOLU
+                        </span>
+                      )}
+                      {isLowSpots && (
                         <span style={{ position: 'absolute', top: 12, left: 12, fontSize: 11, fontWeight: 700, color: '#fff', background: 'rgba(0,0,0,0.25)', padding: '3px 9px', borderRadius: 20, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           <Flame size={12} /> Son {item.spots} yer
                         </span>
@@ -273,9 +451,16 @@ export default function Home() {
                         <div>
                           <span style={{ fontSize: 20, fontWeight: 800, color: '#111' }}>₺{price}</span>
                           <span style={{ fontSize: 12, color: '#aaa', marginLeft: 3 }}>/ kişi</span>
+                          {!isFull && isLowSpots && (
+                            <div style={{ fontSize: 11, color: '#EF4444', fontWeight: 600, marginTop: 2 }}>{item.spots} yer kaldı</div>
+                          )}
                         </div>
-                        <button style={{ padding: '9px 18px', borderRadius: 12, border: 'none', background: '#111', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                          {item.isDropIn ? 'Katıl' : 'Rezervasyon'}
+                        <button
+                          onClick={e => handleCardBookingClick(e, item)}
+                          disabled={isFull}
+                          style={{ padding: '9px 18px', borderRadius: 12, border: 'none', background: isFull ? '#D1D5DB' : '#111', color: isFull ? '#9CA3AF' : '#fff', fontSize: 13, fontWeight: 700, cursor: isFull ? 'not-allowed' : 'pointer' }}
+                        >
+                          {isFull ? 'Dolu' : item.isDropIn ? 'Katıl' : 'Rezervasyon'}
                         </button>
                       </div>
                     </div>

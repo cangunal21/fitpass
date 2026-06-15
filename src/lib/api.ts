@@ -50,8 +50,9 @@ export const api = {
     return res.json()
   },
 
-  async getSessions() {
-    const res = await fetch(`${API_URL}/api/public/sessions`)
+  async getSessions(params?: { category?: string; date?: string; dateFrom?: string; dateTo?: string; neighborhoodId?: string; search?: string; sort?: string; userNeighborhoodId?: string }) {
+    const qs = params ? '?' + new URLSearchParams(Object.entries(params).filter(([, v]) => v) as [string, string][]).toString() : ''
+    const res = await fetch(`${API_URL}/api/public/sessions${qs}`)
     return res.json()
   },
 
@@ -88,6 +89,31 @@ export const api = {
     return res.json()
   },
 
+  async getNeighborhoods() {
+    const res = await fetch(`${API_URL}/api/public/neighborhoods`)
+    return res.json()
+  },
+
+  async getVenuesList() {
+    const res = await fetch(`${API_URL}/api/public/venues-list`)
+    return res.json()
+  },
+
+  async getDropInSlotById(id: number) {
+    const res = await fetch(`${API_URL}/api/public/dropin/${id}`)
+    return res.json()
+  },
+
+  getUserActivities: async (username: string) =>
+    fetch(`${API_URL}/api/public/users/${username}`).then(r => r.json()),
+
+  updatePrivacy: async (token: string, activityPrivacy: string) =>
+    fetch(`${API_URL}/api/auth/privacy`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ activityPrivacy }),
+    }).then(r => r.json()),
+
   forgotPassword: async (email: string) => {
     const res = await fetch(`${API_URL}/api/auth/forgot-password`, {
       method: 'POST',
@@ -105,6 +131,28 @@ export const api = {
     })
     return res.json()
   },
+
+  followUser: async (token: string, username: string) =>
+    fetch(`${API_URL}/api/social/follow/${username}`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+
+  unfollowUser: async (token: string, username: string) =>
+    fetch(`${API_URL}/api/social/unfollow/${username}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+
+  getFollowStatus: async (token: string, username: string) =>
+    fetch(`${API_URL}/api/social/status/${username}`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+
+  getFollowers: async (username: string) =>
+    fetch(`${API_URL}/api/social/followers/${username}`).then(r => r.json()),
+
+  getFollowing: async (username: string) =>
+    fetch(`${API_URL}/api/social/following/${username}`).then(r => r.json()),
+
+  updateProfile: async (token: string, data: { fullName?: string; bio?: string; neighborhoodId?: number; avatarUrl?: string }) =>
+    fetch(`${API_URL}/api/auth/profile`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }).then(r => r.json()),
 }
 
 export const saveToken = (token: string) => localStorage.setItem('fitpass_token', token)

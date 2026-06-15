@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { mockClasses, mockVenues, mockInstructors } from '@/lib/mockData'
 import Navbar from '@/components/Navbar'
 import { api, getToken, getUser } from '@/lib/api'
@@ -260,12 +260,13 @@ export default function DersDetay() {
               </div>
 
               <button
-                onClick={() => setShowBooking(true)}
-                style={{ width: '100%', padding: '15px', borderRadius: 14, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', marginBottom: 14, transition: 'background 0.15s' }}
-                onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = '#4338CA'}
-                onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = '#4F46E5'}
+                onClick={() => { if (cls.spots > 0) setShowBooking(true) }}
+                disabled={cls.spots === 0}
+                style={{ width: '100%', padding: '15px', borderRadius: 14, border: 'none', background: cls.spots === 0 ? '#D1D5DB' : '#4F46E5', color: cls.spots === 0 ? '#9CA3AF' : '#fff', fontSize: 15, fontWeight: 700, cursor: cls.spots === 0 ? 'not-allowed' : 'pointer', marginBottom: 14, transition: 'background 0.15s' }}
+                onMouseEnter={e => { if (cls.spots > 0) (e.currentTarget as HTMLButtonElement).style.background = '#4338CA' }}
+                onMouseLeave={e => { if (cls.spots > 0) (e.currentTarget as HTMLButtonElement).style.background = '#4F46E5' }}
               >
-                Rezervasyon Yap
+                {cls.spots === 0 ? 'Seans Dolu' : 'Rezervasyon Yap'}
               </button>
 
               <p style={{ textAlign: 'center', fontSize: 12, color: '#bbb', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><ShieldCheck size={14} /> 12 saat öncesine kadar ücretsiz iptal</p>
@@ -286,6 +287,7 @@ export default function DersDetay() {
 }
 
 function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void }) {
+  const router = useRouter()
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -297,7 +299,7 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
     const user = getUser()
 
     if (!token || !user) {
-      setError('Rezervasyon yapmak için giriş yapmalısın.')
+      router.push('/giris?redirect=' + encodeURIComponent(window.location.pathname))
       return
     }
 

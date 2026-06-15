@@ -1,13 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { api, saveToken, saveUser } from '@/lib/api'
 import { AlertCircle } from 'lucide-react'
 
-export default function GirisPage() {
+function GirisForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -25,7 +26,8 @@ export default function GirisPage() {
       if (res.error) { setError(res.error); setLoading(false); return }
       saveToken(res.token)
       saveUser(res.user)
-      router.push('/')
+      const redirect = searchParams.get('redirect')
+      router.push(redirect || '/')
     } catch {
       setError('Bağlantı hatası. Lütfen tekrar dene.')
       setLoading(false)
@@ -105,3 +107,7 @@ export default function GirisPage() {
 
 const labelStyle: React.CSSProperties = { fontSize: 13, fontWeight: 600, color: '#444', display: 'block', marginBottom: 7 }
 const inputStyle: React.CSSProperties = { width: '100%', padding: '13px 16px', borderRadius: 12, border: '1.5px solid #E8E8E8', fontSize: 14, outline: 'none', backgroundColor: '#FAFAFA', color: '#111', boxSizing: 'border-box', transition: 'border-color 0.15s' }
+
+export default function GirisPage() {
+  return <Suspense><GirisForm /></Suspense>
+}

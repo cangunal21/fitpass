@@ -5,10 +5,14 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Building2, AlertCircle } from 'lucide-react'
 
+const SPORT_OPTIONS = ['Yoga', 'Pilates', 'Boks', 'HIIT', 'Halı Saha', 'Basketbol', 'Padel', 'Dans', 'Yüzme', 'Crossfit', 'Diğer']
+
 export default function SalonGirisPage() {
   const router = useRouter()
   const [tab, setTab] = useState<'giris' | 'kayit'>('giris')
   const [form, setForm] = useState({ name: '', email: '', password: '', phone: '', address: '', description: '' })
+  const [selectedSports, setSelectedSports] = useState<string[]>([])
+  const [instructor, setInstructor] = useState({ fullName: '', email: '', phone: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -39,14 +43,28 @@ export default function SalonGirisPage() {
     }
   }
 
+  const toggleSport = (sport: string) => {
+    setSelectedSports(prev => prev.includes(sport) ? prev.filter(s => s !== sport) : [...prev, sport])
+    setError('')
+  }
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (selectedSports.length === 0) { setError('En az bir spor branşı seçmelisiniz.'); return }
     setLoading(true)
     try {
+      const body: any = {
+        name: form.name, email: form.email, password: form.password,
+        phone: form.phone, address: form.address, description: form.description,
+        sportCategories: selectedSports,
+      }
+      if (instructor.fullName.trim()) {
+        body.instructor = { fullName: instructor.fullName, email: instructor.email, phone: instructor.phone }
+      }
       const res = await fetch(`${API_URL}/api/venue/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: form.name, email: form.email, password: form.password, phone: form.phone, address: form.address, description: form.description }),
+        body: JSON.stringify(body),
       })
       const data = await res.json()
       if (data.error) { setError(data.error); setLoading(false); return }
@@ -119,6 +137,43 @@ export default function SalonGirisPage() {
                 <label style={labelStyle}>Şifre</label>
                 <input name="password" type="password" placeholder="En az 6 karakter" value={form.password} onChange={handleChange} required style={inputStyle} />
               </div>
+
+              {/* Spor Branşları */}
+              <div>
+                <label style={labelStyle}>Spor Branşları <span style={{ color: '#DC2626' }}>*</span></label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
+                  {SPORT_OPTIONS.map(sport => (
+                    <button key={sport} type="button" onClick={() => toggleSport(sport)} style={{ padding: '6px 14px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, backgroundColor: selectedSports.includes(sport) ? '#4F46E5' : '#f0f0f0', color: selectedSports.includes(sport) ? '#fff' : '#555', transition: 'all 0.15s' }}>
+                      {sport}
+                    </button>
+                  ))}
+                </div>
+                {selectedSports.length === 0 && <p style={{ fontSize: 11, color: '#aaa', marginTop: 6 }}>En az bir branş seçmelisiniz</p>}
+              </div>
+
+              {/* İlk Hoca */}
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '8px 0 14px' }}>
+                  <div style={{ flex: 1, height: 1, backgroundColor: '#eee' }} />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#999', whiteSpace: 'nowrap' }}>İlk Hocanızı Ekleyin (opsiyonel)</span>
+                  <div style={{ flex: 1, height: 1, backgroundColor: '#eee' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div>
+                    <label style={labelStyle}>Ad Soyad</label>
+                    <input type="text" placeholder="Ayşe Kaya" value={instructor.fullName} onChange={e => setInstructor({ ...instructor, fullName: e.target.value })} style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>E-posta</label>
+                    <input type="email" placeholder="hoca@email.com" value={instructor.email} onChange={e => setInstructor({ ...instructor, email: e.target.value })} style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Telefon</label>
+                    <input type="tel" placeholder="05XX XXX XX XX" value={instructor.phone} onChange={e => setInstructor({ ...instructor, phone: e.target.value })} style={inputStyle} />
+                  </div>
+                </div>
+              </div>
+
               {error && <div style={{ ...errorStyle, display: 'flex', alignItems: 'center', gap: 8 }}><AlertCircle size={14} /> {error}</div>}
               <button type="submit" disabled={loading} style={btnStyle(loading)}>
                 {loading ? 'Kaydediliyor...' : 'Başvuru Gönder'}
