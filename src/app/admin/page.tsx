@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Lock, User, Building2, Ticket, Clock } from 'lucide-react'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
-const ADMIN_SECRET = 'fitpass-admin-2024'
+const ADMIN_SECRET = process.env.NEXT_PUBLIC_ADMIN_SECRET || 'fitpass-admin-2024'
 
 const headers = { 'Content-Type': 'application/json', 'x-admin-secret': ADMIN_SECRET }
 
@@ -20,7 +20,7 @@ export default function AdminPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
-    if (password === 'fitpass-admin-2024') setAuthed(true)
+    if (password === ADMIN_SECRET) setAuthed(true)
     else alert('Hatalı şifre!')
   }
 
