@@ -7,6 +7,7 @@ import { getUser, getToken } from '@/lib/api'
 import { getInitialsAvatar } from '@/lib/cloudinary'
 import { MapPin } from 'lucide-react'
 import Link from 'next/link'
+import { SportIconBox } from '@/lib/sportIcons'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
@@ -23,11 +24,11 @@ const MOCK_USERS = [
 ]
 
 const MOCK_VENUES = [
-  { id: 'v1', name: 'Kadıköy Spor Merkezi', avgRating: 4.9, totalReviews: 128, coverImageUrl: null, neighborhood: { name: 'Kadıköy' }, sportCategories: [{ sportCategory: { name: 'Yoga' } }, { sportCategory: { name: 'Pilates' } }, { sportCategory: { name: 'HIIT' } }] },
-  { id: 'v2', name: 'Beşiktaş Boks Kulübü', avgRating: 4.8, totalReviews: 94, coverImageUrl: null, neighborhood: { name: 'Beşiktaş' }, sportCategories: [{ sportCategory: { name: 'Boks' } }, { sportCategory: { name: 'Crossfit' } }] },
-  { id: 'v3', name: 'Flow Yoga Studio', avgRating: 4.7, totalReviews: 73, coverImageUrl: null, neighborhood: { name: 'Şişli' }, sportCategories: [{ sportCategory: { name: 'Yoga' } }, { sportCategory: { name: 'Dans' } }] },
-  { id: 'v4', name: 'Padel İstanbul', avgRating: 4.6, totalReviews: 61, coverImageUrl: null, neighborhood: { name: 'Sarıyer' }, sportCategories: [{ sportCategory: { name: 'Padel' } }] },
-  { id: 'v5', name: 'Üsküdar Fitness Club', avgRating: 4.5, totalReviews: 55, coverImageUrl: null, neighborhood: { name: 'Üsküdar' }, sportCategories: [{ sportCategory: { name: 'HIIT' } }, { sportCategory: { name: 'Pilates' } }] },
+  { id: 'v1', name: 'Kadıköy Spor Merkezi', avgRating: 4.9, totalReviews: 128, coverImageUrl: null, mainIcon: 'yoga', iconBg: '#F0FDF4', iconColor: '#16A34A', neighborhood: { name: 'Kadıköy' }, sportCategories: [{ sportCategory: { name: 'Yoga' } }, { sportCategory: { name: 'Pilates' } }, { sportCategory: { name: 'HIIT' } }] },
+  { id: 'v2', name: 'Beşiktaş Boks Kulübü', avgRating: 4.8, totalReviews: 94, coverImageUrl: null, mainIcon: 'boxing', iconBg: '#FFF1F2', iconColor: '#E11D48', neighborhood: { name: 'Beşiktaş' }, sportCategories: [{ sportCategory: { name: 'Boks' } }, { sportCategory: { name: 'Crossfit' } }] },
+  { id: 'v3', name: 'Flow Yoga Studio', avgRating: 4.7, totalReviews: 73, coverImageUrl: null, mainIcon: 'yoga', iconBg: '#F0FDF4', iconColor: '#16A34A', neighborhood: { name: 'Şişli' }, sportCategories: [{ sportCategory: { name: 'Yoga' } }, { sportCategory: { name: 'Dans' } }] },
+  { id: 'v4', name: 'Padel İstanbul', avgRating: 4.6, totalReviews: 61, coverImageUrl: null, mainIcon: 'padel', iconBg: '#EFF6FF', iconColor: '#2563EB', neighborhood: { name: 'Sarıyer' }, sportCategories: [{ sportCategory: { name: 'Padel' } }] },
+  { id: 'v5', name: 'Üsküdar Fitness Club', avgRating: 4.5, totalReviews: 55, coverImageUrl: null, mainIcon: 'hiit', iconBg: '#FFF7ED', iconColor: '#EA580C', neighborhood: { name: 'Üsküdar' }, sportCategories: [{ sportCategory: { name: 'HIIT' } }, { sportCategory: { name: 'Pilates' } }] },
 ]
 
 export default function SosyalPage() {
@@ -130,8 +131,8 @@ export default function SosyalPage() {
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 4, backgroundColor: '#eee', borderRadius: 16, padding: 4, marginTop: -20, marginBottom: 24, width: 'fit-content' }}>
           {[
-            { key: 'siralama', label: '🏆 Sıralama' },
-            { key: 'arkadaslar', label: '👥 Arkadaşlar' },
+            { key: 'siralama', label: 'Sıralama' },
+            { key: 'arkadaslar', label: 'Arkadaşlar' },
           ].map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key as any)}
               style={{ padding: '10px 24px', borderRadius: 12, border: 'none', background: activeTab === tab.key ? '#fff' : 'transparent', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: activeTab === tab.key ? '#1a1a1a' : '#888', boxShadow: activeTab === tab.key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
@@ -145,7 +146,7 @@ export default function SosyalPage() {
           <div>
             {/* Type toggle */}
             <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-              {[{ key: 'kullanici', label: '👤 Sporcular' }, { key: 'salon', label: '🏋️ Salonlar' }].map(t => (
+              {[{ key: 'kullanici', label: 'Sporcular' }, { key: 'salon', label: 'Salonlar' }].map(t => (
                 <button key={t.key} onClick={() => setSiralamaType(t.key as any)}
                   style={{ padding: '8px 20px', borderRadius: 100, border: siralamaType === t.key ? 'none' : '1.5px solid #e5e5e5', background: siralamaType === t.key ? '#4F46E5' : '#fff', color: siralamaType === t.key ? '#fff' : '#666', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
                   {t.label}
@@ -214,7 +215,13 @@ export default function SosyalPage() {
                       {venue.coverImageUrl ? (
                         <img src={venue.coverImageUrl} style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} alt="" />
                       ) : (
-                        <div style={{ width: 44, height: 44, borderRadius: 10, backgroundColor: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>🏋️</div>
+                        <SportIconBox
+                          name={venue.mainIcon || (venue.sportCategories?.[0]?.sportCategory?.name?.toLowerCase() ?? 'weightlifting')}
+                          bgColor={venue.iconBg || '#EEF2FF'}
+                          iconColor={venue.iconColor || '#4F46E5'}
+                          boxSize={44}
+                          size={22}
+                        />
                       )}
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a' }}>{venue.name}</div>

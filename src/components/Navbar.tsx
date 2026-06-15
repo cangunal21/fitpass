@@ -27,7 +27,7 @@ export default function Navbar() {
     <nav style={{ backgroundColor: '#fff', borderBottom: '1px solid #F0F0F0', padding: '0 16px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
       <Link href="/" style={{ fontSize: 24, fontWeight: 800, color: '#4F46E5', letterSpacing: -0.5, textDecoration: 'none' }}>şipşakspor</Link>
 
-      <Link href="/sosyal" style={{ fontSize: 14, fontWeight: 600, color: '#555', textDecoration: 'none', padding: '6px 12px', borderRadius: 8 }}>
+      <Link href="/sosyal" style={{ fontSize: 16, fontWeight: 800, color: '#4F46E5', textDecoration: 'none', padding: '6px 12px', borderRadius: 8, letterSpacing: -0.3 }}>
         Sosyal
       </Link>
 
