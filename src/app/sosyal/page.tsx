@@ -12,6 +12,24 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
 const BRANCHES = ['Tümü', 'Yoga', 'Pilates', 'Boks', 'Padel', 'Halı Saha', 'Basketbol', 'HIIT', 'Dans', 'Yüzme', 'Crossfit', 'Binicilik']
 
+const MOCK_USERS = [
+  { id: 'm1', username: 'zeynep_aktif', avatarUrl: null, lessonCount: 42, neighborhood: { name: 'Kadıköy' } },
+  { id: 'm2', username: 'baris_sporcu', avatarUrl: null, lessonCount: 38, neighborhood: { name: 'Beşiktaş' } },
+  { id: 'm3', username: 'elif_yoga', avatarUrl: null, lessonCount: 31, neighborhood: { name: 'Şişli' } },
+  { id: 'm4', username: 'mert_boks', avatarUrl: null, lessonCount: 27, neighborhood: { name: 'Üsküdar' } },
+  { id: 'm5', username: 'selin_pilates', avatarUrl: null, lessonCount: 24, neighborhood: { name: 'Bakırköy' } },
+  { id: 'm6', username: 'ahmet_crossfit', avatarUrl: null, lessonCount: 19, neighborhood: { name: 'Sarıyer' } },
+  { id: 'm7', username: 'dila_dans', avatarUrl: null, lessonCount: 15, neighborhood: { name: 'Maltepe' } },
+]
+
+const MOCK_VENUES = [
+  { id: 'v1', name: 'Kadıköy Spor Merkezi', avgRating: 4.9, totalReviews: 128, coverImageUrl: null, neighborhood: { name: 'Kadıköy' }, sportCategories: [{ sportCategory: { name: 'Yoga' } }, { sportCategory: { name: 'Pilates' } }, { sportCategory: { name: 'HIIT' } }] },
+  { id: 'v2', name: 'Beşiktaş Boks Kulübü', avgRating: 4.8, totalReviews: 94, coverImageUrl: null, neighborhood: { name: 'Beşiktaş' }, sportCategories: [{ sportCategory: { name: 'Boks' } }, { sportCategory: { name: 'Crossfit' } }] },
+  { id: 'v3', name: 'Flow Yoga Studio', avgRating: 4.7, totalReviews: 73, coverImageUrl: null, neighborhood: { name: 'Şişli' }, sportCategories: [{ sportCategory: { name: 'Yoga' } }, { sportCategory: { name: 'Dans' } }] },
+  { id: 'v4', name: 'Padel İstanbul', avgRating: 4.6, totalReviews: 61, coverImageUrl: null, neighborhood: { name: 'Sarıyer' }, sportCategories: [{ sportCategory: { name: 'Padel' } }] },
+  { id: 'v5', name: 'Üsküdar Fitness Club', avgRating: 4.5, totalReviews: 55, coverImageUrl: null, neighborhood: { name: 'Üsküdar' }, sportCategories: [{ sportCategory: { name: 'HIIT' } }, { sportCategory: { name: 'Pilates' } }] },
+]
+
 export default function SosyalPage() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<'siralama' | 'arkadaslar'>('siralama')
@@ -101,10 +119,10 @@ export default function SosyalPage() {
       <Navbar />
 
       {/* Header */}
-      <div style={{ background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)', padding: '32px 24px 40px' }}>
+      <div style={{ background: '#fff', borderBottom: '1px solid #f0f0f0', padding: '28px 24px 32px' }}>
         <div style={{ maxWidth: 800, margin: '0 auto', textAlign: 'center' }}>
-          <h1 style={{ fontSize: 32, fontWeight: 800, color: '#fff', marginBottom: 8 }}>Sosyal</h1>
-          <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.8)' }}>İstanbul&apos;un en aktif sporcularını keşfet</p>
+          <h1 style={{ fontSize: 36, fontWeight: 900, color: '#4F46E5', marginBottom: 6, letterSpacing: -1 }}>Sosyal</h1>
+          <p style={{ fontSize: 15, color: '#888' }}>İstanbul&apos;un en aktif sporcularını keşfet</p>
         </div>
       </div>
 
@@ -155,14 +173,10 @@ export default function SosyalPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {loading ? (
                   <div style={{ textAlign: 'center', padding: 40, color: '#aaa' }}>Yükleniyor...</div>
-                ) : userLeaderboard.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: 40, color: '#aaa', backgroundColor: '#fff', borderRadius: 16 }}>
-                    Henüz bu kategoride sıralama yok.
-                  </div>
-                ) : userLeaderboard.map((user, i) => {
+                ) : (userLeaderboard.length === 0 ? MOCK_USERS : userLeaderboard).map((user, i) => {
                   const { initials, color } = getInitialsAvatar(user.username || '?')
                   return (
-                    <Link key={user.id} href={`/profil/${user.username}`} style={{ textDecoration: 'none' }}>
+                    <Link key={user.id} href={typeof user.id === 'number' ? `/profil/${user.username}` : '#'} style={{ textDecoration: 'none' }}>
                       <div style={{ backgroundColor: i < 3 ? '#FFFBEB' : '#fff', borderRadius: 16, padding: '14px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 14, border: i === 0 ? '2px solid #F59E0B' : '1px solid transparent' }}>
                         <div style={{ width: 36, textAlign: 'center', fontSize: i < 3 ? 22 : 14, fontWeight: 800, color: medalColor(i) }}>
                           {medalEmoji(i)}
@@ -185,17 +199,14 @@ export default function SosyalPage() {
               </div>
             )}
 
+
             {/* Venue Leaderboard */}
             {siralamaType === 'salon' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {loading ? (
                   <div style={{ textAlign: 'center', padding: 40, color: '#aaa' }}>Yükleniyor...</div>
-                ) : venueLeaderboard.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: 40, color: '#aaa', backgroundColor: '#fff', borderRadius: 16 }}>
-                    Henüz bu kategoride sıralama yok.
-                  </div>
-                ) : venueLeaderboard.map((venue, i) => (
-                  <Link key={venue.id} href={`/venue/${venue.id}`} style={{ textDecoration: 'none' }}>
+                ) : (venueLeaderboard.length === 0 ? MOCK_VENUES : venueLeaderboard).map((venue, i) => (
+                  <Link key={venue.id} href={typeof venue.id === 'number' ? `/venue/${venue.id}` : '#'} style={{ textDecoration: 'none' }}>
                     <div style={{ backgroundColor: i < 3 ? '#FFFBEB' : '#fff', borderRadius: 16, padding: '14px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 14, border: i === 0 ? '2px solid #F59E0B' : '1px solid transparent' }}>
                       <div style={{ width: 36, textAlign: 'center', fontSize: i < 3 ? 22 : 14, fontWeight: 800, color: medalColor(i) }}>
                         {medalEmoji(i)}
