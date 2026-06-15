@@ -40,6 +40,12 @@ export default function SalonPaneliPage() {
   const [sessionForms, setSessionForms] = useState<Record<number, { date: string; time: string; capacity: string; instructorId: string }>>({})
   const [sessionSuccess, setSessionSuccess] = useState<Record<number, string>>({})
   const [sessionError, setSessionError] = useState<Record<number, string>>({})
+  const [sessionMode, setSessionMode] = useState<Record<number, 'tek' | 'tekrarlayan'>>({})
+  const [recurringForms, setRecurringForms] = useState<Record<number, { time: string; capacity: string; weekDays: number[]; weeks: string }>>({})
+  const WEEK_DAYS = [
+    { label: 'Pzt', value: 1 }, { label: 'Sal', value: 2 }, { label: 'Çar', value: 3 },
+    { label: 'Per', value: 4 }, { label: 'Cum', value: 5 }, { label: 'Cmt', value: 6 }, { label: 'Paz', value: 0 },
+  ]
 
   // Instructor form
   const [instructorForm, setInstructorForm] = useState({ fullName: '', specialty: '', bio: '', avatarUrl: '', phone: '', email: '' })
@@ -194,6 +200,28 @@ export default function SalonPaneliPage() {
       setSessionForms(prev => ({ ...prev, [classId]: { date: '', time: '', capacity: '', instructorId: '' } }))
       fetchVenue(token)
       setTimeout(() => setSessionSuccess(prev => ({ ...prev, [classId]: '' })), 3000)
+    }
+  }
+
+  const handleAddRecurring = async (classId: number) => {
+    const token = localStorage.getItem('fitpass_venue_token')!
+    const form = recurringForms[classId]
+    if (!form?.time || !form?.capacity || !form?.weekDays?.length || !form?.weeks) return
+    setSessionError(prev => ({ ...prev, [classId]: '' }))
+    const res = await fetch(`${API_URL}/api/venue/classes/${classId}/sessions/recurring`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(form),
+    })
+    const data = await res.json()
+    if (data.error) {
+      setSessionError(prev => ({ ...prev, [classId]: data.error }))
+      setTimeout(() => setSessionError(prev => ({ ...prev, [classId]: '' })), 5000)
+    } else {
+      setSessionSuccess(prev => ({ ...prev, [classId]: data.message }))
+      setRecurringForms(prev => ({ ...prev, [classId]: { time: '', capacity: '', weekDays: [], weeks: '' } }))
+      fetchVenue(token)
+      setTimeout(() => setSessionSuccess(prev => ({ ...prev, [classId]: '' })), 4000)
     }
   }
 
@@ -403,36 +431,98 @@ export default function SalonPaneliPage() {
 
                   {/* Seans Ekle */}
                   <div style={{ backgroundColor: '#f9f9f9', borderRadius: 14, padding: '18px 20px' }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#555', marginBottom: 14 }}>+ Yeni Seans Ekle</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: needsInstructor ? '1.2fr 1fr 1fr 1fr auto' : '1.4fr 1fr 1fr auto', gap: 12, alignItems: 'end' }}>
+                    {/* Toggle */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#555' }}>+ Yeni Seans Ekle</div>
+                      <div style={{ display: 'flex', gap: 4, backgroundColor: '#e8e8e8', borderRadius: 10, padding: 3 }}>
+                        {(['tek', 'tekrarlayan'] as const).map(mode => (
+                          <button key={mode} onClick={() => setSessionMode(prev => ({ ...prev, [cls.id]: mode }))}
+                            style={{ padding: '5px 14px', borderRadius: 8, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: (sessionMode[cls.id] || 'tek') === mode ? '#fff' : 'transparent', color: (sessionMode[cls.id] || 'tek') === mode ? '#4F46E5' : '#888', boxShadow: (sessionMode[cls.id] || 'tek') === mode ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>
+                            {mode === 'tek' ? 'Tek Seferlik' : '🔁 Tekrarlayan'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* TEK SEFERLİK FORM */}
+                    {(sessionMode[cls.id] || 'tek') === 'tek' && (
+                      <div style={{ display: 'grid', gridTemplateColumns: needsInstructor ? '1.2fr 1fr 1fr 1fr auto' : '1.4fr 1fr 1fr auto', gap: 12, alignItems: 'end' }}>
+                        <div>
+                          <label style={{ fontSize: 11, color: '#888', display: 'block', marginBottom: 4 }}>Tarih</label>
+                          <input type="date" value={sessionForms[cls.id]?.date || ''} onChange={e => setSessionForms(prev => ({ ...prev, [cls.id]: { ...prev[cls.id], date: e.target.value } }))} style={{ width: '100%', padding: '9px 10px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', boxSizing: 'border-box' as const, backgroundColor: '#fff' }} />
+                          {sessionForms[cls.id]?.date && (
+                            <div style={{ fontSize: 11, color: '#6366f1', fontWeight: 600, marginTop: 4 }}>{formatSessionDate(sessionForms[cls.id].date)}</div>
+                          )}
+                        </div>
+                        <div>
+                          <label style={{ fontSize: 11, color: '#888', display: 'block', marginBottom: 4 }}>Saat</label>
+                          <input type="time" value={sessionForms[cls.id]?.time || ''} onChange={e => setSessionForms(prev => ({ ...prev, [cls.id]: { ...prev[cls.id], time: e.target.value } }))} style={{ width: '100%', padding: '9px 10px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', boxSizing: 'border-box' as const, backgroundColor: '#fff' }} />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: 11, color: '#888', display: 'block', marginBottom: 4 }}>Kontenjan</label>
+                          <input type="number" placeholder="15" value={sessionForms[cls.id]?.capacity || ''} onChange={e => setSessionForms(prev => ({ ...prev, [cls.id]: { ...prev[cls.id], capacity: e.target.value } }))} style={{ width: '100%', padding: '9px 10px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', boxSizing: 'border-box' as const, backgroundColor: '#fff' }} />
+                        </div>
+                        {needsInstructor && (
+                          <div>
+                            <label style={{ fontSize: 11, color: '#888', display: 'block', marginBottom: 4 }}>Hoca</label>
+                            <select value={sessionForms[cls.id]?.instructorId || ''} onChange={e => setSessionForms(prev => ({ ...prev, [cls.id]: { ...prev[cls.id], instructorId: e.target.value } }))} style={{ width: '100%', padding: '9px 10px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', boxSizing: 'border-box' as const, backgroundColor: '#fff' }}>
+                              <option value="">Seçin</option>
+                              {instructors.map((inst: any) => (
+                                <option key={inst.id} value={inst.id}>{inst.fullName}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                        <button onClick={() => handleAddSession(cls.id)} style={{ padding: '9px 18px', borderRadius: 10, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' as const, alignSelf: 'end' }}>Ekle</button>
+                      </div>
+                    )}
+
+                    {/* TEKRARLAYAN FORM */}
+                    {sessionMode[cls.id] === 'tekrarlayan' && (
                       <div>
-                        <label style={{ fontSize: 11, color: '#888', display: 'block', marginBottom: 4 }}>Tarih</label>
-                        <input type="date" value={sessionForms[cls.id]?.date || ''} onChange={e => setSessionForms(prev => ({ ...prev, [cls.id]: { ...prev[cls.id], date: e.target.value } }))} style={{ width: '100%', padding: '9px 10px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', boxSizing: 'border-box' as const, backgroundColor: '#fff' }} />
-                        {sessionForms[cls.id]?.date && (
-                          <div style={{ fontSize: 11, color: '#6366f1', fontWeight: 600, marginTop: 4 }}>{formatSessionDate(sessionForms[cls.id].date)}</div>
+                        <div style={{ marginBottom: 12 }}>
+                          <label style={{ fontSize: 11, color: '#888', display: 'block', marginBottom: 6 }}>Hangi Günler?</label>
+                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                            {WEEK_DAYS.map(d => {
+                              const selected = recurringForms[cls.id]?.weekDays?.includes(d.value)
+                              return (
+                                <button key={d.value} onClick={() => setRecurringForms(prev => {
+                                  const cur = prev[cls.id]?.weekDays || []
+                                  return { ...prev, [cls.id]: { ...prev[cls.id], weekDays: selected ? cur.filter(x => x !== d.value) : [...cur, d.value] } }
+                                })}
+                                  style={{ padding: '6px 14px', borderRadius: 8, border: selected ? 'none' : '1.5px solid #e5e5e5', background: selected ? '#4F46E5' : '#fff', color: selected ? '#fff' : '#555', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                                  {d.label}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 12, alignItems: 'end' }}>
+                          <div>
+                            <label style={{ fontSize: 11, color: '#888', display: 'block', marginBottom: 4 }}>Saat</label>
+                            <input type="time" value={recurringForms[cls.id]?.time || ''} onChange={e => setRecurringForms(prev => ({ ...prev, [cls.id]: { ...prev[cls.id], time: e.target.value } }))} style={{ width: '100%', padding: '9px 10px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', boxSizing: 'border-box' as const, backgroundColor: '#fff' }} />
+                          </div>
+                          <div>
+                            <label style={{ fontSize: 11, color: '#888', display: 'block', marginBottom: 4 }}>Kontenjan</label>
+                            <input type="number" placeholder="15" value={recurringForms[cls.id]?.capacity || ''} onChange={e => setRecurringForms(prev => ({ ...prev, [cls.id]: { ...prev[cls.id], capacity: e.target.value } }))} style={{ width: '100%', padding: '9px 10px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', boxSizing: 'border-box' as const, backgroundColor: '#fff' }} />
+                          </div>
+                          <div>
+                            <label style={{ fontSize: 11, color: '#888', display: 'block', marginBottom: 4 }}>Kaç Hafta?</label>
+                            <select value={recurringForms[cls.id]?.weeks || ''} onChange={e => setRecurringForms(prev => ({ ...prev, [cls.id]: { ...prev[cls.id], weeks: e.target.value } }))} style={{ width: '100%', padding: '9px 10px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', backgroundColor: '#fff' }}>
+                              <option value="">Seçin</option>
+                              {[1,2,3,4,6,8,12].map(w => <option key={w} value={w}>{w} hafta</option>)}
+                            </select>
+                          </div>
+                          <button onClick={() => handleAddRecurring(cls.id)} style={{ padding: '9px 18px', borderRadius: 10, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' as const, alignSelf: 'end' }}>Oluştur</button>
+                        </div>
+                        {recurringForms[cls.id]?.weekDays?.length > 0 && recurringForms[cls.id]?.weeks && (
+                          <div style={{ fontSize: 11, color: '#6366f1', fontWeight: 600, marginTop: 8 }}>
+                            {WEEK_DAYS.filter(d => recurringForms[cls.id]?.weekDays?.includes(d.value)).map(d => d.label).join(', ')} günleri · {recurringForms[cls.id]?.weeks} hafta · toplam ~{(recurringForms[cls.id]?.weekDays?.length || 0) * parseInt(recurringForms[cls.id]?.weeks || '0')} seans oluşturulacak
+                          </div>
                         )}
                       </div>
-                      <div>
-                        <label style={{ fontSize: 11, color: '#888', display: 'block', marginBottom: 4 }}>Saat</label>
-                        <input type="time" value={sessionForms[cls.id]?.time || ''} onChange={e => setSessionForms(prev => ({ ...prev, [cls.id]: { ...prev[cls.id], time: e.target.value } }))} style={{ width: '100%', padding: '9px 10px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', boxSizing: 'border-box' as const, backgroundColor: '#fff' }} />
-                      </div>
-                      <div>
-                        <label style={{ fontSize: 11, color: '#888', display: 'block', marginBottom: 4 }}>Kontenjan</label>
-                        <input type="number" placeholder="15" value={sessionForms[cls.id]?.capacity || ''} onChange={e => setSessionForms(prev => ({ ...prev, [cls.id]: { ...prev[cls.id], capacity: e.target.value } }))} style={{ width: '100%', padding: '9px 10px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', boxSizing: 'border-box' as const, backgroundColor: '#fff' }} />
-                      </div>
-                      {needsInstructor && (
-                        <div>
-                          <label style={{ fontSize: 11, color: '#888', display: 'block', marginBottom: 4 }}>Hoca</label>
-                          <select value={sessionForms[cls.id]?.instructorId || ''} onChange={e => setSessionForms(prev => ({ ...prev, [cls.id]: { ...prev[cls.id], instructorId: e.target.value } }))} style={{ width: '100%', padding: '9px 10px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', boxSizing: 'border-box' as const, backgroundColor: '#fff' }}>
-                            <option value="">Seçin</option>
-                            {instructors.map((inst: any) => (
-                              <option key={inst.id} value={inst.id}>{inst.fullName}</option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
-                      <button onClick={() => handleAddSession(cls.id)} style={{ padding: '9px 18px', borderRadius: 10, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' as const, alignSelf: 'end' }}>Ekle</button>
-                    </div>
+                    )}
+
                     {sessionSuccess[cls.id] && (
                       <div style={{ fontSize: 12, color: '#10B981', fontWeight: 600, marginTop: 10, backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 8, padding: '8px 12px' }}>
                         ✓ {sessionSuccess[cls.id]}
