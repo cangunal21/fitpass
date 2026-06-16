@@ -25,7 +25,7 @@ const FORMAT_PLAYERS: Record<string, number> = {
 export default function SalonPaneliPage() {
   const router = useRouter()
   const [venue, setVenue] = useState<any>(null)
-  const [activeTab, setActiveTab] = useState<'dersler' | 'hocalar' | 'resimler' | 'rezervasyonlar' | 'dropin' | 'istatistikler' | 'kuponlar' | 'gelir'>('dersler')
+  const [activeTab, setActiveTab] = useState<'dersler' | 'hocalar' | 'resimler' | 'rezervasyonlar' | 'dropin' | 'istatistikler' | 'kuponlar' | 'gelir' | 'yorumlar'>('dersler')
   const [bookings, setBookings] = useState<any[]>([])
   const [instructors, setInstructors] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -83,6 +83,10 @@ export default function SalonPaneliPage() {
   const [couponError, setCouponError] = useState('')
   const [couponSuccess, setCouponSuccess] = useState('')
   const [deletingCoupon, setDeletingCoupon] = useState<number | null>(null)
+  const [reviews, setReviews] = useState<any[]>([])
+  const [reviewsLoading, setReviewsLoading] = useState(false)
+  const [replyTexts, setReplyTexts] = useState<Record<number, string>>({})
+  const [replyLoading, setReplyLoading] = useState<number | null>(null)
 
   // Drop-in state
   const [dropInSlots, setDropInSlots] = useState<any[]>([])
@@ -169,6 +173,42 @@ export default function SalonPaneliPage() {
     setCoupons(data.coupons || [])
   }
 
+  const fetchReviews = async () => {
+    if (!venue?.id) return
+    setReviewsLoading(true)
+    const token = localStorage.getItem('fitpass_venue_token')!
+    const res = await fetch(`${API_URL}/api/reviews/venue/${venue.id}`, { headers: { Authorization: `Bearer ${token}` } })
+    const data = await res.json()
+    setReviews(data.reviews || [])
+    setReviewsLoading(false)
+  }
+
+  const handleReply = async (reviewId: number) => {
+    const reply = replyTexts[reviewId]?.trim()
+    if (!reply) return
+    setReplyLoading(reviewId)
+    const token = localStorage.getItem('fitpass_venue_token')!
+    const res = await fetch(`${API_URL}/api/reviews/${reviewId}/reply`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ reply }),
+    })
+    if (res.ok) {
+      setReplyTexts(t => ({ ...t, [reviewId]: '' }))
+      fetchReviews()
+    }
+    setReplyLoading(null)
+  }
+
+  const handleDeleteReply = async (reviewId: number) => {
+    const token = localStorage.getItem('fitpass_venue_token')!
+    await fetch(`${API_URL}/api/reviews/${reviewId}/reply`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    fetchReviews()
+  }
+
   const handleAddCoupon = async (e: React.FormEvent) => {
     e.preventDefault()
     setCouponError(''); setCouponSuccess('')
@@ -213,6 +253,7 @@ export default function SalonPaneliPage() {
     if (tab === 'istatistikler') fetchStats()
     if (tab === 'kuponlar') fetchCoupons()
     if (tab === 'gelir') fetchRevenue()
+    if (tab === 'yorumlar') fetchReviews()
   }
 
   const saveVenueImages = async (images: string[], cover?: string) => {
@@ -423,6 +464,7 @@ export default function SalonPaneliPage() {
             { key: 'istatistikler', label: 'İstatistikler' },
             { key: 'gelir', label: '💰 Gelir Raporu' },
             { key: 'kuponlar', label: 'Kuponlar' },
+            { key: 'yorumlar', label: 'Yorumlar' },
           ] as const).map(tab => (
             <button key={tab.key} onClick={() => handleTabChange(tab.key)} className="salon-tab-item" style={{ padding: '10px 20px', borderRadius: 12, border: 'none', background: activeTab === tab.key ? '#fff' : 'transparent', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: activeTab === tab.key ? '#1a1a1a' : '#888', boxShadow: activeTab === tab.key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
               {tab.label}
@@ -1248,6 +1290,66 @@ export default function SalonPaneliPage() {
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#4F46E5' }}>₺{b.finalAmount}</div>
                   <div style={{ fontSize: 11, color: b.status === 'confirmed' ? '#10B981' : '#EF4444', fontWeight: 600 }}>{b.status === 'confirmed' ? '✓ Onaylı' : '✗ İptal'}</div>
                 </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeTab === 'yorumlar' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <h3 style={{ fontSize: 18, fontWeight: 800, color: '#1a1a1a', margin: 0 }}>Kullanıcı Yorumları</h3>
+              <button onClick={fetchReviews} style={{ background: '#F5F3FF', border: 'none', borderRadius: 10, padding: '8px 16px', fontSize: 13, fontWeight: 600, color: '#4F46E5', cursor: 'pointer' }}>Yenile</button>
+            </div>
+            {reviewsLoading ? (
+              <div style={{ textAlign: 'center', padding: 40, color: '#888' }}>Yükleniyor...</div>
+            ) : reviews.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 40, color: '#bbb' }}>
+                <div style={{ fontSize: 40, marginBottom: 10 }}>⭐</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: '#555' }}>Henüz yorum yok</div>
+                <div style={{ fontSize: 13, color: '#aaa', marginTop: 4 }}>Kullanıcılar ders aldıktan sonra yorum yapabilir</div>
+              </div>
+            ) : reviews.map((r: any) => (
+              <div key={r.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '20px 24px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#E0E7FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: '#4F46E5' }}>
+                      {r.isAnonymous ? '?' : (r.reviewer?.fullName?.[0] || '?')}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>{r.isAnonymous ? 'Anonim' : (r.reviewer?.fullName || 'Kullanıcı')}</div>
+                      <div style={{ fontSize: 11, color: '#aaa' }}>{new Date(r.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 2 }}>
+                    {[1,2,3,4,5].map(n => <span key={n} style={{ fontSize: 16, color: n <= r.rating ? '#F59E0B' : '#e5e5e5' }}>★</span>)}
+                  </div>
+                </div>
+                {r.comment && <p style={{ fontSize: 14, color: '#444', lineHeight: 1.6, margin: '0 0 14px' }}>{r.comment}</p>}
+                {r.venueReply ? (
+                  <div style={{ backgroundColor: '#F5F3FF', borderRadius: 10, padding: '12px 16px', borderLeft: '3px solid #4F46E5', marginBottom: 10 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#4F46E5', marginBottom: 4 }}>Yanıtınız</div>
+                    <p style={{ fontSize: 13, color: '#444', lineHeight: 1.6, margin: 0 }}>{r.venueReply}</p>
+                    <button onClick={() => handleDeleteReply(r.id)} style={{ marginTop: 8, background: 'none', border: 'none', color: '#EF4444', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>Yanıtı Sil</button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <textarea
+                      value={replyTexts[r.id] || ''}
+                      onChange={e => setReplyTexts(t => ({ ...t, [r.id]: e.target.value }))}
+                      placeholder="Bu yoruma yanıt yaz..."
+                      rows={2}
+                      style={{ flex: 1, padding: '10px 14px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', resize: 'vertical', fontFamily: 'inherit' }}
+                    />
+                    <button
+                      onClick={() => handleReply(r.id)}
+                      disabled={replyLoading === r.id || !replyTexts[r.id]?.trim()}
+                      style={{ padding: '0 18px', borderRadius: 10, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: replyLoading === r.id ? 0.6 : 1 }}
+                    >
+                      {replyLoading === r.id ? '...' : 'Yanıtla'}
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

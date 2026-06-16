@@ -587,6 +587,12 @@ export default function VenuePage() {
                     </div>
                   </div>
                   {r.comment && <p style={{ fontSize: 14, color: '#444', lineHeight: 1.6, margin: 0 }}>{r.comment}</p>}
+                  {r.venueReply && (
+                    <div style={{ marginTop: 14, backgroundColor: '#F5F3FF', borderRadius: 12, padding: '12px 16px', borderLeft: '3px solid #4F46E5' }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: '#4F46E5', marginBottom: 6 }}>Salon Yanıtı</div>
+                      <p style={{ fontSize: 13, color: '#444', lineHeight: 1.6, margin: 0 }}>{r.venueReply}</p>
+                    </div>
+                  )}
                 </div>
               ))
             )}

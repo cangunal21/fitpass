@@ -291,6 +291,7 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [groupSize, setGroupSize] = useState(1)
 
   const sessionId = (cls as { sessionId?: number }).sessionId
 
@@ -312,7 +313,7 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/bookings`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ sessionId, bookingType: 'class' }),
+          body: JSON.stringify({ sessionId, bookingType: 'class', groupSize }),
         })
         const data = await res.json()
         if (!res.ok) {
@@ -362,9 +363,18 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
                 </div>
               </div>
               <div style={{ height: 1, backgroundColor: '#EBEBEB', marginBottom: 14 }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: '#555' }}>Kişi Sayısı</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <button onClick={() => setGroupSize(g => Math.max(1, g - 1))} style={{ width: 30, height: 30, borderRadius: 8, border: '1.5px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontSize: 18, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+                  <span style={{ fontSize: 16, fontWeight: 700, color: '#111', minWidth: 20, textAlign: 'center' }}>{groupSize}</span>
+                  <button onClick={() => setGroupSize(g => Math.min(10, g + 1))} style={{ width: 30, height: 30, borderRadius: 8, border: '1.5px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontSize: 18, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                </div>
+              </div>
+              <div style={{ height: 1, backgroundColor: '#EBEBEB', marginBottom: 14 }} />
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>Toplam</span>
-                <span style={{ fontSize: 18, fontWeight: 800, color: '#4F46E5' }}>₺{cls.basePrice}</span>
+                <span style={{ fontSize: 18, fontWeight: 800, color: '#4F46E5' }}>₺{(cls.basePrice || 0) * groupSize}{groupSize > 1 && <span style={{ fontSize: 13, fontWeight: 500, color: '#888', marginLeft: 6 }}>({groupSize} × ₺{cls.basePrice})</span>}</span>
               </div>
             </div>
 
