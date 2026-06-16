@@ -25,7 +25,7 @@ const FORMAT_PLAYERS: Record<string, number> = {
 export default function SalonPaneliPage() {
   const router = useRouter()
   const [venue, setVenue] = useState<any>(null)
-  const [activeTab, setActiveTab] = useState<'dersler' | 'hocalar' | 'resimler' | 'rezervasyonlar' | 'dropin'>('dersler')
+  const [activeTab, setActiveTab] = useState<'dersler' | 'hocalar' | 'resimler' | 'rezervasyonlar' | 'dropin' | 'istatistikler' | 'kuponlar'>('dersler')
   const [bookings, setBookings] = useState<any[]>([])
   const [instructors, setInstructors] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -68,6 +68,17 @@ export default function SalonPaneliPage() {
 
   // New instructor avatar state
   const [newInstructorAvatar, setNewInstructorAvatar] = useState('')
+
+  // Stats state
+  const [stats, setStats] = useState<any>(null)
+  const [statsLoading, setStatsLoading] = useState(false)
+
+  // Coupon state
+  const [coupons, setCoupons] = useState<any[]>([])
+  const [couponForm, setCouponForm] = useState({ code: '', discountType: 'percent', discountValue: '', maxUses: '', expiresAt: '' })
+  const [couponError, setCouponError] = useState('')
+  const [couponSuccess, setCouponSuccess] = useState('')
+  const [deletingCoupon, setDeletingCoupon] = useState<number | null>(null)
 
   // Drop-in state
   const [dropInSlots, setDropInSlots] = useState<any[]>([])
@@ -122,12 +133,70 @@ export default function SalonPaneliPage() {
     setDropInSlots(data.slots || [])
   }
 
+  const fetchStats = async () => {
+    setStatsLoading(true)
+    try {
+      const token = localStorage.getItem('fitpass_venue_token')!
+      const res = await fetch(`${API_URL}/api/venue/stats`, { headers: { Authorization: `Bearer ${token}` } })
+      const data = await res.json()
+      setStats(data)
+    } catch {
+      setStats(null)
+    } finally {
+      setStatsLoading(false)
+    }
+  }
+
+  const fetchCoupons = async () => {
+    const token = localStorage.getItem('fitpass_venue_token')!
+    const res = await fetch(`${API_URL}/api/venue/coupons`, { headers: { Authorization: `Bearer ${token}` } })
+    const data = await res.json()
+    setCoupons(data.coupons || [])
+  }
+
+  const handleAddCoupon = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setCouponError(''); setCouponSuccess('')
+    const token = localStorage.getItem('fitpass_venue_token')!
+    const body: any = {
+      code: couponForm.code,
+      discountType: couponForm.discountType,
+      discountValue: Number(couponForm.discountValue),
+    }
+    if (couponForm.maxUses) body.maxUses = Number(couponForm.maxUses)
+    if (couponForm.expiresAt) body.expiresAt = couponForm.expiresAt
+    const res = await fetch(`${API_URL}/api/venue/coupons`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(body),
+    })
+    const data = await res.json()
+    if (data.error) { setCouponError(data.error); return }
+    setCouponSuccess('Kupon oluşturuldu!')
+    setCouponForm({ code: '', discountType: 'percent', discountValue: '', maxUses: '', expiresAt: '' })
+    fetchCoupons()
+    setTimeout(() => setCouponSuccess(''), 3000)
+  }
+
+  const handleDeleteCoupon = async (couponId: number) => {
+    if (!confirm('Bu kuponu deaktive etmek istediğinize emin misiniz?')) return
+    const token = localStorage.getItem('fitpass_venue_token')!
+    setDeletingCoupon(couponId)
+    const res = await fetch(`${API_URL}/api/venue/coupons/${couponId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+    const data = await res.json()
+    setDeletingCoupon(null)
+    if (data.error) { alert(data.error); return }
+    fetchCoupons()
+  }
+
   const handleTabChange = (tab: typeof activeTab) => {
     setActiveTab(tab)
     if (tab === 'rezervasyonlar') fetchBookings()
     if (tab === 'hocalar') fetchInstructors()
     if (tab === 'dersler') fetchInstructors()
     if (tab === 'dropin') fetchDropInSlots()
+    if (tab === 'istatistikler') fetchStats()
+    if (tab === 'kuponlar') fetchCoupons()
   }
 
   const saveVenueImages = async (images: string[], cover?: string) => {
@@ -335,6 +404,8 @@ export default function SalonPaneliPage() {
             { key: 'resimler', label: 'Salon Resimleri' },
             { key: 'dropin', label: 'Drop-In' },
             { key: 'rezervasyonlar', label: 'Rezervasyonlar' },
+            { key: 'istatistikler', label: 'İstatistikler' },
+            { key: 'kuponlar', label: 'Kuponlar' },
           ] as const).map(tab => (
             <button key={tab.key} onClick={() => handleTabChange(tab.key)} className="salon-tab-item" style={{ padding: '10px 20px', borderRadius: 12, border: 'none', background: activeTab === tab.key ? '#fff' : 'transparent', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: activeTab === tab.key ? '#1a1a1a' : '#888', boxShadow: activeTab === tab.key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
               {tab.label}
@@ -846,6 +917,190 @@ export default function SalonPaneliPage() {
                         {deletingSlot === slot.id ? '...' : 'Sil'}
                       </button>
                     </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* İSTATİSTİKLER */}
+        {activeTab === 'istatistikler' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {statsLoading ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#888', fontSize: 15 }}>Yükleniyor...</div>
+            ) : !stats ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#888', fontSize: 15 }}>İstatistikler yüklenemedi.</div>
+            ) : (
+              <>
+                {/* Özet Kartlar */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+                  {[
+                    { label: 'Toplam Seans', value: stats.summary?.totalSessions ?? 0, color: '#4F46E5' },
+                    { label: 'Toplam Rezervasyon', value: stats.summary?.totalBookings ?? 0, color: '#3B82F6' },
+                    { label: 'Toplam Gelir', value: `₺${(stats.summary?.totalRevenue ?? 0).toLocaleString('tr-TR')}`, color: '#10B981' },
+                    { label: 'Ort. Doluluk', value: `%${Math.round(stats.summary?.avgFillRate ?? 0)}`, color: '#F59E0B' },
+                  ].map((card, i) => (
+                    <div key={i} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', textAlign: 'center' }}>
+                      <div style={{ fontSize: 26, fontWeight: 800, color: card.color }}>{card.value}</div>
+                      <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>{card.label}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Günlere Göre Doluluk */}
+                {stats.dayStats && stats.dayStats.length > 0 && (
+                  <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+                    <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 16 }}>Günlere Göre Doluluk</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {stats.dayStats.map((d: any, i: number) => {
+                        const fill = Math.round(d.fillRate ?? 0)
+                        const barColor = fill >= 80 ? '#EF4444' : fill >= 50 ? '#F97316' : '#10B981'
+                        return (
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <div style={{ width: 40, fontSize: 13, fontWeight: 600, color: '#555', flexShrink: 0 }}>{d.day}</div>
+                            <div style={{ flex: 1, backgroundColor: '#f0f0f0', borderRadius: 8, height: 18, overflow: 'hidden' }}>
+                              <div style={{ width: `${fill}%`, backgroundColor: barColor, height: '100%', borderRadius: 8, transition: 'width 0.4s' }} />
+                            </div>
+                            <div style={{ width: 48, fontSize: 13, fontWeight: 700, color: barColor, textAlign: 'right', flexShrink: 0 }}>%{fill}</div>
+                            <div style={{ width: 60, fontSize: 11, color: '#888', textAlign: 'right', flexShrink: 0 }}>{d.sessions} seans</div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* En Popüler 5 Seans */}
+                {stats.topSessions && stats.topSessions.length > 0 && (
+                  <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+                    <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 16 }}>En Popüler 5 Seans</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {stats.topSessions.slice(0, 5).map((s: any, i: number) => {
+                        const fill = Math.round(s.fillRate ?? 0)
+                        const fillColor = fill >= 80 ? '#EF4444' : fill >= 50 ? '#F97316' : '#10B981'
+                        return (
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', backgroundColor: '#f8f8f8', borderRadius: 12 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                              <div style={{ width: 28, height: 28, borderRadius: '50%', backgroundColor: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: '#4F46E5' }}>{i + 1}</div>
+                              <div>
+                                <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>{s.title}</div>
+                                <div style={{ fontSize: 11, color: '#888' }}>{s.date}</div>
+                              </div>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              <div style={{ fontSize: 14, fontWeight: 800, color: fillColor }}>%{fill}</div>
+                              <div style={{ fontSize: 11, color: '#888' }}>{s.booked}/{s.capacity} kişi</div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Yaklaşan 7 Gün Seansları */}
+                {stats.upcoming && stats.upcoming.length > 0 && (
+                  <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+                    <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 16 }}>Yaklaşan 7 Gün</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {stats.upcoming.map((s: any, i: number) => {
+                        const fill = Math.round(s.fillRate ?? 0)
+                        const fillColor = fill >= 80 ? '#EF4444' : fill >= 50 ? '#F97316' : '#10B981'
+                        return (
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', border: '1px solid #f0f0f0', borderRadius: 12 }}>
+                            <div>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a' }}>{s.title}</div>
+                              <div style={{ fontSize: 11, color: '#888' }}>{s.date}</div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                              <div style={{ width: 80, backgroundColor: '#f0f0f0', borderRadius: 6, height: 8, overflow: 'hidden' }}>
+                                <div style={{ width: `${fill}%`, backgroundColor: fillColor, height: '100%', borderRadius: 6 }} />
+                              </div>
+                              <span style={{ fontSize: 12, fontWeight: 700, color: fillColor, width: 36, textAlign: 'right' }}>%{fill}</span>
+                              <span style={{ fontSize: 11, color: '#888', width: 56, textAlign: 'right' }}>{s.booked}/{s.capacity} kişi</span>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* KUPONLAR */}
+        {activeTab === 'kuponlar' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {/* Kupon Oluşturma Formu */}
+            <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '28px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+              <h3 style={{ fontSize: 16, fontWeight: 800, color: '#1a1a1a', marginBottom: 20 }}>Yeni Kupon Oluştur</h3>
+              <form onSubmit={handleAddCoupon} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                  <div>
+                    <label style={labelStyle}>Kupon Kodu *</label>
+                    <input type="text" placeholder="YAZA20" value={couponForm.code} onChange={e => setCouponForm({ ...couponForm, code: e.target.value.toUpperCase() })} required style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>İndirim Tipi *</label>
+                    <select value={couponForm.discountType} onChange={e => setCouponForm({ ...couponForm, discountType: e.target.value })} style={inputStyle}>
+                      <option value="percent">Yüzde (%)</option>
+                      <option value="fixed">Sabit Tutar (₺)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>İndirim Değeri *</label>
+                    <input type="number" placeholder={couponForm.discountType === 'percent' ? '20' : '50'} value={couponForm.discountValue} onChange={e => setCouponForm({ ...couponForm, discountValue: e.target.value })} required min="0" style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Maksimum Kullanım (opsiyonel)</label>
+                    <input type="number" placeholder="100" value={couponForm.maxUses} onChange={e => setCouponForm({ ...couponForm, maxUses: e.target.value })} min="1" style={inputStyle} />
+                  </div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={labelStyle}>Son Kullanım Tarihi (opsiyonel)</label>
+                    <input type="date" value={couponForm.expiresAt} onChange={e => setCouponForm({ ...couponForm, expiresAt: e.target.value })} style={inputStyle} />
+                  </div>
+                </div>
+                {couponError && <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#DC2626', display: 'flex', alignItems: 'center', gap: 8 }}><AlertCircle size={14} /> {couponError}</div>}
+                {couponSuccess && <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#16a34a' }}>✓ {couponSuccess}</div>}
+                <button type="submit" style={{ padding: '13px', borderRadius: 12, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Kupon Oluştur</button>
+              </form>
+            </div>
+
+            {/* Kupon Listesi */}
+            <div>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#555', marginBottom: 12 }}>Mevcut Kuponlar</h3>
+              {coupons.length === 0 ? (
+                <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '32px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', color: '#aaa', fontSize: 14 }}>
+                  Henüz kupon oluşturulmadı.
+                </div>
+              ) : coupons.map((c: any) => (
+                <div key={c.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '18px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+                    <div style={{ backgroundColor: '#EEF2FF', borderRadius: 10, padding: '8px 16px' }}>
+                      <span style={{ fontSize: 15, fontWeight: 800, color: '#4F46E5', letterSpacing: 1 }}>{c.code}</span>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>
+                        {c.discountType === 'percent' ? `%${c.discountValue} indirim` : `₺${c.discountValue} indirim`}
+                      </div>
+                      <div style={{ fontSize: 12, color: '#888', marginTop: 2, display: 'flex', gap: 10 }}>
+                        <span>{c.usedCount ?? 0}{c.maxUses ? `/${c.maxUses}` : ''} kullanım</span>
+                        {c.expiresAt && <span>· Son: {new Date(c.expiresAt).toLocaleDateString('tr-TR')}</span>}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, backgroundColor: c.isActive !== false ? '#F0FDF4' : '#FEF2F2', color: c.isActive !== false ? '#16a34a' : '#DC2626', padding: '3px 10px', borderRadius: 20 }}>
+                      {c.isActive !== false ? '● Aktif' : '● Pasif'}
+                    </span>
+                    {c.isActive !== false && (
+                      <button onClick={() => handleDeleteCoupon(c.id)} disabled={deletingCoupon === c.id} style={{ padding: '5px 14px', borderRadius: 10, border: '1px solid #FECACA', background: '#FEF2F2', color: '#DC2626', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
+                        {deletingCoupon === c.id ? '...' : 'Deaktive Et'}
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

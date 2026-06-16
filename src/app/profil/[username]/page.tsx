@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation'
 import { mockUsers } from '@/lib/mockData'
 import Navbar from '@/components/Navbar'
 import { api, getUser, getToken } from '@/lib/api'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 import type { ReactNode } from 'react'
 import { User, Users, Ticket, Award, ClipboardList, BarChart2, BookOpen, Calendar, Flame, Dumbbell, Heart, Building, MapPin, Gift, Medal, Check, X, Lock, CreditCard } from 'lucide-react'
 import { SportIcon, SportIconBox } from '@/lib/sportIcons'
@@ -38,6 +39,11 @@ export default function ProfilPage() {
   // Privacy toggle
   const [privacy, setPrivacy] = useState<'public' | 'private'>('public')
   const [privacySaved, setPrivacySaved] = useState(false)
+
+  // Bildirim tercihleri
+  const [emailReminders, setEmailReminders] = useState(true)
+  const [smsReminders, setSmsReminders] = useState(false)
+  const [notifSaved, setNotifSaved] = useState(false)
 
   // Profile edit
   const [editMode, setEditMode] = useState(false)
@@ -95,6 +101,8 @@ export default function ProfilPage() {
       if (data.user) {
         setMeData(data.user)
         setPrivacy(data.user.activityPrivacy || 'public')
+        setEmailReminders(data.user.emailReminders !== false)
+        setSmsReminders(data.user.smsReminders === true)
         setEditForm({
           fullName: data.user.fullName || '',
           bio: data.user.bio || '',
@@ -745,6 +753,39 @@ export default function ProfilPage() {
                 {privacy === 'public' ? 'Aktiviteleriniz diğer kullanıcılar tarafından görülebilir.' : 'Aktiviteleriniz yalnızca size görünür.'}
               </div>
               {privacySaved && <div style={{ fontSize: 13, color: '#10B981', fontWeight: 600, marginTop: 8 }}>Kaydedildi ✓</div>}
+            </div>
+
+            {/* Bildirim Tercihleri */}
+            <div style={{ marginTop: 28, paddingTop: 24, borderTop: '1px solid #F0F0F0' }}>
+              <h4 style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 16 }}>🔔 Bildirim Tercihleri</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {[
+                  { label: 'E-posta hatırlatmaları', desc: 'Ders öncesi hatırlatma maili al', value: emailReminders, set: setEmailReminders },
+                  { label: 'SMS hatırlatmaları', desc: 'Ders öncesi hatırlatma SMS\'i al (yakında)', value: smsReminders, set: setSmsReminders },
+                ].map(item => (
+                  <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', backgroundColor: '#F8F8F8', borderRadius: 12 }}>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a' }}>{item.label}</div>
+                      <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{item.desc}</div>
+                    </div>
+                    <button onClick={async () => {
+                      const newVal = !item.value
+                      item.set(newVal)
+                      const token = getToken()
+                      await fetch(`${API_URL}/api/auth/notifications`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                        body: JSON.stringify({ emailReminders: item.label.includes('E-posta') ? newVal : emailReminders, smsReminders: item.label.includes('SMS') ? newVal : smsReminders })
+                      })
+                      setNotifSaved(true)
+                      setTimeout(() => setNotifSaved(false), 2000)
+                    }} style={{ width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', backgroundColor: item.value ? '#4F46E5' : '#D1D5DB', transition: 'background 0.2s', position: 'relative', flexShrink: 0 }}>
+                      <div style={{ position: 'absolute', top: 2, left: item.value ? 22 : 2, width: 20, height: 20, borderRadius: '50%', backgroundColor: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {notifSaved && <div style={{ fontSize: 13, color: '#10B981', fontWeight: 600, marginTop: 10 }}>Kaydedildi ✓</div>}
             </div>
           </div>
         )}

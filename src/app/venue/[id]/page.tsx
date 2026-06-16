@@ -20,6 +20,7 @@ export default function VenuePage() {
   const [favLoading, setFavLoading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'dersler' | 'hocalar' | 'yorumlar'>('dersler')
+  const [activeImage, setActiveImage] = useState<string | null>(null)
   const [reviews, setReviews] = useState<any[]>([])
   const [reviewsLoading, setReviewsLoading] = useState(false)
   const [showReviewForm, setShowReviewForm] = useState(false)
@@ -183,18 +184,78 @@ export default function VenuePage() {
 
         {/* Hero kartı */}
         <div style={{ backgroundColor: '#fff', borderRadius: 24, overflow: 'hidden', border: '1px solid #F0F0F0', marginBottom: 20 }}>
-          <div className="venue-hero" style={{
-            height: 220,
-            background: venue.coverImageUrl
-              ? `url(${venue.coverImageUrl}) center/cover no-repeat`
-              : `linear-gradient(135deg, ${heroColor} 0%, ${heroColor}88 100%)`,
-            position: 'relative',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            {!venue.coverImageUrl && <SportIconBox name={heroIcon} bgColor="rgba(255,255,255,0.2)" iconColor="#fff" boxSize={100} borderRadius={28} size={52} />}
-          </div>
+          {/* Fotoğraf Galerisi */}
+          {(() => {
+            const rawImgs: string[] = !venue._isMock && Array.isArray(venue.images)
+              ? venue.images
+              : (!venue._isMock && typeof venue.images === 'string' ? JSON.parse(venue.images || '[]') : [])
+            const allImgs: string[] = venue.coverImageUrl
+              ? [venue.coverImageUrl, ...rawImgs.filter((u: string) => u !== venue.coverImageUrl)]
+              : rawImgs
+            const mainImg = activeImage ?? (allImgs[0] ?? null)
+            const thumbs = allImgs.slice(0, 5)
+
+            return (
+              <div>
+                {/* Ana görsel */}
+                <div style={{
+                  height: 260,
+                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
+                  background: mainImg
+                    ? `url(${mainImg}) center/cover no-repeat`
+                    : `linear-gradient(135deg, ${heroColor} 0%, ${heroColor}88 100%)`
+                }}>
+                  {!mainImg && <SportIconBox name={heroIcon} bgColor="rgba(255,255,255,0.2)" iconColor="#fff" boxSize={100} borderRadius={28} size={52} />}
+                  {/* Görsel sayısı rozeti */}
+                  {allImgs.length > 1 && (
+                    <div style={{
+                      position: 'absolute', bottom: 12, right: 14,
+                      background: 'rgba(0,0,0,0.55)', color: '#fff',
+                      fontSize: 12, fontWeight: 700, borderRadius: 100,
+                      padding: '4px 10px', backdropFilter: 'blur(4px)'
+                    }}>
+                      {allImgs.indexOf(mainImg!) + 1} / {allImgs.length}
+                    </div>
+                  )}
+                </div>
+
+                {/* Thumbnail şeridi */}
+                {thumbs.length > 1 && (
+                  <div style={{ display: 'flex', gap: 8, padding: '10px 16px', backgroundColor: '#F9F9F9', borderBottom: '1px solid #F0F0F0', overflowX: 'auto' }}>
+                    {thumbs.map((img, i) => {
+                      const isActive = (mainImg === img) || (mainImg === null && i === 0)
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => setActiveImage(img)}
+                          style={{
+                            flexShrink: 0,
+                            width: 72,
+                            height: 52,
+                            borderRadius: 10,
+                            overflow: 'hidden',
+                            padding: 0,
+                            border: isActive ? '2.5px solid #4F46E5' : '2.5px solid transparent',
+                            cursor: 'pointer',
+                            background: 'none',
+                            outline: 'none',
+                            opacity: isActive ? 1 : 0.72,
+                            transition: 'border-color 0.15s, opacity 0.15s'
+                          }}
+                        >
+                          <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )
+          })()}
 
           <div style={{ padding: '28px 32px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
@@ -269,21 +330,6 @@ export default function VenuePage() {
             </div>
           </div>
 
-          {/* Gallery */}
-          {!venue._isMock && (() => {
-            const imgs: string[] = Array.isArray(venue.images) ? venue.images : (typeof venue.images === 'string' ? JSON.parse(venue.images || '[]') : [])
-            if (imgs.length === 0) return null
-            return (
-              <div style={{ padding: '0 32px 20px', marginBottom: 4 }}>
-                <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 12 }}>Galeri</h3>
-                <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
-                  {imgs.map((img, i) => (
-                    <img key={i} src={img} alt="" style={{ width: 160, height: 110, objectFit: 'cover', borderRadius: 12, flexShrink: 0 }} />
-                  ))}
-                </div>
-              </div>
-            )
-          })()}
 
           {/* Stats satırı */}
           <div style={{ borderTop: '1px solid #F5F5F5', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)' }}>
