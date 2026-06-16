@@ -25,7 +25,7 @@ const FORMAT_PLAYERS: Record<string, number> = {
 export default function SalonPaneliPage() {
   const router = useRouter()
   const [venue, setVenue] = useState<any>(null)
-  const [activeTab, setActiveTab] = useState<'dersler' | 'hocalar' | 'resimler' | 'rezervasyonlar' | 'dropin' | 'istatistikler' | 'kuponlar'>('dersler')
+  const [activeTab, setActiveTab] = useState<'dersler' | 'hocalar' | 'resimler' | 'rezervasyonlar' | 'dropin' | 'istatistikler' | 'kuponlar' | 'gelir'>('dersler')
   const [bookings, setBookings] = useState<any[]>([])
   const [instructors, setInstructors] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -72,6 +72,10 @@ export default function SalonPaneliPage() {
   // Stats state
   const [stats, setStats] = useState<any>(null)
   const [statsLoading, setStatsLoading] = useState(false)
+
+  // Revenue state
+  const [revenue, setRevenue] = useState<any>(null)
+  const [revenueLoading, setRevenueLoading] = useState(false)
 
   // Coupon state
   const [coupons, setCoupons] = useState<any[]>([])
@@ -147,6 +151,17 @@ export default function SalonPaneliPage() {
     }
   }
 
+  const fetchRevenue = async () => {
+    setRevenueLoading(true)
+    try {
+      const token = localStorage.getItem('fitpass_venue_token')!
+      const res = await fetch(`${API_URL}/api/venue/revenue`, { headers: { Authorization: `Bearer ${token}` } })
+      const data = await res.json()
+      setRevenue(data)
+    } catch { setRevenue(null) }
+    setRevenueLoading(false)
+  }
+
   const fetchCoupons = async () => {
     const token = localStorage.getItem('fitpass_venue_token')!
     const res = await fetch(`${API_URL}/api/venue/coupons`, { headers: { Authorization: `Bearer ${token}` } })
@@ -197,6 +212,7 @@ export default function SalonPaneliPage() {
     if (tab === 'dropin') fetchDropInSlots()
     if (tab === 'istatistikler') fetchStats()
     if (tab === 'kuponlar') fetchCoupons()
+    if (tab === 'gelir') fetchRevenue()
   }
 
   const saveVenueImages = async (images: string[], cover?: string) => {
@@ -405,6 +421,7 @@ export default function SalonPaneliPage() {
             { key: 'dropin', label: 'Drop-In' },
             { key: 'rezervasyonlar', label: 'Rezervasyonlar' },
             { key: 'istatistikler', label: 'İstatistikler' },
+            { key: 'gelir', label: '💰 Gelir Raporu' },
             { key: 'kuponlar', label: 'Kuponlar' },
           ] as const).map(tab => (
             <button key={tab.key} onClick={() => handleTabChange(tab.key)} className="salon-tab-item" style={{ padding: '10px 20px', borderRadius: 12, border: 'none', background: activeTab === tab.key ? '#fff' : 'transparent', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: activeTab === tab.key ? '#1a1a1a' : '#888', boxShadow: activeTab === tab.key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
@@ -1105,6 +1122,106 @@ export default function SalonPaneliPage() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* GELİR RAPORU */}
+        {activeTab === 'gelir' && (
+          <div>
+            {revenueLoading ? (
+              <div style={{ textAlign: 'center', padding: 60, color: '#aaa' }}>Yükleniyor...</div>
+            ) : !revenue ? (
+              <div style={{ textAlign: 'center', padding: 60, color: '#aaa' }}>Veri yüklenemedi.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+
+                {/* Özet kartlar */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
+                  {[
+                    { label: 'Bu Ay', value: `₺${revenue.summary.thisMonthRevenue.toLocaleString('tr-TR')}`, sub: revenue.summary.monthChange !== null ? `${revenue.summary.monthChange > 0 ? '+' : ''}${revenue.summary.monthChange}% geçen aya göre` : 'İlk ay', color: '#4F46E5', bg: '#EEF2FF' },
+                    { label: 'Geçen Ay', value: `₺${revenue.summary.lastMonthRevenue.toLocaleString('tr-TR')}`, sub: `${revenue.summary.totalBookings} toplam rezervasyon`, color: '#0EA5E9', bg: '#F0F9FF' },
+                    { label: 'Ort. Ders Geliri', value: `₺${revenue.summary.avgPerBooking.toLocaleString('tr-TR')}`, sub: 'rezervasyon başına', color: '#10B981', bg: '#F0FDF4' },
+                    { label: 'İptal Kaybı', value: `₺${revenue.summary.totalCancelledAmount.toLocaleString('tr-TR')}`, sub: `${revenue.summary.cancelledCount} iptal`, color: '#F59E0B', bg: '#FFFBEB' },
+                  ].map(card => (
+                    <div key={card.label} style={{ backgroundColor: card.bg, borderRadius: 16, padding: '20px 22px' }}>
+                      <div style={{ fontSize: 12, color: '#888', fontWeight: 600, marginBottom: 8 }}>{card.label}</div>
+                      <div style={{ fontSize: 24, fontWeight: 900, color: card.color, marginBottom: 4 }}>{card.value}</div>
+                      <div style={{ fontSize: 11, color: '#999' }}>{card.sub}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Aylık gelir bar chart */}
+                <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px 28px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                  <h3 style={{ fontSize: 15, fontWeight: 800, color: '#1a1a1a', marginBottom: 24 }}>Son 6 Ay Geliri</h3>
+                  {revenue.monthlyRevenue.every((m: any) => m.revenue === 0) ? (
+                    <div style={{ textAlign: 'center', color: '#bbb', padding: '20px 0', fontSize: 14 }}>Henüz gelir verisi yok</div>
+                  ) : (() => {
+                    const maxRev = Math.max(...revenue.monthlyRevenue.map((m: any) => m.revenue), 1)
+                    return (
+                      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, height: 160 }}>
+                        {revenue.monthlyRevenue.map((m: any, i: number) => {
+                          const isThisMonth = i === revenue.monthlyRevenue.length - 1
+                          const height = Math.max((m.revenue / maxRev) * 140, m.revenue > 0 ? 4 : 0)
+                          return (
+                            <div key={m.month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                              {m.revenue > 0 && <div style={{ fontSize: 10, color: '#666', fontWeight: 700 }}>₺{m.revenue.toLocaleString('tr-TR')}</div>}
+                              <div style={{ width: '100%', height: height, backgroundColor: isThisMonth ? '#4F46E5' : '#C7D2FE', borderRadius: '6px 6px 0 0', minHeight: m.revenue > 0 ? 4 : 0 }} />
+                              <div style={{ fontSize: 11, color: isThisMonth ? '#4F46E5' : '#999', fontWeight: isThisMonth ? 800 : 500 }}>{m.month}</div>
+                              <div style={{ fontSize: 10, color: '#bbb' }}>{m.bookings} rezerv.</div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )
+                  })()}
+                </div>
+
+                {/* Ders bazlı gelir */}
+                <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px 28px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                  <h3 style={{ fontSize: 15, fontWeight: 800, color: '#1a1a1a', marginBottom: 16 }}>Ders Bazlı Gelir</h3>
+                  {revenue.byClass.length === 0 ? (
+                    <div style={{ textAlign: 'center', color: '#bbb', padding: '20px 0', fontSize: 14 }}>Henüz veri yok</div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: 12, padding: '8px 12px', fontSize: 11, color: '#aaa', fontWeight: 700, borderBottom: '1px solid #f0f0f0' }}>
+                        <span>DERS</span><span style={{ textAlign: 'right' }}>REZ.</span><span style={{ textAlign: 'right' }}>GELİR</span><span style={{ textAlign: 'right' }}>ORT.</span>
+                      </div>
+                      {revenue.byClass.map((cls: any, i: number) => (
+                        <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: 12, padding: '12px 12px', borderBottom: '1px solid #f8f8f8', alignItems: 'center' }}>
+                          <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a' }}>{cls.title}</span>
+                          <span style={{ fontSize: 13, color: '#888', textAlign: 'right' }}>{cls.bookings}</span>
+                          <span style={{ fontSize: 14, fontWeight: 800, color: '#4F46E5', textAlign: 'right' }}>₺{cls.revenue.toLocaleString('tr-TR')}</span>
+                          <span style={{ fontSize: 12, color: '#aaa', textAlign: 'right' }}>₺{Math.round(cls.revenue / cls.bookings).toLocaleString('tr-TR')}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* CSV İndir */}
+                <div style={{ textAlign: 'right' }}>
+                  <button onClick={() => {
+                    const rows = [
+                      ['Ay', 'Gelir (₺)', 'Rezervasyon'],
+                      ...revenue.monthlyRevenue.map((m: any) => [m.month, m.revenue, m.bookings]),
+                      [],
+                      ['Ders', 'Rezervasyon', 'Gelir (₺)', 'Ort. (₺)'],
+                      ...revenue.byClass.map((c: any) => [c.title, c.bookings, c.revenue, Math.round(c.revenue / c.bookings)]),
+                    ]
+                    const csv = rows.map(r => r.join(',')).join('\n')
+                    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+                    const url = URL.createObjectURL(blob)
+                    const a = document.createElement('a')
+                    a.href = url; a.download = 'gelir-raporu.csv'; a.click()
+                    URL.revokeObjectURL(url)
+                  }} style={{ padding: '10px 20px', borderRadius: 10, border: '1.5px solid #e5e5e5', background: '#fff', color: '#555', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                    CSV İndir
+                  </button>
+                </div>
+
+              </div>
+            )}
           </div>
         )}
 
