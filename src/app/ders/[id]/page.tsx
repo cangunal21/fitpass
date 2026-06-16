@@ -292,8 +292,19 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [groupSize, setGroupSize] = useState(1)
+  const [tagInputs, setTagInputs] = useState<string[]>([])
+  const [tagSuggestions, setTagSuggestions] = useState<Record<number, any[]>>({})
+  const [tagFocus, setTagFocus] = useState<number | null>(null)
 
   const sessionId = (cls as { sessionId?: number }).sessionId
+
+  const searchUsers = async (idx: number, q: string) => {
+    const clean = q.replace(/^@/, '').trim()
+    if (clean.length < 2) { setTagSuggestions(s => ({ ...s, [idx]: [] })); return }
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/public/users-search?q=${encodeURIComponent(clean)}`)
+    const data = await res.json()
+    setTagSuggestions(s => ({ ...s, [idx]: data.users || [] }))
+  }
 
   const handleConfirm = async () => {
     const token = getToken()
@@ -313,7 +324,7 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/bookings`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ sessionId, bookingType: 'class', groupSize }),
+          body: JSON.stringify({ sessionId, bookingType: 'class', groupSize, taggedUsernames: tagInputs.filter(Boolean) }),
         })
         const data = await res.json()
         if (!res.ok) {
@@ -363,14 +374,58 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
                 </div>
               </div>
               <div style={{ height: 1, backgroundColor: '#EBEBEB', marginBottom: 14 }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: groupSize > 1 ? 12 : 14 }}>
                 <span style={{ fontSize: 14, fontWeight: 600, color: '#555' }}>Kişi Sayısı</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <button onClick={() => setGroupSize(g => Math.max(1, g - 1))} style={{ width: 30, height: 30, borderRadius: 8, border: '1.5px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontSize: 18, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+                  <button onClick={() => { setGroupSize(g => Math.max(1, g - 1)); setTagInputs(t => t.slice(0, groupSize - 2)) }} style={{ width: 30, height: 30, borderRadius: 8, border: '1.5px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontSize: 18, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
                   <span style={{ fontSize: 16, fontWeight: 700, color: '#111', minWidth: 20, textAlign: 'center' }}>{groupSize}</span>
                   <button onClick={() => setGroupSize(g => Math.min(10, g + 1))} style={{ width: 30, height: 30, borderRadius: 8, border: '1.5px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontSize: 18, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
                 </div>
               </div>
+              {groupSize > 1 && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>Birlikte gelecek kişileri etiketle (opsiyonel)</div>
+                  {Array.from({ length: groupSize - 1 }).map((_, idx) => (
+                    <div key={idx} style={{ position: 'relative', marginBottom: 8 }}>
+                      <input
+                        type="text"
+                        placeholder={`@kullanıcıadı ${idx + 2}`}
+                        value={tagInputs[idx] || ''}
+                        onChange={e => {
+                          const val = e.target.value
+                          setTagInputs(t => { const n = [...t]; n[idx] = val; return n })
+                          searchUsers(idx, val)
+                        }}
+                        onFocus={() => setTagFocus(idx)}
+                        onBlur={() => setTimeout(() => setTagFocus(null), 150)}
+                        style={{ width: '100%', padding: '9px 14px', borderRadius: 10, border: '1.5px solid #E5E7EB', fontSize: 13, outline: 'none', boxSizing: 'border-box' as const, fontFamily: 'inherit' }}
+                      />
+                      {tagFocus === idx && (tagSuggestions[idx] || []).length > 0 && (
+                        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 50, overflow: 'hidden', marginTop: 4 }}>
+                          {(tagSuggestions[idx] || []).map((u: any) => (
+                            <button
+                              key={u.username}
+                              onMouseDown={() => {
+                                setTagInputs(t => { const n = [...t]; n[idx] = '@' + u.username; return n })
+                                setTagSuggestions(s => ({ ...s, [idx]: [] }))
+                              }}
+                              style={{ width: '100%', padding: '10px 14px', border: 'none', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left' }}
+                            >
+                              <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#E0E7FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#4F46E5', flexShrink: 0 }}>
+                                {u.fullName?.[0] || '?'}
+                              </div>
+                              <div>
+                                <div style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{u.fullName}</div>
+                                <div style={{ fontSize: 11, color: '#888' }}>@{u.username}</div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
               <div style={{ height: 1, backgroundColor: '#EBEBEB', marginBottom: 14 }} />
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>Toplam</span>
