@@ -31,6 +31,13 @@ function mapApiSlot(slot: any) {
     venueName: slot.venue?.name || '',
     venueAddress: slot.venue?.address || '',
     participantCount: slot.participants?.length || slot.currentPlayers,
+    participants: (slot.participants || []).map((p: any) => ({
+      id: p.id,
+      team: p.team,
+      username: p.user?.username || null,
+      fullName: p.user?.fullName || null,
+      avatarUrl: p.user?.avatarUrl || null,
+    })),
     isReal: true,
   }
 }
@@ -79,6 +86,10 @@ export default function DropInPage() {
         venueName: mockVenue?.name || '',
         venueAddress: mockVenue?.address || '',
         participantCount: mockSlot.currentPlayers,
+        participants: [
+          ...(mockSlot.teams?.A || []),
+          ...(mockSlot.teams?.B || []),
+        ].map((u: any) => ({ id: u.id, team: null, username: u.username, fullName: u.username, avatarUrl: null })),
         isReal: false,
       })
     }
@@ -173,15 +184,36 @@ export default function DropInPage() {
           {/* Katılımcılar */}
           <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px', boxShadow: '0 2px 12px rgba(0,0,0,0.07)' }}>
             <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a1a1a', marginBottom: 16 }}>Katılımcılar ({slot.participantCount}/{slot.totalPlayers})</h2>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {Array.from({ length: slot.participantCount }).map((_, i) => (
-                <div key={i} style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: slot.color + '20', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <User size={18} color={slot.color} />
-                </div>
-              ))}
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+              {(slot.participants || []).map((p: any) => {
+                const initials = (p.fullName || p.username || '?').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
+                const colors = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#0891B2', '#EC4899']
+                const bg = colors[(p.username || '').charCodeAt(0) % colors.length] || '#4F46E5'
+                const card = (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: p.username ? 'pointer' : 'default' }}>
+                    <div style={{ width: 48, height: 48, borderRadius: '50%', backgroundColor: p.avatarUrl ? 'transparent' : bg, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `2px solid ${slot.color}30` }}>
+                      {p.avatarUrl
+                        ? <img src={p.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+                        : <span style={{ fontSize: 14, fontWeight: 800, color: '#fff' }}>{initials}</span>
+                      }
+                    </div>
+                    <span style={{ fontSize: 11, color: '#888', fontWeight: 500, maxWidth: 56, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      @{p.username || '?'}
+                    </span>
+                  </div>
+                )
+                return p.username ? (
+                  <Link key={p.id} href={`/profil/${p.username}`} style={{ textDecoration: 'none' }}>{card}</Link>
+                ) : (
+                  <div key={p.id}>{card}</div>
+                )
+              })}
               {Array.from({ length: Math.max(0, slot.totalPlayers - slot.participantCount) }).map((_, i) => (
-                <div key={`empty-${i}`} style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed #ccc' }}>
-                  <span style={{ fontSize: 16, color: '#ccc' }}>+</span>
+                <div key={`empty-${i}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                  <div style={{ width: 48, height: 48, borderRadius: '50%', backgroundColor: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed #ddd' }}>
+                    <span style={{ fontSize: 18, color: '#ccc' }}>+</span>
+                  </div>
+                  <span style={{ fontSize: 11, color: '#ddd' }}>Boş</span>
                 </div>
               ))}
             </div>
