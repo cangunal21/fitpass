@@ -1493,7 +1493,7 @@ export default function SalonPaneliPage() {
 function CheckInScanner({ venueId }: { venueId: number }) {
   const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<{ success?: boolean; alreadyCheckedIn?: boolean; message: string; booking?: any } | null>(null)
+  const [result, setResult] = useState<{ success?: boolean; alreadyCheckedIn?: boolean; message: string; booking?: any; participant?: any } | null>(null)
 
   const handleCheckIn = async (e: React.FormEvent) => {
     e.preventDefault()

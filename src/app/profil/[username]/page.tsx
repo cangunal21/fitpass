@@ -159,12 +159,32 @@ export default function ProfilPage() {
   // Use real data for own profile, mock for others
   const user = isOwnProfile && meData ? null : mockUser  // public profile uses mockUser
 
-  const recentActivity = [
-    { id: 1, description: `${mockUser.topSports[0]?.name} dersini tamamladı`, icon: mockUser.topSports[0]?.icon || 'strength', time: '2 saat önce', type: 'booking' },
-    { id: 2, description: 'Halı Saha maçına katıldı', icon: 'football', time: 'Dün', type: 'dropin' },
-    { id: 3, description: 'Disiplinli rozetini kazandı', icon: 'strength', time: '3 gün önce', type: 'badge' },
-    { id: 4, description: `${mockUser.topSports[1]?.name || 'HIIT'} dersini tamamladı`, icon: mockUser.topSports[1]?.icon || 'hiit', time: '4 gün önce', type: 'booking' },
-  ]
+  const recentActivity: any[] = [] // artık kullanılmıyor
+
+  const categoryIconMap2: Record<string, string> = { 'Yoga': 'yoga', 'Pilates': 'pilates', 'Boks': 'boxing', 'HIIT': 'hiit', 'Dans': 'dance', 'Yüzme': 'swimming', 'Crossfit': 'strength', 'Padel': 'padel', 'Halı Saha': 'football', 'Basketbol': 'basketball' }
+  const categoryColorMap2: Record<string, string> = { 'Yoga': '#C4A882', 'Pilates': '#C9849A', 'Boks': '#DC2626', 'HIIT': '#F97316', 'Dans': '#9333EA', 'Yüzme': '#0891B2', 'Crossfit': '#4B5563', 'Padel': '#EAB308', 'Halı Saha': '#16A34A', 'Basketbol': '#C2501F' }
+
+  function timeAgo(date: Date) {
+    const diff = Date.now() - date.getTime()
+    const mins = Math.floor(diff / 60000)
+    if (mins < 60) return `${mins} dakika önce`
+    const hours = Math.floor(mins / 60)
+    if (hours < 24) return `${hours} saat önce`
+    const days = Math.floor(hours / 24)
+    if (days === 1) return 'Dün'
+    if (days < 7) return `${days} gün önce`
+    return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' })
+  }
+
+  // Kendi profilinde gerçek aktivite listesi (booking + drop-in birleşik, en yeni önce)
+  const realActivities = [
+    ...bookings
+      .filter(b => b.status === 'confirmed')
+      .map(b => ({ type: 'booking' as const, date: new Date(b.session?.startsAt || b.createdAt), data: b })),
+    ...dropIns
+      .filter(dp => dp.status === 'confirmed')
+      .map(dp => ({ type: 'dropin' as const, date: new Date(dp.slot?.startsAt || dp.joinedAt), data: dp })),
+  ].sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 20)
 
   const ownTabs: { key: OwnTab; label: ReactNode }[] = [
     { key: 'aktivite', label: <><ClipboardList size={15} style={{ marginRight: 5 }} />Aktivite</> },
@@ -312,8 +332,8 @@ export default function ProfilPage() {
           <div className="stats-grid" style={{ borderTop: '1px solid #F5F5F5', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
             {[
               { label: 'Toplam Ders', value: displayTotalLessons, icon: <BookOpen size={20} /> },
-              { label: 'Bu Ay', value: isOwnProfile && meData ? '-' : mockUser.stats.thisMonth, icon: <Calendar size={20} /> },
-              { label: 'İstanbul Sırası', value: isOwnProfile ? '-' : `#${mockUser.leaderboard.istanbul}`, icon: <Building size={20} /> },
+              { label: 'Bu Ay', value: isOwnProfile && meData ? (() => { const now = new Date(); return bookings.filter(b => b.status === 'confirmed' && new Date(b.session?.startsAt || b.createdAt).getMonth() === now.getMonth() && new Date(b.session?.startsAt || b.createdAt).getFullYear() === now.getFullYear()).length + dropIns.filter(dp => dp.status === 'confirmed' && new Date(dp.slot?.startsAt || dp.joinedAt).getMonth() === now.getMonth() && new Date(dp.slot?.startsAt || dp.joinedAt).getFullYear() === now.getFullYear()).length })() : (pubUser?.totalLessonsCompleted ?? '-'), icon: <Calendar size={20} /> },
+              { label: 'İstanbul Sırası', value: '-', icon: <Building size={20} /> },
               { label: 'Puan', value: isOwnProfile && meData ? meData.rewardPoints : '-', icon: <MapPin size={20} /> },
             ].map((stat, i) => (
               <div key={i} style={{ padding: '18px 12px', textAlign: 'center', borderRight: i < 3 ? '1px solid #F5F5F5' : 'none' }}>
@@ -326,35 +346,52 @@ export default function ProfilPage() {
         </div>
 
         {/* Sporlar + Rozetler — only for public profiles */}
-        {!isOwnProfile && (
+        {!isOwnProfile && !loadingPublic && !publicData?.isPrivate && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
             <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '22px 24px', border: '1px solid #F0F0F0' }}>
               <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}><Medal size={16} /> Ana Sporlar</h3>
-              {mockUser.topSports.map((sport, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-                  <SportIconBox name={sport.icon} bgColor={sport.color + '20'} iconColor={sport.color} boxSize={38} borderRadius={12} size={18} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{sport.name}</span>
-                      <span style={{ fontSize: 12, color: '#999' }}>{sport.count} ders</span>
-                    </div>
-                    <div style={{ height: 5, backgroundColor: '#F0F0F0', borderRadius: 100 }}>
-                      <div style={{ height: '100%', backgroundColor: sport.color, borderRadius: 100, width: `${(sport.count / mockUser.topSports[0].count) * 100}%` }} />
+              {(() => {
+                const counts: Record<string, number> = {}
+                ;(publicData?.bookings || []).forEach((b: any) => {
+                  const cat = b.session?.class?.category || b.session?.class?.sportCategory?.name || ''
+                  if (cat) counts[cat] = (counts[cat] || 0) + 1
+                })
+                ;(publicData?.dropInParticipations || []).forEach((dp: any) => {
+                  const cat = dp.slot?.sportCategory?.name || ''
+                  if (cat) counts[cat] = (counts[cat] || 0) + 1
+                })
+                const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 4)
+                if (sorted.length === 0) return <div style={{ color: '#bbb', fontSize: 13 }}>Henüz aktivite yok.</div>
+                const max = sorted[0][1]
+                return sorted.map(([cat, count], i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+                    <SportIconBox name={categoryIconMap2[cat] || 'strength'} bgColor={(categoryColorMap2[cat] || '#4F46E5') + '20'} iconColor={categoryColorMap2[cat] || '#4F46E5'} boxSize={38} borderRadius={12} size={18} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{cat}</span>
+                        <span style={{ fontSize: 12, color: '#999' }}>{count} aktivite</span>
+                      </div>
+                      <div style={{ height: 5, backgroundColor: '#F0F0F0', borderRadius: 100 }}>
+                        <div style={{ height: '100%', backgroundColor: categoryColorMap2[cat] || '#4F46E5', borderRadius: 100, width: `${(count / max) * 100}%` }} />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              })()}
             </div>
 
             <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '22px 24px', border: '1px solid #F0F0F0' }}>
               <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}><Award size={16} /> Rozetler</h3>
-              {mockUser.badges.length === 0 && <div style={{ color: '#bbb', fontSize: 13 }}>Henüz rozet kazanılmadı.</div>}
-              {mockUser.badges.map((badge, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', backgroundColor: badge.color + '10', borderRadius: 12, marginBottom: 8 }}>
-                  <SportIcon name={badge.icon} size={20} color={badge.color} />
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{badge.name}</div>
-                </div>
-              ))}
+              {(() => {
+                const badges = publicData?.user?.badges || []
+                if (badges.length === 0) return <div style={{ color: '#bbb', fontSize: 13 }}>Henüz rozet kazanılmadı.</div>
+                return badges.slice(0, 5).map((ub: any, i: number) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', backgroundColor: '#F0FDF4', borderRadius: 12, marginBottom: 8 }}>
+                    <Award size={18} color="#16A34A" />
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{ub.badge?.name || 'Rozet'}</div>
+                  </div>
+                ))
+              })()}
             </div>
           </div>
         )}
@@ -398,18 +435,69 @@ export default function ProfilPage() {
           ))}
         </div>
 
-        {/* Aktivite */}
+        {/* Aktivite — kendi profilim */}
         {activeTab === 'aktivite' && isOwnProfile && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {recentActivity.map(act => (
-              <div key={act.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 14 }}>
-                <SportIconBox name={act.icon} bgColor={act.type === 'booking' ? '#F0FDF4' : act.type === 'dropin' ? '#EFF6FF' : '#FEF9C3'} iconColor={act.type === 'booking' ? '#16A34A' : act.type === 'dropin' ? '#3B82F6' : '#CA8A04'} boxSize={46} borderRadius={14} size={20} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>{act.description}</div>
-                </div>
-                <div style={{ fontSize: 12, color: '#bbb', whiteSpace: 'nowrap' }}>{act.time}</div>
+            {loadingBookings ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <div style={{ width: 46, height: 46, borderRadius: 14, background: 'linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.4s ease-in-out infinite', flexShrink: 0 }} />
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={{ height: 14, width: '55%', borderRadius: 6, background: 'linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.4s ease-in-out infinite' }} />
+                      <div style={{ height: 12, width: '35%', borderRadius: 6, background: 'linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.4s ease-in-out infinite' }} />
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            ) : realActivities.length === 0 ? (
+              <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '48px', textAlign: 'center', border: '1px solid #F0F0F0' }}>
+                <div style={{ fontSize: 36, marginBottom: 12 }}>🏃</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 6 }}>Henüz aktivite yok</div>
+                <div style={{ fontSize: 13, color: '#aaa' }}>Bir derse katıl veya drop-in maça kaydol — burada görünecek.</div>
+              </div>
+            ) : realActivities.map((item, idx) => {
+              if (item.type === 'booking') {
+                const b = item.data
+                const session = b.session
+                const classObj = session?.class
+                const venue = classObj?.venue
+                const catName = classObj?.category || classObj?.sportCategory?.name || ''
+                const icon = categoryIconMap2[catName] || 'strength'
+                const color = categoryColorMap2[catName] || '#4F46E5'
+                return (
+                  <div key={`a-b-${b.id}`} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <SportIconBox name={icon} bgColor={color + '18'} iconColor={color} boxSize={46} borderRadius={14} size={20} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: '#111' }}>{classObj?.title || 'Ders'}</div>
+                      <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>{venue?.name || ''}</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: 11, color: '#bbb', whiteSpace: 'nowrap' }}>{timeAgo(item.date)}</div>
+                      <span style={{ fontSize: 11, color: '#10B981', fontWeight: 600 }}>Ders</span>
+                    </div>
+                  </div>
+                )
+              } else {
+                const dp = item.data
+                const slot = dp.slot
+                const cat = slot?.sportCategory
+                const iconColor = cat?.colorHex ? `#${cat.colorHex}` : '#3B82F6'
+                return (
+                  <div key={`a-dp-${dp.id}`} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <SportIconBox name={cat?.iconUrl || 'football'} bgColor={iconColor + '18'} iconColor={iconColor} boxSize={46} borderRadius={14} size={20} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: '#111' }}>{slot?.title || 'Maç'}</div>
+                      <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>{slot?.venue?.name || ''}</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: 11, color: '#bbb', whiteSpace: 'nowrap' }}>{timeAgo(item.date)}</div>
+                      <span style={{ fontSize: 11, color: '#3B82F6', fontWeight: 600 }}>Drop-in</span>
+                    </div>
+                  </div>
+                )
+              }
+            })}
           </div>
         )}
 
@@ -417,7 +505,17 @@ export default function ProfilPage() {
         {activeTab === 'aktivite' && !isOwnProfile && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {loadingPublic ? (
-              <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '40px', textAlign: 'center', border: '1px solid #F0F0F0', color: '#999', fontSize: 14 }}>Yükleniyor...</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <div style={{ width: 50, height: 50, borderRadius: 14, background: 'linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.4s ease-in-out infinite', flexShrink: 0 }} />
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={{ height: 15, width: '50%', borderRadius: 6, background: 'linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.4s ease-in-out infinite' }} />
+                      <div style={{ height: 12, width: '30%', borderRadius: 6, background: 'linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.4s ease-in-out infinite' }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : publicData?.isPrivate ? (
               <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '48px', textAlign: 'center', border: '1px solid #F0F0F0' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}><Lock size={48} color="#ccc" /></div>
@@ -487,20 +585,11 @@ export default function ProfilPage() {
                   </div>
                 )
               })()
-            ) : publicData !== null ? (
-              <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '40px', textAlign: 'center', border: '1px solid #F0F0F0', color: '#999', fontSize: 14 }}>Henüz aktivite yok</div>
             ) : (
-              // publicData is null = API error, fall back to mock
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {recentActivity.map(act => (
-                  <div key={act.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 14 }}>
-                    <SportIconBox name={act.icon} bgColor={act.type === 'booking' ? '#F0FDF4' : act.type === 'dropin' ? '#EFF6FF' : '#FEF9C3'} iconColor={act.type === 'booking' ? '#16A34A' : act.type === 'dropin' ? '#3B82F6' : '#CA8A04'} boxSize={46} borderRadius={14} size={20} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>{act.description}</div>
-                    </div>
-                    <div style={{ fontSize: 12, color: '#bbb', whiteSpace: 'nowrap' }}>{act.time}</div>
-                  </div>
-                ))}
+              <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '48px', textAlign: 'center', border: '1px solid #F0F0F0' }}>
+                <div style={{ fontSize: 36, marginBottom: 12 }}>🏃</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 6 }}>Henüz aktivite yok</div>
+                <div style={{ fontSize: 13, color: '#aaa' }}>Bu kullanıcının henüz tamamlanmış aktivitesi bulunmuyor.</div>
               </div>
             )}
           </div>
