@@ -462,7 +462,7 @@ export default function SalonPaneliPage() {
             { key: 'dropin', label: 'Drop-In' },
             { key: 'rezervasyonlar', label: 'Rezervasyonlar' },
             { key: 'istatistikler', label: 'İstatistikler' },
-            { key: 'gelir', label: '💰 Gelir Raporu' },
+            { key: 'gelir', label: 'Gelir Raporu' },
             { key: 'kuponlar', label: 'Kuponlar' },
             { key: 'yorumlar', label: 'Yorumlar' },
           ] as const).map(tab => (
@@ -568,7 +568,7 @@ export default function SalonPaneliPage() {
                         {(['tek', 'tekrarlayan'] as const).map(mode => (
                           <button key={mode} onClick={() => setSessionMode(prev => ({ ...prev, [cls.id]: mode }))}
                             style={{ padding: '5px 14px', borderRadius: 8, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: (sessionMode[cls.id] || 'tek') === mode ? '#fff' : 'transparent', color: (sessionMode[cls.id] || 'tek') === mode ? '#4F46E5' : '#888', boxShadow: (sessionMode[cls.id] || 'tek') === mode ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>
-                            {mode === 'tek' ? 'Tek Seferlik' : '🔁 Tekrarlayan'}
+                            {mode === 'tek' ? 'Tek Seferlik' : 'Tekrarlayan'}
                           </button>
                         ))}
                       </div>
@@ -841,7 +841,7 @@ export default function SalonPaneliPage() {
                   <img src={coverImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="kapak" />
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 8 }}>
-                    <span style={{ fontSize: 32 }}>🏋️</span>
+                    <span style={{ fontSize: 32, color: '#4F46E5' }}>+</span>
                     <span style={{ fontSize: 13, color: '#aaa' }}>Kapak fotoğrafı eklemek için tıkla</span>
                   </div>
                 )}
@@ -1305,7 +1305,7 @@ export default function SalonPaneliPage() {
               <div style={{ textAlign: 'center', padding: 40, color: '#888' }}>Yükleniyor...</div>
             ) : reviews.length === 0 ? (
               <div style={{ textAlign: 'center', padding: 40, color: '#bbb' }}>
-                <div style={{ fontSize: 40, marginBottom: 10 }}>⭐</div>
+                <div style={{ fontSize: 40, marginBottom: 10, color: '#e5e5e5' }}>★</div>
                 <div style={{ fontSize: 16, fontWeight: 600, color: '#555' }}>Henüz yorum yok</div>
                 <div style={{ fontSize: 13, color: '#aaa', marginTop: 4 }}>Kullanıcılar ders aldıktan sonra yorum yapabilir</div>
               </div>
