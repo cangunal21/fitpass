@@ -1373,6 +1373,61 @@ export default function SalonPaneliPage() {
   )
 }
 
+function CheckInScanner({ venueId }: { venueId: number }) {
+  const [code, setCode] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState<{ success?: boolean; alreadyCheckedIn?: boolean; message: string; booking?: any } | null>(null)
+
+  const handleCheckIn = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!code.trim()) return
+    setLoading(true)
+    setResult(null)
+    const token = localStorage.getItem('fitpass_venue_token')!
+    const res = await fetch(`${API_URL}/api/bookings/checkin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ code: code.trim().toUpperCase() }),
+    })
+    const data = await res.json()
+    setResult(data.error ? { success: false, message: data.error } : data)
+    setLoading(false)
+    if (!data.error) setCode('')
+  }
+
+  return (
+    <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.08)', marginBottom: 8 }}>
+      <h4 style={{ fontSize: 16, fontWeight: 800, color: '#1a1a1a', margin: '0 0 16px' }}>Check-in Yap</h4>
+      <form onSubmit={handleCheckIn} style={{ display: 'flex', gap: 10 }}>
+        <input
+          type="text"
+          placeholder="8 haneli kod (örn: A1B2C3D4)"
+          value={code}
+          onChange={e => { setCode(e.target.value.toUpperCase()); setResult(null) }}
+          maxLength={8}
+          style={{ flex: 1, padding: '12px 16px', borderRadius: 12, border: '1.5px solid #E5E7EB', fontSize: 15, fontWeight: 700, letterSpacing: 3, fontFamily: 'monospace', outline: 'none', textTransform: 'uppercase' }}
+        />
+        <button type="submit" disabled={loading || code.length < 4} style={{ padding: '12px 20px', borderRadius: 12, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', opacity: loading || code.length < 4 ? 0.6 : 1 }}>
+          {loading ? '...' : 'Onayla'}
+        </button>
+      </form>
+      {result && (
+        <div style={{ marginTop: 14, borderRadius: 12, padding: '14px 18px', backgroundColor: result.success ? '#F0FDF4' : result.alreadyCheckedIn ? '#FFFBEB' : '#FEF2F2', border: `1px solid ${result.success ? '#BBF7D0' : result.alreadyCheckedIn ? '#FDE68A' : '#FECACA'}` }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: result.success ? '#166534' : result.alreadyCheckedIn ? '#92400E' : '#DC2626', marginBottom: result.booking ? 8 : 0 }}>
+            {result.success ? '✓ ' : result.alreadyCheckedIn ? '⚠ ' : '✗ '}{result.message}
+          </div>
+          {result.booking && (
+            <div style={{ fontSize: 13, color: '#555' }}>
+              <strong>{result.booking.user?.fullName}</strong> — {result.booking.classTitle}
+              {result.booking.groupSize > 1 && <span style={{ color: '#4F46E5', fontWeight: 600 }}> ({result.booking.groupSize} kişi)</span>}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function QRTab({ venueId, venueName }: { venueId: number; venueName: string }) {
   const SITE_URL = 'https://sipsakspor.com'
   const venueUrl = `${SITE_URL}/venue/${venueId}`
@@ -1405,6 +1460,8 @@ function QRTab({ venueId, venueName }: { venueId: number; venueName: string }) {
         <h3 style={{ fontSize: 18, fontWeight: 800, color: '#1a1a1a', marginBottom: 4 }}>QR Kodlarınız</h3>
         <p style={{ fontSize: 14, color: '#888', margin: 0 }}>QR kodları yazdırıp salonunuza asın — müşteriler okutunca doğrudan salonunuza veya kayıt sayfasına yönlendirilir.</p>
       </div>
+
+      <CheckInScanner venueId={venueId} />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         {/* QR 1 — Müşteri için */}

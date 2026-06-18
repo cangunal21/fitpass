@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { mockUsers } from '@/lib/mockData'
@@ -571,7 +571,10 @@ export default function ProfilPage() {
                                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                                   <span style={{ fontSize: 12, color: '#10B981', fontWeight: 600, backgroundColor: '#F0FDF4', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Check size={12} /> Onaylı</span>
                                   {isConfirmed && isFuture && (
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                                      {b.checkInCode && (
+                                        <CheckInQR code={b.checkInCode} />
+                                      )}
                                       <div style={{ display: 'flex', gap: 6 }}>
                                         {awaitingConfirm ? (
                                           <button onClick={() => handleCancel(b.id)} style={{ fontSize: 12, color: '#fff', fontWeight: 600, background: '#EF4444', border: 'none', borderRadius: 100, padding: '4px 12px', cursor: 'pointer' }}>Evet, İptal Et</button>
@@ -910,6 +913,34 @@ export default function ProfilPage() {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+function CheckInQR({ code }: { code: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    if (open && canvasRef.current) {
+      import('qrcode').then(QRCode => {
+        QRCode.toCanvas(canvasRef.current!, code, { width: 160, margin: 1, color: { dark: '#1a1a1a', light: '#ffffff' } })
+      })
+    }
+  }, [open, code])
+
+  return (
+    <div>
+      <button onClick={() => setOpen(o => !o)} style={{ fontSize: 12, color: '#4F46E5', fontWeight: 700, background: '#EEF2FF', border: 'none', borderRadius: 100, padding: '4px 12px', cursor: 'pointer' }}>
+        {open ? 'QR Gizle' : 'Check-in QR'}
+      </button>
+      {open && (
+        <div style={{ marginTop: 10, backgroundColor: '#fff', borderRadius: 16, padding: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.12)', textAlign: 'center', border: '1px solid #F0F0F0' }}>
+          <canvas ref={canvasRef} style={{ borderRadius: 8, display: 'block', margin: '0 auto 10px' }} />
+          <div style={{ fontSize: 20, fontWeight: 900, color: '#1a1a1a', letterSpacing: 4, fontFamily: 'monospace' }}>{code}</div>
+          <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>Salona QR veya kodu göster</div>
+        </div>
+      )}
     </div>
   )
 }
