@@ -190,7 +190,12 @@ export default function Home() {
   const filtered = allItems.filter(c => {
     const activeCatName = filters.category || (activeCategory ? categories.find(x => x.id === activeCategory)?.name : null)
     const matchCat = !activeCatName || c.category === activeCatName
-    const matchSearch = !filters.search || c.title?.toLowerCase().includes(filters.search.toLowerCase()) || (c.venue as string)?.toLowerCase().includes(filters.search.toLowerCase())
+    const s = filters.search.toLowerCase()
+    const matchSearch = !filters.search ||
+      c.title?.toLowerCase().includes(s) ||
+      (typeof c.venue === 'string' ? c.venue.toLowerCase().includes(s) : c.venue?.name?.toLowerCase().includes(s)) ||
+      c.neighborhood?.toLowerCase().includes(s) ||
+      c.category?.toLowerCase().includes(s)
     return matchCat && matchSearch
   })
 
