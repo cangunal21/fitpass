@@ -9,11 +9,12 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false)
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState('')
-  const [activeTab, setActiveTab] = useState<'stats' | 'venues' | 'users' | 'bookings'>('venues')
+  const [activeTab, setActiveTab] = useState<'stats' | 'venues' | 'users' | 'bookings' | 'coupons'>('venues')
   const [stats, setStats] = useState<any>(null)
   const [venues, setVenues] = useState<any[]>([])
   const [users, setUsers] = useState<any[]>([])
   const [bookings, setBookings] = useState<any[]>([])
+  const [coupons, setCoupons] = useState<any[]>([])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -49,10 +50,17 @@ export default function AdminPage() {
     setBookings(data.bookings || [])
   }
 
+  const fetchCoupons = async () => {
+    const res = await fetch(`${API_URL}/api/admin/coupons`, { headers: getHeaders() })
+    const data = await res.json()
+    setCoupons(data.coupons || [])
+  }
+
   const handleTab = (tab: typeof activeTab) => {
     setActiveTab(tab)
     if (tab === 'users') fetchUsers()
     if (tab === 'bookings') fetchBookings()
+    if (tab === 'coupons') fetchCoupons()
   }
 
   const handleApprove = async (id: number, approve: boolean) => {
@@ -62,6 +70,36 @@ export default function AdminPage() {
       body: JSON.stringify({ approve }),
     })
     setVenues(prev => prev.map(v => v.id === id ? { ...v, isApproved: approve } : v))
+  }
+
+  const handleSuspend = async (id: number, suspend: boolean) => {
+    await fetch(`${API_URL}/api/admin/venues/${id}/suspend`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify({ suspend }),
+    })
+    setVenues(prev => prev.map(v => v.id === id ? { ...v, isSuspended: suspend } : v))
+  }
+
+  const handleDeleteVenue = async (id: number, name: string) => {
+    if (!confirm(`"${name}" salonunu kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`)) return
+    await fetch(`${API_URL}/api/admin/venues/${id}`, { method: 'DELETE', headers: getHeaders() })
+    setVenues(prev => prev.filter(v => v.id !== id))
+  }
+
+  const handleBanUser = async (id: number, ban: boolean) => {
+    await fetch(`${API_URL}/api/admin/users/${id}/ban`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify({ ban }),
+    })
+    setUsers(prev => prev.map(u => u.id === id ? { ...u, banned: ban } : u))
+  }
+
+  const handleDeleteCoupon = async (id: number) => {
+    if (!confirm('Bu kuponu silmek istediğinize emin misiniz?')) return
+    await fetch(`${API_URL}/api/admin/coupons/${id}`, { method: 'DELETE', headers: getHeaders() })
+    setCoupons(prev => prev.filter(c => c.id !== id))
   }
 
   if (!authed) {
@@ -116,6 +154,7 @@ export default function AdminPage() {
             { key: 'venues', label: 'Salonlar' },
             { key: 'users', label: 'Kullanıcılar' },
             { key: 'bookings', label: 'Rezervasyonlar' },
+            { key: 'coupons', label: 'Kuponlar' },
           ] as const).map(tab => (
             <button key={tab.key} onClick={() => handleTab(tab.key)} style={{ padding: '10px 20px', borderRadius: 12, border: 'none', background: activeTab === tab.key ? '#fff' : 'transparent', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: activeTab === tab.key ? '#1a1a1a' : '#888', boxShadow: activeTab === tab.key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
               {tab.label}
@@ -153,16 +192,22 @@ export default function AdminPage() {
                   <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{new Date(v.createdAt).toLocaleDateString('tr-TR')} tarihinde başvurdu</div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, padding: '3px 10px', borderRadius: 20, backgroundColor: v.isApproved ? '#F0FDF4' : '#FEF9C3', color: v.isApproved ? '#16a34a' : '#92400e' }}>
-                    {v.isApproved ? '✓ Onaylı' : 'Bekliyor'}
+                  <span style={{ fontSize: 12, fontWeight: 600, padding: '3px 10px', borderRadius: 20, backgroundColor: v.isSuspended ? '#FEF2F2' : v.isApproved ? '#F0FDF4' : '#FEF9C3', color: v.isSuspended ? '#DC2626' : v.isApproved ? '#16a34a' : '#92400e' }}>
+                    {v.isSuspended ? 'Donduruldu' : v.isApproved ? '✓ Onaylı' : 'Bekliyor'}
                   </span>
-                  <div style={{ display: 'flex', gap: 6 }}>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                     {!v.isApproved && (
                       <button onClick={() => handleApprove(v.id, true)} style={{ padding: '6px 14px', borderRadius: 10, border: 'none', background: '#10B981', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Onayla</button>
                     )}
                     {v.isApproved && (
-                      <button onClick={() => handleApprove(v.id, false)} style={{ padding: '6px 14px', borderRadius: 10, border: 'none', background: '#EF4444', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>İptal Et</button>
+                      <button onClick={() => handleApprove(v.id, false)} style={{ padding: '6px 14px', borderRadius: 10, border: 'none', background: '#F59E0B', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Onayı Kaldır</button>
                     )}
+                    {!v.isSuspended ? (
+                      <button onClick={() => handleSuspend(v.id, true)} style={{ padding: '6px 14px', borderRadius: 10, border: 'none', background: '#6366F1', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Dondur</button>
+                    ) : (
+                      <button onClick={() => handleSuspend(v.id, false)} style={{ padding: '6px 14px', borderRadius: 10, border: 'none', background: '#10B981', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Aktif Et</button>
+                    )}
+                    <button onClick={() => handleDeleteVenue(v.id, v.name)} style={{ padding: '6px 14px', borderRadius: 10, border: 'none', background: '#EF4444', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Sil</button>
                   </div>
                 </div>
               </div>
@@ -180,9 +225,39 @@ export default function AdminPage() {
                   <div style={{ fontSize: 12, color: '#888' }}>@{u.username} · {u.email}</div>
                   <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{new Date(u.createdAt).toLocaleDateString('tr-TR')} tarihinde katıldı</div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
+                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#8B5CF6' }}>{u._count?.bookings || 0} rezervasyon</div>
                   <div style={{ fontSize: 12, color: '#888' }}>{u.totalLessonsCompleted || 0} ders tamamlandı</div>
+                  {!u.banned ? (
+                    <button onClick={() => handleBanUser(u.id, true)} style={{ padding: '5px 12px', borderRadius: 8, border: 'none', background: '#EF4444', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Banla</button>
+                  ) : (
+                    <button onClick={() => handleBanUser(u.id, false)} style={{ padding: '5px 12px', borderRadius: 8, border: 'none', background: '#10B981', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Ban Kaldır</button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* KUPONLAR */}
+        {activeTab === 'coupons' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {coupons.length === 0 && <div style={{ color: '#888', fontSize: 14 }}>Kupon bulunamadı.</div>}
+            {coupons.map(c => (
+              <div key={c.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a' }}>{c.code}</div>
+                  <div style={{ fontSize: 12, color: '#888' }}>{c.venue?.name} · {c.discountType === 'percent' ? `%${c.discountValue}` : `₺${c.discountValue}`} indirim</div>
+                  <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>
+                    {c.usedCount}/{c.maxUses || '∞'} kullanım
+                    {c.expiresAt ? ` · ${new Date(c.expiresAt).toLocaleDateString('tr-TR')} bitiş` : ''}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, padding: '3px 10px', borderRadius: 20, backgroundColor: c.isActive ? '#F0FDF4' : '#FEF2F2', color: c.isActive ? '#16a34a' : '#DC2626' }}>
+                    {c.isActive ? 'Aktif' : 'Pasif'}
+                  </span>
+                  <button onClick={() => handleDeleteCoupon(c.id)} style={{ padding: '5px 12px', borderRadius: 8, border: 'none', background: '#EF4444', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Sil</button>
                 </div>
               </div>
             ))}

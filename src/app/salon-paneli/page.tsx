@@ -25,7 +25,7 @@ const FORMAT_PLAYERS: Record<string, number> = {
 export default function SalonPaneliPage() {
   const router = useRouter()
   const [venue, setVenue] = useState<any>(null)
-  const [activeTab, setActiveTab] = useState<'dersler' | 'hocalar' | 'resimler' | 'rezervasyonlar' | 'dropin' | 'istatistikler' | 'kuponlar' | 'gelir' | 'yorumlar' | 'qr'>('dersler')
+  const [activeTab, setActiveTab] = useState<'dersler' | 'hocalar' | 'resimler' | 'rezervasyonlar' | 'dropin' | 'istatistikler' | 'kuponlar' | 'gelir' | 'yorumlar' | 'qr' | 'profil'>('dersler')
   const [bookings, setBookings] = useState<any[]>([])
   const [instructors, setInstructors] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -94,6 +94,14 @@ export default function SalonPaneliPage() {
   const [dropInError, setDropInError] = useState('')
   const [dropInSuccess, setDropInSuccess] = useState('')
 
+  // Profil güncelleme state
+  const [profileForm, setProfileForm] = useState({ name: '', phone: '', address: '', description: '', website: '' })
+  const [profileError, setProfileError] = useState('')
+  const [profileSuccess, setProfileSuccess] = useState('')
+  const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', newPassword2: '' })
+  const [pwError, setPwError] = useState('')
+  const [pwSuccess, setPwSuccess] = useState('')
+
   const formatSessionDate = (date: string) => {
     if (!date) return ''
     return new Date(date).toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -113,6 +121,13 @@ export default function SalonPaneliPage() {
       setVenue(data.venue)
       setVenueImages(data.venue?.images || [])
       setCoverImage(data.venue?.coverImageUrl || '')
+      setProfileForm({
+        name: data.venue?.name || '',
+        phone: data.venue?.phone || '',
+        address: data.venue?.address || '',
+        description: data.venue?.description || '',
+        website: data.venue?.website || '',
+      })
     } catch {
       router.push('/salon-giris')
     } finally {
@@ -207,6 +222,39 @@ export default function SalonPaneliPage() {
       headers: { Authorization: `Bearer ${token}` },
     })
     fetchReviews()
+  }
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setProfileError(''); setProfileSuccess('')
+    const token = localStorage.getItem('fitpass_venue_token')!
+    const res = await fetch(`${API_URL}/api/venue/profile`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(profileForm),
+    })
+    const data = await res.json()
+    if (data.error) { setProfileError(data.error); return }
+    setProfileSuccess('Bilgiler güncellendi!')
+    setVenue((v: any) => ({ ...v, ...data.venue }))
+    setTimeout(() => setProfileSuccess(''), 3000)
+  }
+
+  const handleChangeVenuePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setPwError(''); setPwSuccess('')
+    if (pwForm.newPassword !== pwForm.newPassword2) { setPwError('Yeni şifreler eşleşmiyor.'); return }
+    const token = localStorage.getItem('fitpass_venue_token')!
+    const res = await fetch(`${API_URL}/api/venue/change-password`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ currentPassword: pwForm.currentPassword, newPassword: pwForm.newPassword }),
+    })
+    const data = await res.json()
+    if (data.error) { setPwError(data.error); return }
+    setPwSuccess('Şifre değiştirildi!')
+    setPwForm({ currentPassword: '', newPassword: '', newPassword2: '' })
+    setTimeout(() => setPwSuccess(''), 3000)
   }
 
   const handleAddCoupon = async (e: React.FormEvent) => {
@@ -470,6 +518,7 @@ export default function SalonPaneliPage() {
               { key: 'kuponlar', label: 'Kuponlar' },
               { key: 'yorumlar', label: 'Yorumlar' },
               { key: 'qr', label: 'QR Kod' },
+              { key: 'profil', label: 'Profil & Şifre' },
             ]
             return tabs as { key: typeof activeTab; label: string }[]
           })().map(tab => (
@@ -1367,6 +1416,74 @@ export default function SalonPaneliPage() {
         )}
         {activeTab === 'qr' && venue && (
           <QRTab venueId={venue.id} venueName={venue.name} />
+        )}
+
+        {activeTab === 'profil' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 28, maxWidth: 600 }}>
+            {/* Salon bilgileri */}
+            <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: 28, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+              <h3 style={{ fontSize: 18, fontWeight: 800, color: '#1a1a1a', marginBottom: 20 }}>Salon Bilgileri</h3>
+              <form onSubmit={handleUpdateProfile} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {[
+                  { label: 'Salon Adı', field: 'name' as const, type: 'text' },
+                  { label: 'Telefon', field: 'phone' as const, type: 'tel' },
+                  { label: 'Adres', field: 'address' as const, type: 'text' },
+                  { label: 'Website', field: 'website' as const, type: 'url' },
+                ].map(({ label, field, type }) => (
+                  <div key={field}>
+                    <label style={{ fontSize: 13, fontWeight: 600, color: '#555', marginBottom: 6, display: 'block' }}>{label}</label>
+                    <input
+                      type={type}
+                      value={profileForm[field]}
+                      onChange={e => setProfileForm(f => ({ ...f, [field]: e.target.value }))}
+                      style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: '1.5px solid #e5e5e5', fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                ))}
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: '#555', marginBottom: 6, display: 'block' }}>Açıklama</label>
+                  <textarea
+                    value={profileForm.description}
+                    onChange={e => setProfileForm(f => ({ ...f, description: e.target.value }))}
+                    rows={4}
+                    style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: '1.5px solid #e5e5e5', fontSize: 14, outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+                  />
+                </div>
+                {profileError && <div style={{ color: '#DC2626', fontSize: 13 }}>{profileError}</div>}
+                {profileSuccess && <div style={{ color: '#10B981', fontSize: 13, fontWeight: 600 }}>{profileSuccess}</div>}
+                <button type="submit" style={{ padding: '13px', borderRadius: 14, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+                  Bilgileri Güncelle
+                </button>
+              </form>
+            </div>
+
+            {/* Şifre değiştir */}
+            <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: 28, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+              <h3 style={{ fontSize: 18, fontWeight: 800, color: '#1a1a1a', marginBottom: 20 }}>Şifre Değiştir</h3>
+              <form onSubmit={handleChangeVenuePassword} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {[
+                  { label: 'Mevcut Şifre', field: 'currentPassword' as const },
+                  { label: 'Yeni Şifre', field: 'newPassword' as const },
+                  { label: 'Yeni Şifre (Tekrar)', field: 'newPassword2' as const },
+                ].map(({ label, field }) => (
+                  <div key={field}>
+                    <label style={{ fontSize: 13, fontWeight: 600, color: '#555', marginBottom: 6, display: 'block' }}>{label}</label>
+                    <input
+                      type="password"
+                      value={pwForm[field]}
+                      onChange={e => setPwForm(f => ({ ...f, [field]: e.target.value }))}
+                      style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: '1.5px solid #e5e5e5', fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                ))}
+                {pwError && <div style={{ color: '#DC2626', fontSize: 13 }}>{pwError}</div>}
+                {pwSuccess && <div style={{ color: '#10B981', fontSize: 13, fontWeight: 600 }}>{pwSuccess}</div>}
+                <button type="submit" style={{ padding: '13px', borderRadius: 14, border: 'none', background: '#1a1a1a', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+                  Şifremi Değiştir
+                </button>
+              </form>
+            </div>
+          </div>
         )}
       </div>
     </div>
