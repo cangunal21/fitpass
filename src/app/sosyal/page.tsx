@@ -178,7 +178,7 @@ export default function SosyalPage() {
                 ) : (userLeaderboard.length === 0 ? MOCK_USERS : userLeaderboard).map((user, i) => {
                   const { initials, color } = getInitialsAvatar(user.username || '?')
                   return (
-                    <Link key={user.id} href={typeof user.id === 'number' ? `/profil/${user.username}` : '#'} style={{ textDecoration: 'none' }}>
+                    <Link key={user.id} href={user.username ? `/profil/${user.username}` : '#'} style={{ textDecoration: 'none' }}>
                       <div style={{ backgroundColor: i < 3 ? '#FFFBEB' : '#fff', borderRadius: 16, padding: '14px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 14, border: i === 0 ? '2px solid #F59E0B' : '1px solid transparent' }}>
                         <div style={{ width: 36, textAlign: 'center', fontSize: i < 3 ? 22 : 14, fontWeight: 800, color: medalColor(i) }}>
                           {medalEmoji(i)}
