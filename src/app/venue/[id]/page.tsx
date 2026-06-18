@@ -9,6 +9,7 @@ import Navbar from '@/components/Navbar'
 import { MapPin, Calendar, User, Star, Clock, Timer, Flame } from 'lucide-react'
 import { SportIconBox } from '@/lib/sportIcons'
 import { api } from '@/lib/api'
+import { SkeletonVenuePage } from '@/components/Skeleton'
 
 export default function VenuePage() {
   const params = useParams()
@@ -126,14 +127,7 @@ export default function VenuePage() {
       <div style={{ minHeight: '100vh', backgroundColor: '#FAFAFA', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
         <Navbar />
         <div className="page-container" style={{ maxWidth: 1000, margin: '0 auto', padding: '32px 24px' }}>
-          <div style={{ backgroundColor: '#fff', borderRadius: 24, overflow: 'hidden', border: '1px solid #F0F0F0', marginBottom: 20 }}>
-            <div style={{ height: 180, background: 'linear-gradient(135deg, #E0E0E0 0%, #EBEBEB 100%)' }} />
-            <div style={{ padding: '28px 32px' }}>
-              <div style={{ width: 220, height: 28, backgroundColor: '#E0E0E0', borderRadius: 8, marginBottom: 12 }} />
-              <div style={{ width: 140, height: 16, backgroundColor: '#EBEBEB', borderRadius: 6 }} />
-            </div>
-          </div>
-          <div style={{ color: '#999', fontSize: 14, textAlign: 'center', padding: 20 }}>Salon yükleniyor...</div>
+          <SkeletonVenuePage />
         </div>
       </div>
     )

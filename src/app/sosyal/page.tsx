@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
+import { SkeletonList } from '@/components/Skeleton'
 import { getUser, getToken } from '@/lib/api'
 import { getInitialsAvatar } from '@/lib/cloudinary'
 import { MapPin } from 'lucide-react'
@@ -173,7 +174,7 @@ export default function SosyalPage() {
             {siralamaType === 'kullanici' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {loading ? (
-                  <div style={{ textAlign: 'center', padding: 40, color: '#aaa' }}>Yükleniyor...</div>
+                  <SkeletonList count={5} />
                 ) : (userLeaderboard.length === 0 ? MOCK_USERS : userLeaderboard).map((user, i) => {
                   const { initials, color } = getInitialsAvatar(user.username || '?')
                   return (
@@ -205,7 +206,7 @@ export default function SosyalPage() {
             {siralamaType === 'salon' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {loading ? (
-                  <div style={{ textAlign: 'center', padding: 40, color: '#aaa' }}>Yükleniyor...</div>
+                  <SkeletonList count={5} />
                 ) : (venueLeaderboard.length === 0 ? MOCK_VENUES : venueLeaderboard).map((venue, i) => (
                   <Link key={venue.id} href={typeof venue.id === 'number' ? `/venue/${venue.id}` : '#'} style={{ textDecoration: 'none' }}>
                     <div style={{ backgroundColor: i < 3 ? '#FFFBEB' : '#fff', borderRadius: 16, padding: '14px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 14, border: i === 0 ? '2px solid #F59E0B' : '1px solid transparent' }}>

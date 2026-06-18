@@ -82,8 +82,10 @@ export default function DersDetay() {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#FAFAFA', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
         <Navbar />
-        <div style={{ maxWidth: 1080, margin: '0 auto', padding: '32px 24px' }}>
-          <div style={{ background: '#F0F0F0', borderRadius: 24, height: 300 }} />
+        <div style={{ maxWidth: 1080, margin: '0 auto', padding: '32px 24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {[{ h: 300 }, { h: 160 }, { h: 200 }].map((b, i) => (
+            <div key={i} style={{ background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.4s ease-in-out infinite', borderRadius: 24, height: b.h }} />
+          ))}
         </div>
       </div>
     )

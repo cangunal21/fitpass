@@ -8,6 +8,7 @@ import Navbar from '@/components/Navbar'
 import { api, getToken, getUser } from '@/lib/api'
 import { Search, LayoutGrid, Map, Flame, Clock, Timer, X } from 'lucide-react'
 import { SportIcon, SportIconBox } from '@/lib/sportIcons'
+import { SkeletonCardGrid } from '@/components/Skeleton'
 
 const categories = [
   { id: 1, name: 'Yoga', icon: 'yoga', color: '#C4A882' },
@@ -403,18 +404,7 @@ export default function Home() {
         </div>
 
         {loading ? (
-          <div className="cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} style={{ backgroundColor: '#fff', borderRadius: 20, overflow: 'hidden', border: '1px solid #F0F0F0' }}>
-                <div style={{ background: '#F0F0F0', height: 130, animation: 'pulse 1.5s ease-in-out infinite' }} />
-                <div style={{ padding: '16px 20px 20px' }}>
-                  <div style={{ background: '#F0F0F0', borderRadius: 8, height: 14, width: '60%', marginBottom: 10 }} />
-                  <div style={{ background: '#F0F0F0', borderRadius: 8, height: 12, width: '40%', marginBottom: 16 }} />
-                  <div style={{ background: '#F0F0F0', borderRadius: 8, height: 36 }} />
-                </div>
-              </div>
-            ))}
-          </div>
+          <SkeletonCardGrid count={6} />
         ) : activeView === 'list' ? (
           <div className="cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
             {filtered.map(item => {
