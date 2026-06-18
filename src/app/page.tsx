@@ -193,7 +193,7 @@ export default function Home() {
     const s = filters.search.toLowerCase()
     const matchSearch = !filters.search ||
       c.title?.toLowerCase().includes(s) ||
-      (typeof c.venue === 'string' ? c.venue.toLowerCase().includes(s) : c.venue?.name?.toLowerCase().includes(s)) ||
+      (typeof c.venue === 'string' ? c.venue.toLowerCase().includes(s) : (c.venue as any)?.name?.toLowerCase().includes(s)) ||
       c.neighborhood?.toLowerCase().includes(s) ||
       c.category?.toLowerCase().includes(s)
     return matchCat && matchSearch
