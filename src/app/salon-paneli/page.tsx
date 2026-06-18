@@ -455,18 +455,24 @@ export default function SalonPaneliPage() {
 
         {/* Tabs */}
         <div className="salon-tabs" style={{ display: 'flex', gap: 4, backgroundColor: '#eee', borderRadius: 16, padding: 4, marginBottom: 24, width: 'fit-content' }}>
-          {([
-            { key: 'dersler', label: 'Dersler & Seanslar' },
-            { key: 'hocalar', label: 'Hocalarım' },
-            { key: 'resimler', label: 'Salon Resimleri' },
-            { key: 'dropin', label: 'Drop-In' },
-            { key: 'rezervasyonlar', label: 'Rezervasyonlar' },
-            { key: 'istatistikler', label: 'İstatistikler' },
-            { key: 'gelir', label: 'Gelir Raporu' },
-            { key: 'kuponlar', label: 'Kuponlar' },
-            { key: 'yorumlar', label: 'Yorumlar' },
-            { key: 'qr', label: 'QR Kod' },
-          ] as const).map(tab => (
+          {(() => {
+            const DROP_IN_SPORTS = ['padel', 'basketbol', 'halı saha', 'halısaha']
+            const venueCategories: string[] = (venue?.sportCategories || []).map((sc: any) => sc.sportCategory?.name?.toLowerCase() || '')
+            const hasDropIn = venueCategories.some((c: string) => DROP_IN_SPORTS.includes(c))
+            const tabs = [
+              { key: 'dersler', label: 'Dersler & Seanslar' },
+              { key: 'hocalar', label: 'Hocalarım' },
+              { key: 'resimler', label: 'Salon Resimleri' },
+              ...(hasDropIn ? [{ key: 'dropin', label: 'Drop-In' }] : []),
+              { key: 'rezervasyonlar', label: 'Rezervasyonlar' },
+              { key: 'istatistikler', label: 'İstatistikler' },
+              { key: 'gelir', label: 'Gelir Raporu' },
+              { key: 'kuponlar', label: 'Kuponlar' },
+              { key: 'yorumlar', label: 'Yorumlar' },
+              { key: 'qr', label: 'QR Kod' },
+            ]
+            return tabs as { key: typeof activeTab; label: string }[]
+          })().map(tab => (
             <button key={tab.key} onClick={() => handleTabChange(tab.key)} className="salon-tab-item" style={{ padding: '10px 20px', borderRadius: 12, border: 'none', background: activeTab === tab.key ? '#fff' : 'transparent', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: activeTab === tab.key ? '#1a1a1a' : '#888', boxShadow: activeTab === tab.key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
               {tab.label}
             </button>
@@ -507,6 +513,10 @@ export default function SalonPaneliPage() {
                     <div>
                       <label style={labelStyle}>Fiyat (₺) *</label>
                       <input type="number" placeholder="350" value={classForm.basePrice} onChange={e => setClassForm({ ...classForm, basePrice: e.target.value })} required style={inputStyle} />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Kapasite (kişi) *</label>
+                      <input type="number" placeholder="15" min="1" value={classForm.capacity} onChange={e => setClassForm({ ...classForm, capacity: e.target.value })} required style={inputStyle} />
                     </div>
                     {showInstructor && (
                       <div>
