@@ -9,12 +9,14 @@ const SPORT_OPTIONS = ['Yoga', 'Pilates', 'Boks', 'HIIT', 'Halı Saha', 'Basketb
 
 export default function SalonGirisPage() {
   const router = useRouter()
-  const [tab, setTab] = useState<'giris' | 'kayit'>('giris')
+  const [tab, setTab] = useState<'giris' | 'kayit' | 'sifre'>('giris')
   const [form, setForm] = useState({ name: '', email: '', password: '', phone: '', address: '', description: '' })
   const [selectedSports, setSelectedSports] = useState<string[]>([])
   const [instructor, setInstructor] = useState({ fullName: '', email: '', phone: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotSent, setForgotSent] = useState(false)
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
@@ -46,6 +48,24 @@ export default function SalonGirisPage() {
   const toggleSport = (sport: string) => {
     setSelectedSports(prev => prev.includes(sport) ? prev.filter(s => s !== sport) : [...prev, sport])
     setError('')
+  }
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    try {
+      await fetch(`${API_URL}/api/venue/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail }),
+      })
+      setForgotSent(true)
+    } catch {
+      setError('Bağlantı hatası.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -92,15 +112,39 @@ export default function SalonGirisPage() {
             <p style={{ fontSize: 14, color: '#888' }}>Salonunuzu yönetin, derslerinizi ekleyin</p>
           </div>
 
-          <div style={{ display: 'flex', backgroundColor: '#f5f5f5', borderRadius: 14, padding: 4, marginBottom: 28 }}>
-            {(['giris', 'kayit'] as const).map(t => (
-              <button key={t} onClick={() => { setTab(t); setError('') }} style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: tab === t ? '#fff' : 'transparent', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: tab === t ? '#1a1a1a' : '#888', boxShadow: tab === t ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
-                {t === 'giris' ? 'Giriş Yap' : 'Kayıt Ol'}
-              </button>
-            ))}
-          </div>
+          {tab !== 'sifre' && (
+            <div style={{ display: 'flex', backgroundColor: '#f5f5f5', borderRadius: 14, padding: 4, marginBottom: 28 }}>
+              {(['giris', 'kayit'] as const).map(t => (
+                <button key={t} onClick={() => { setTab(t); setError('') }} style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: tab === t ? '#fff' : 'transparent', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: tab === t ? '#1a1a1a' : '#888', boxShadow: tab === t ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
+                  {t === 'giris' ? 'Giriş Yap' : 'Kayıt Ol'}
+                </button>
+              ))}
+            </div>
+          )}
 
-          {tab === 'giris' ? (
+          {tab === 'sifre' ? (
+            <div>
+              <button onClick={() => { setTab('giris'); setForgotSent(false); setError('') }} style={{ background: 'none', border: 'none', color: '#4F46E5', fontSize: 13, fontWeight: 600, cursor: 'pointer', marginBottom: 20, padding: 0 }}>← Geri Dön</button>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: '#1a1a1a', marginBottom: 6 }}>Şifremi Unuttum</h2>
+              {forgotSent ? (
+                <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: '16px', fontSize: 14, color: '#166534', lineHeight: 1.6 }}>
+                  Email adresinize şifre sıfırlama bağlantısı gönderildi. Gelen kutunuzu kontrol edin.
+                </div>
+              ) : (
+                <form onSubmit={handleForgotPassword} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <p style={{ fontSize: 14, color: '#888', margin: 0 }}>Kayıtlı email adresinizi girin, şifre sıfırlama bağlantısı gönderelim.</p>
+                  <div>
+                    <label style={labelStyle}>E-posta</label>
+                    <input type="email" placeholder="salon@email.com" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} required style={inputStyle} />
+                  </div>
+                  {error && <div style={{ ...errorStyle, display: 'flex', alignItems: 'center', gap: 8 }}><AlertCircle size={14} /> {error}</div>}
+                  <button type="submit" disabled={loading} style={btnStyle(loading)}>
+                    {loading ? 'Gönderiliyor...' : 'Sıfırlama Linki Gönder'}
+                  </button>
+                </form>
+              )}
+            </div>
+          ) : tab === 'giris' ? (
             <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
                 <label style={labelStyle}>E-posta</label>
@@ -113,6 +157,9 @@ export default function SalonGirisPage() {
               {error && <div style={{ ...errorStyle, display: 'flex', alignItems: 'center', gap: 8 }}><AlertCircle size={14} /> {error}</div>}
               <button type="submit" disabled={loading} style={btnStyle(loading)}>
                 {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
+              </button>
+              <button type="button" onClick={() => { setTab('sifre'); setError('') }} style={{ background: 'none', border: 'none', color: '#4F46E5', fontSize: 13, fontWeight: 600, cursor: 'pointer', textAlign: 'center', marginTop: 4 }}>
+                Şifremi Unuttum
               </button>
             </form>
           ) : (
