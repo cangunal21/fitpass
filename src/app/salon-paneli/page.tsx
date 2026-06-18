@@ -1501,12 +1501,22 @@ function CheckInScanner({ venueId }: { venueId: number }) {
     setLoading(true)
     setResult(null)
     const token = localStorage.getItem('fitpass_venue_token')!
-    const res = await fetch(`${API_URL}/api/bookings/checkin`, {
+    // Önce class check-in dene, hata alırsa drop-in check-in dene
+    let res = await fetch(`${API_URL}/api/bookings/checkin`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ code: code.trim().toUpperCase() }),
     })
-    const data = await res.json()
+    let data = await res.json()
+    if (data.error) {
+      const res2 = await fetch(`${API_URL}/api/bookings/dropin-checkin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ code: code.trim().toUpperCase() }),
+      })
+      const data2 = await res2.json()
+      if (!data2.error) data = data2
+    }
     setResult(data.error ? { success: false, message: data.error } : data)
     setLoading(false)
     if (!data.error) setCode('')
@@ -1537,6 +1547,11 @@ function CheckInScanner({ venueId }: { venueId: number }) {
             <div style={{ fontSize: 13, color: '#555' }}>
               <strong>{result.booking.user?.fullName}</strong> — {result.booking.classTitle}
               {result.booking.groupSize > 1 && <span style={{ color: '#4F46E5', fontWeight: 600 }}> ({result.booking.groupSize} kişi)</span>}
+            </div>
+          )}
+          {result.participant && (
+            <div style={{ fontSize: 13, color: '#555' }}>
+              <strong>{result.participant.user?.fullName}</strong> — {result.participant.slotTitle}
             </div>
           )}
         </div>

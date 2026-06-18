@@ -611,11 +611,14 @@ export default function ProfilPage() {
                               <div style={{ fontSize: 13, color: '#aaa', marginBottom: 2 }}>{slot?.venue?.name || ''}</div>
                               <div style={{ fontSize: 12, color: '#bbb' }}>{dpDateStr}{dpTimeStr ? ` · ${dpTimeStr}` : ''}</div>
                             </div>
-                            <div style={{ textAlign: 'right' }}>
+                            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
                               {dpCancelled
                                 ? <span style={{ fontSize: 12, color: '#EF4444', fontWeight: 600, backgroundColor: '#FEF2F2', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><X size={12} /> İptal</span>
                                 : <span style={{ fontSize: 12, color: '#10B981', fontWeight: 600, backgroundColor: '#F0FDF4', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Check size={12} /> Katıldı</span>
                               }
+                              {!dpCancelled && slotStartsAt && slotStartsAt > new Date() && dp.checkInCode && (
+                                <CheckInQR code={dp.checkInCode} />
+                              )}
                             </div>
                           </div>
                         )
