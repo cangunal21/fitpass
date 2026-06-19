@@ -7,44 +7,11 @@ import { mockClasses, mockDropInSlots } from '@/lib/mockData'
 import Navbar from '@/components/Navbar'
 import { api, getToken, getUser } from '@/lib/api'
 import { Search, LayoutGrid, Map, Flame, Clock, Timer, X } from 'lucide-react'
-import { SportIcon, SportIconBox } from '@/lib/sportIcons'
+import { SportIcon, SportIconBox, getIconKeyForCategory, getColorForCategory } from '@/lib/sportIcons'
 import { SkeletonCardGrid } from '@/components/Skeleton'
 
-const categories = [
-  { id: 1, name: 'Yoga', icon: 'yoga', color: '#C4A882' },
-  { id: 2, name: 'Pilates', icon: 'pilates', color: '#C9849A' },
-  { id: 3, name: 'Boks', icon: 'boxing', color: '#DC2626' },
-  { id: 4, name: 'Padel', icon: 'padel', color: '#EAB308' },
-  { id: 5, name: 'Halı Saha', icon: 'football', color: '#16A34A' },
-  { id: 6, name: 'Basketbol', icon: 'basketball', color: '#C2501F' },
-  { id: 7, name: 'HIIT', icon: 'hiit', color: '#F97316' },
-  { id: 8, name: 'Dans', icon: 'dance', color: '#9333EA' },
-  { id: 9, name: 'Yüzme', icon: 'swimming', color: '#0891B2' },
-  { id: 10, name: 'Crossfit', icon: 'strength', color: '#4B5563' },
-  { id: 11, name: 'Binicilik', icon: 'equestrian', color: '#92400E' },
-]
-
-const categoryIconMap: Record<string, string> = {
-  'Yoga': 'yoga', 'Pilates': 'pilates', 'Boks': 'boxing',
-  'HIIT': 'hiit', 'Halı Saha': 'football', 'Basketbol': 'basketball',
-  'Padel': 'padel', 'Dans': 'dance', 'Yüzme': 'swimming', 'Crossfit': 'strength',
-  'Binicilik': 'equestrian',
-}
-
-const categoryColorMap: Record<string, string> = {
-  'Yoga': '#C4A882', 'Pilates': '#C9849A', 'Boks': '#DC2626',
-  'Padel': '#EAB308', 'Halı Saha': '#16A34A', 'Basketbol': '#C2501F',
-  'HIIT': '#F97316', 'Dans': '#9333EA', 'Yüzme': '#0891B2', 'Crossfit': '#4B5563',
-  'Binicilik': '#92400E',
-}
-
-function getCategoryIcon(name: string): string {
-  return categoryIconMap[name] || 'hiit'
-}
-
-function getCategoryColor(name: string): string {
-  return categoryColorMap[name] || '#4F46E5'
-}
+// Kategoriler API'dan dinamik olarak yüklenir
+interface Category { id: number; name: string; icon: string; color: string }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapSessionToItem(session: any) {
@@ -55,8 +22,8 @@ function mapSessionToItem(session: any) {
     venue: session.venueName,
     neighborhood: session.neighborhood,
     category: session.category,
-    icon: getCategoryIcon(session.category),
-    color: session.categoryColor || getCategoryColor(session.category),
+    icon: getIconKeyForCategory(session.category),
+    color: session.categoryColor || getColorForCategory(session.category),
     basePrice: session.basePrice,
     spots: session.availableSpots,
     rating: session.rating || 4.5,
@@ -103,6 +70,7 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState<number | null>(null)
   const [activeView, setActiveView] = useState<'list' | 'map'>('list')
   const [loading, setLoading] = useState(true)
+  const [categories, setCategories] = useState<Category[]>([])
   const [allItems, setAllItems] = useState<DisplayItem[]>([
     ...mockClassItems,
     ...mockDropInItems,
@@ -114,10 +82,20 @@ export default function Home() {
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [searchInput, setSearchInput] = useState('')
 
-  // Fetch neighborhoods on mount
+  // Fetch neighborhoods + categories on mount
   useEffect(() => {
     api.getNeighborhoods().then((r: any) => {
       if (r?.neighborhoods) setNeighborhoods(r.neighborhoods)
+    }).catch(() => {})
+    api.getCategories().then((r: any) => {
+      if (r?.categories) {
+        setCategories(r.categories.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          icon: getIconKeyForCategory(c.name),
+          color: c.colorHex || getColorForCategory(c.name),
+        })))
+      }
     }).catch(() => {})
   }, [])
 

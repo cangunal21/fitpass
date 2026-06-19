@@ -9,7 +9,7 @@ import { api, getUser, getToken } from '@/lib/api'
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 import type { ReactNode } from 'react'
 import { User, Users, Ticket, Award, ClipboardList, BarChart2, BookOpen, Calendar, Flame, Dumbbell, Heart, Building, MapPin, Gift, Medal, Check, X, Lock, CreditCard } from 'lucide-react'
-import { SportIcon, SportIconBox } from '@/lib/sportIcons'
+import { SportIcon, SportIconBox, getIconKeyForCategory, getColorForCategory } from '@/lib/sportIcons'
 import AvatarUpload from '@/components/AvatarUpload'
 import { getInitialsAvatar } from '@/lib/cloudinary'
 
@@ -161,8 +161,7 @@ export default function ProfilPage() {
 
   const recentActivity: any[] = [] // artık kullanılmıyor
 
-  const categoryIconMap2: Record<string, string> = { 'Yoga': 'yoga', 'Pilates': 'pilates', 'Boks': 'boxing', 'HIIT': 'hiit', 'Dans': 'dance', 'Yüzme': 'swimming', 'Crossfit': 'strength', 'Padel': 'padel', 'Halı Saha': 'football', 'Basketbol': 'basketball' }
-  const categoryColorMap2: Record<string, string> = { 'Yoga': '#C4A882', 'Pilates': '#C9849A', 'Boks': '#DC2626', 'HIIT': '#F97316', 'Dans': '#9333EA', 'Yüzme': '#0891B2', 'Crossfit': '#4B5563', 'Padel': '#EAB308', 'Halı Saha': '#16A34A', 'Basketbol': '#C2501F' }
+  // İkon ve renk artık keyword matching ile dinamik — hardcoded map yok
 
   function timeAgo(date: Date) {
     const diff = Date.now() - date.getTime()
@@ -365,14 +364,14 @@ export default function ProfilPage() {
                 const max = sorted[0][1]
                 return sorted.map(([cat, count], i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-                    <SportIconBox name={categoryIconMap2[cat] || 'strength'} bgColor={(categoryColorMap2[cat] || '#4F46E5') + '20'} iconColor={categoryColorMap2[cat] || '#4F46E5'} boxSize={38} borderRadius={12} size={18} />
+                    <SportIconBox name={getIconKeyForCategory(cat)} bgColor={getColorForCategory(cat) + '20'} iconColor={getColorForCategory(cat)} boxSize={38} borderRadius={12} size={18} />
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{cat}</span>
                         <span style={{ fontSize: 12, color: '#999' }}>{count} aktivite</span>
                       </div>
                       <div style={{ height: 5, backgroundColor: '#F0F0F0', borderRadius: 100 }}>
-                        <div style={{ height: '100%', backgroundColor: categoryColorMap2[cat] || '#4F46E5', borderRadius: 100, width: `${(count / max) * 100}%` }} />
+                        <div style={{ height: '100%', backgroundColor: getColorForCategory(cat), borderRadius: 100, width: `${(count / max) * 100}%` }} />
                       </div>
                     </div>
                   </div>
@@ -463,8 +462,8 @@ export default function ProfilPage() {
                 const classObj = session?.class
                 const venue = classObj?.venue
                 const catName = classObj?.category || classObj?.sportCategory?.name || ''
-                const icon = categoryIconMap2[catName] || 'strength'
-                const color = categoryColorMap2[catName] || '#4F46E5'
+                const icon = getIconKeyForCategory(catName)
+                const color = getColorForCategory(catName)
                 return (
                   <div key={`a-b-${b.id}`} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 14 }}>
                     <SportIconBox name={icon} bgColor={color + '18'} iconColor={color} boxSize={46} borderRadius={14} size={20} />
@@ -546,10 +545,8 @@ export default function ProfilPage() {
                         const dateStr = startsAt ? startsAt.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : ''
                         const timeStr = startsAt ? startsAt.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : ''
                         const catName = classObj?.category || ''
-                        const iconMap: Record<string, string> = { 'Yoga': 'yoga', 'Pilates': 'pilates', 'Boks': 'boxing', 'HIIT': 'hiit', 'Dans': 'dance', 'Yüzme': 'swimming', 'Crossfit': 'strength' }
-                        const colorMap: Record<string, string> = { 'Yoga': '#C4A882', 'Pilates': '#C9849A', 'Boks': '#DC2626', 'HIIT': '#F97316', 'Dans': '#9333EA', 'Yüzme': '#0891B2', 'Crossfit': '#4B5563' }
-                        const icon = iconMap[catName] || 'strength'
-                        const color = colorMap[catName] || '#4F46E5'
+                        const icon = getIconKeyForCategory(catName)
+                        const color = getColorForCategory(catName)
                         return (
                           <div key={`pb-${b.id}`} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '18px 22px', border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 14 }}>
                             <SportIconBox name={icon} bgColor={color + '18'} iconColor={color} boxSize={50} borderRadius={14} size={22} />
@@ -634,10 +631,8 @@ export default function ProfilPage() {
                         const isCancelled = b.status === 'cancelled'
                         const awaitingConfirm = cancelConfirm === b.id
                         const catName = classObj?.category || ''
-                        const iconMap: Record<string, string> = { 'Yoga': 'yoga', 'Pilates': 'pilates', 'Boks': 'boxing', 'HIIT': 'hiit', 'Dans': 'dance', 'Yüzme': 'swimming', 'Crossfit': 'strength' }
-                        const colorMap: Record<string, string> = { 'Yoga': '#C4A882', 'Pilates': '#C9849A', 'Boks': '#DC2626', 'HIIT': '#F97316', 'Dans': '#9333EA', 'Yüzme': '#0891B2', 'Crossfit': '#4B5563' }
-                        const icon = iconMap[catName] || 'strength'
-                        const color = colorMap[catName] || '#4F46E5'
+                        const icon = getIconKeyForCategory(catName)
+                        const color = getColorForCategory(catName)
 
                         return (
                           <div key={`b-${b.id}`} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '18px 22px', border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 14 }}>
