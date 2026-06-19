@@ -9,12 +9,14 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false)
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState('')
-  const [activeTab, setActiveTab] = useState<'stats' | 'venues' | 'users' | 'bookings' | 'coupons'>('venues')
+  const [activeTab, setActiveTab] = useState<'stats' | 'venues' | 'users' | 'bookings' | 'coupons' | 'categories'>('venues')
   const [stats, setStats] = useState<any>(null)
   const [venues, setVenues] = useState<any[]>([])
   const [users, setUsers] = useState<any[]>([])
   const [bookings, setBookings] = useState<any[]>([])
   const [coupons, setCoupons] = useState<any[]>([])
+  const [categories, setCategories] = useState<any[]>([])
+  const [newCat, setNewCat] = useState({ name: '', colorHex: '#4F46E5', iconUrl: '' })
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -56,11 +58,41 @@ export default function AdminPage() {
     setCoupons(data.coupons || [])
   }
 
+  const fetchCategories = async () => {
+    const res = await fetch(`${API_URL}/api/admin/categories`, { headers: getHeaders() })
+    const data = await res.json()
+    setCategories(data.categories || [])
+  }
+
+  const handleAddCategory = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newCat.name.trim()) return
+    const res = await fetch(`${API_URL}/api/admin/categories`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ name: newCat.name.trim(), colorHex: newCat.colorHex || null, iconUrl: newCat.iconUrl || null }),
+    })
+    const data = await res.json()
+    if (data.category) {
+      setCategories(prev => [...prev, data.category].sort((a, b) => a.name.localeCompare(b.name)))
+      setNewCat({ name: '', colorHex: '#4F46E5', iconUrl: '' })
+    } else {
+      alert(data.error || 'Hata oluştu.')
+    }
+  }
+
+  const handleDeleteCategory = async (id: number, name: string) => {
+    if (!confirm(`"${name}" kategorisini silmek istediğinize emin misiniz?`)) return
+    await fetch(`${API_URL}/api/admin/categories/${id}`, { method: 'DELETE', headers: getHeaders() })
+    setCategories(prev => prev.filter(c => c.id !== id))
+  }
+
   const handleTab = (tab: typeof activeTab) => {
     setActiveTab(tab)
     if (tab === 'users') fetchUsers()
     if (tab === 'bookings') fetchBookings()
     if (tab === 'coupons') fetchCoupons()
+    if (tab === 'categories') fetchCategories()
   }
 
   const handleApprove = async (id: number, approve: boolean) => {
@@ -155,6 +187,7 @@ export default function AdminPage() {
             { key: 'users', label: 'Kullanıcılar' },
             { key: 'bookings', label: 'Rezervasyonlar' },
             { key: 'coupons', label: 'Kuponlar' },
+            { key: 'categories', label: 'Kategoriler' },
           ] as const).map(tab => (
             <button key={tab.key} onClick={() => handleTab(tab.key)} style={{ padding: '10px 20px', borderRadius: 12, border: 'none', background: activeTab === tab.key ? '#fff' : 'transparent', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: activeTab === tab.key ? '#1a1a1a' : '#888', boxShadow: activeTab === tab.key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
               {tab.label}
@@ -261,6 +294,42 @@ export default function AdminPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* KATEGORİLER */}
+        {activeTab === 'categories' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Yeni kategori formu */}
+            <form onSubmit={handleAddCategory} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 2, minWidth: 160 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#555' }}>Kategori Adı</label>
+                <input value={newCat.name} onChange={e => setNewCat(p => ({ ...p, name: e.target.value }))} placeholder="örn. Yelken / Yatçılık" style={inputStyle} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#555' }}>Renk</label>
+                <input type="color" value={newCat.colorHex} onChange={e => setNewCat(p => ({ ...p, colorHex: e.target.value }))} style={{ width: 48, height: 42, borderRadius: 10, border: '1.5px solid #e5e5e5', cursor: 'pointer', padding: 2 }} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 2, minWidth: 160 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#555' }}>İkon URL (opsiyonel)</label>
+                <input value={newCat.iconUrl} onChange={e => setNewCat(p => ({ ...p, iconUrl: e.target.value }))} placeholder="https://..." style={inputStyle} />
+              </div>
+              <button type="submit" style={{ padding: '12px 20px', borderRadius: 12, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>+ Ekle</button>
+            </form>
+
+            {/* Mevcut kategoriler */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {categories.length === 0 && <div style={{ color: '#888', fontSize: 14 }}>Kategori yükleniyor...</div>}
+              {categories.map(c => (
+                <div key={c.id} style={{ backgroundColor: '#fff', borderRadius: 14, padding: '14px 18px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ width: 18, height: 18, borderRadius: 6, backgroundColor: c.colorHex || '#ccc' }} />
+                    <span style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a' }}>{c.name}</span>
+                  </div>
+                  <button onClick={() => handleDeleteCategory(c.id, c.name)} style={{ padding: '5px 12px', borderRadius: 8, border: 'none', background: '#EF4444', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Sil</button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
