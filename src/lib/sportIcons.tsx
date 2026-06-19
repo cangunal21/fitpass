@@ -56,7 +56,7 @@ export function getIconKeyForCategory(name: string): string {
   if (n.includes('padel') || n.includes('tenis') || n.includes('squash') || n.includes('badminton') || n.includes('masa tenisi')) return 'padel'
   if (n.includes('boks') || n.includes('dövüş') || n.includes('mma') || n.includes('kick') || n.includes('muay') || n.includes('jiu') || n.includes('judo') || n.includes('güreş') || n.includes('boxing')) return 'boxing'
   if (n.includes('cross') || n.includes('hiit') || n.includes('kondisyon')) return 'hiit'
-  if (n.includes('biniç') || n.includes('ata biniş') || n.includes('equestrian') || n.includes('at ')) return 'equestrian'
+  if (n.includes('binici') || n.includes('biniç') || n.includes('ata biniş') || n.includes('equestrian')) return 'equestrian'
   if (n.includes('yelken') || n.includes('yatçılık') || n.includes('sail')) return 'sailing'
   return 'strength'
 }
@@ -73,7 +73,7 @@ export function getColorForCategory(name: string): string {
   if (n.includes('padel')) return '#EAB308'
   if (n.includes('boks') || n.includes('dövüş') || n.includes('mma') || n.includes('kick')) return '#DC2626'
   if (n.includes('cross') || n.includes('hiit')) return '#F97316'
-  if (n.includes('biniç') || n.includes('equestrian')) return '#92400E'
+  if (n.includes('binici') || n.includes('biniç') || n.includes('equestrian')) return '#92400E'
   if (n.includes('yelken') || n.includes('yatçılık')) return '#0EA5E9'
   return '#4F46E5'
 }
