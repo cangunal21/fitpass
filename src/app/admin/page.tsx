@@ -17,6 +17,8 @@ export default function AdminPage() {
   const [coupons, setCoupons] = useState<any[]>([])
   const [categories, setCategories] = useState<any[]>([])
   const [newCat, setNewCat] = useState({ name: '', colorHex: '#4F46E5', iconUrl: '' })
+  const [editingCatId, setEditingCatId] = useState<number | null>(null)
+  const [editCat, setEditCat] = useState({ name: '', colorHex: '' })
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -85,6 +87,27 @@ export default function AdminPage() {
     if (!confirm(`"${name}" kategorisini silmek istediğinize emin misiniz?`)) return
     await fetch(`${API_URL}/api/admin/categories/${id}`, { method: 'DELETE', headers: getHeaders() })
     setCategories(prev => prev.filter(c => c.id !== id))
+  }
+
+  const handleEditCategory = (c: any) => {
+    setEditingCatId(c.id)
+    setEditCat({ name: c.name, colorHex: c.colorHex || '#4F46E5' })
+  }
+
+  const handleUpdateCategory = async (id: number) => {
+    if (!editCat.name.trim()) return
+    const res = await fetch(`${API_URL}/api/admin/categories/${id}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify({ name: editCat.name.trim(), colorHex: editCat.colorHex }),
+    })
+    const data = await res.json()
+    if (data.category) {
+      setCategories(prev => prev.map(c => c.id === id ? data.category : c).sort((a, b) => a.name.localeCompare(b.name)))
+      setEditingCatId(null)
+    } else {
+      alert(data.error || 'Hata oluştu.')
+    }
   }
 
   const handleTab = (tab: typeof activeTab) => {
@@ -321,12 +344,30 @@ export default function AdminPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {categories.length === 0 && <div style={{ color: '#888', fontSize: 14 }}>Kategori yükleniyor...</div>}
               {categories.map(c => (
-                <div key={c.id} style={{ backgroundColor: '#fff', borderRadius: 14, padding: '14px 18px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 18, height: 18, borderRadius: 6, backgroundColor: c.colorHex || '#ccc' }} />
-                    <span style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a' }}>{c.name}</span>
-                  </div>
-                  <button onClick={() => handleDeleteCategory(c.id, c.name)} style={{ padding: '5px 12px', borderRadius: 8, border: 'none', background: '#EF4444', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Sil</button>
+                <div key={c.id} style={{ backgroundColor: '#fff', borderRadius: 14, padding: '14px 18px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                  {editingCatId === c.id ? (
+                    <>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, flexWrap: 'wrap' }}>
+                        <input type="color" value={editCat.colorHex} onChange={e => setEditCat(p => ({ ...p, colorHex: e.target.value }))} style={{ width: 42, height: 38, borderRadius: 8, border: '1.5px solid #e5e5e5', cursor: 'pointer', padding: 2 }} />
+                        <input value={editCat.name} onChange={e => setEditCat(p => ({ ...p, name: e.target.value }))} style={{ ...inputStyle, flex: 1, minWidth: 140, padding: '8px 12px' }} />
+                      </div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button onClick={() => handleUpdateCategory(c.id)} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', background: '#10B981', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Kaydet</button>
+                        <button onClick={() => setEditingCatId(null)} style={{ padding: '6px 14px', borderRadius: 8, border: '1.5px solid #e5e5e5', background: '#fff', color: '#666', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>İptal</button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ width: 18, height: 18, borderRadius: 6, backgroundColor: c.colorHex || '#ccc' }} />
+                        <span style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a' }}>{c.name}</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button onClick={() => handleEditCategory(c)} style={{ padding: '5px 12px', borderRadius: 8, border: 'none', background: '#6366F1', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Düzenle</button>
+                        <button onClick={() => handleDeleteCategory(c.id, c.name)} style={{ padding: '5px 12px', borderRadius: 8, border: 'none', background: '#EF4444', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Sil</button>
+                      </div>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
