@@ -15,8 +15,35 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Şipşakspor",
-  description: "İstanbul'un en iyi spor derslerini keşfet — Şipşakspor",
+  title: {
+    default: "Şipşakspor — İstanbul'un Spor Rezervasyon Platformu",
+    template: "%s | Şipşakspor",
+  },
+  description: "İstanbul'da yoga, pilates, padel, halı saha, boks ve daha fazlası. Tek platformdan spor salonu rezervasyonu yap — Şipşakspor.",
+  keywords: ["spor rezervasyon", "İstanbul spor", "yoga İstanbul", "pilates İstanbul", "padel İstanbul", "halı saha İstanbul", "spor salonu", "şipşakspor", "sipşakspor"],
+  authors: [{ name: "Şipşakspor" }],
+  creator: "Şipşakspor",
+  metadataBase: new URL("https://sipsakspor.com"),
+  openGraph: {
+    type: "website",
+    locale: "tr_TR",
+    url: "https://sipsakspor.com",
+    siteName: "Şipşakspor",
+    title: "Şipşakspor — İstanbul'un Spor Rezervasyon Platformu",
+    description: "İstanbul'da yoga, pilates, padel, halı saha, boks ve daha fazlası. Tek platformdan spor salonu rezervasyonu yap.",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Şipşakspor" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Şipşakspor — İstanbul'un Spor Rezervasyon Platformu",
+    description: "İstanbul'da spor salonu rezervasyonu. Yoga, pilates, padel, halı saha ve daha fazlası.",
+    images: ["/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
 };
 
 export default function RootLayout({
@@ -26,7 +53,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="tr"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
