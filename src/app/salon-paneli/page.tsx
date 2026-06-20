@@ -107,10 +107,17 @@ export default function SalonPaneliPage() {
     return new Date(date).toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   }
 
+  const [sportCategories, setSportCategories] = useState<{ id: number; name: string; hasInstructor: boolean }[]>([])
+
   useEffect(() => {
     const token = localStorage.getItem('fitpass_venue_token')
     if (!token) { router.push('/salon-giris'); return }
     fetchVenue(token)
+    // Kategorileri API'dan çek
+    fetch(`${API_URL}/api/public/categories`)
+      .then(r => r.json())
+      .then(d => { if (d.categories) setSportCategories(d.categories) })
+      .catch(() => {})
   }, [])
 
   const fetchVenue = async (token: string) => {
@@ -465,8 +472,8 @@ export default function SalonPaneliPage() {
 
   if (loading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: '#888' }}>Yükleniyor...</div>
 
-  const categories = ['Yoga', 'Pilates', 'Boks', 'Padel', 'Halı Saha', 'Basketbol', 'HIIT', 'Dans', 'Yüzme', 'Crossfit', 'Binicilik', 'Diğer']
-  const showInstructor = !NO_INSTRUCTOR_CATEGORIES.includes(classForm.category)
+  const selectedCat = sportCategories.find(c => c.name === classForm.category)
+  const showInstructor = selectedCat ? selectedCat.hasInstructor : !NO_INSTRUCTOR_CATEGORIES.includes(classForm.category)
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8f8f8' }}>
@@ -556,7 +563,7 @@ export default function SalonPaneliPage() {
                       <label style={labelStyle}>Kategori *</label>
                       <select value={classForm.category} onChange={e => setClassForm({ ...classForm, category: e.target.value, instructorId: '' })} required style={inputStyle}>
                         <option value="">Seçin</option>
-                        {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                        {sportCategories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                       </select>
                     </div>
                     <div>
