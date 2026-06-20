@@ -1,14 +1,20 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { api, saveToken, saveUser } from '@/lib/api'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, Gift } from 'lucide-react'
 
-export default function KayitPage() {
+function KayitForm() {
   const router = useRouter()
-  const [form, setForm] = useState({ fullName: '', username: '', email: '', phone: '', password: '', passwordConfirm: '' })
+  const searchParams = useSearchParams()
+  const [form, setForm] = useState({ fullName: '', username: '', email: '', phone: '', password: '', passwordConfirm: '', referralCode: '' })
+
+  useEffect(() => {
+    const ref = searchParams.get('ref')
+    if (ref) setForm(f => ({ ...f, referralCode: ref.toUpperCase() }))
+  }, [searchParams])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -30,6 +36,7 @@ export default function KayitPage() {
         email: form.email,
         phone: form.phone || undefined,
         password: form.password,
+        referralCode: form.referralCode || undefined,
       })
 
       if (res.error) { setError(res.error); setLoading(false); return }
@@ -106,6 +113,15 @@ export default function KayitPage() {
             </div>
           </div>
 
+          <div>
+            <label style={labelStyle}>Davet Kodu <span style={{ fontWeight: 400, color: '#bbb' }}>(isteğe bağlı)</span></label>
+            <div style={{ position: 'relative' }}>
+              <Gift size={15} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#A5B4FC' }} />
+              <input name="referralCode" type="text" placeholder="örn. A1B2C3D4" value={form.referralCode} onChange={e => setForm(f => ({ ...f, referralCode: e.target.value.toUpperCase() }))} style={{ ...inputStyle, paddingLeft: 38 }} />
+            </div>
+            {form.referralCode && <p style={{ fontSize: 12, color: '#10B981', marginTop: 5, fontWeight: 600 }}>🎁 İlk dersin için 150 TL kredi kazanacaksın!</p>}
+          </div>
+
           {error && (
             <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 12, padding: '12px 16px', fontSize: 13, color: '#DC2626', display: 'flex', alignItems: 'center', gap: 8 }}>
               <AlertCircle size={14} /> {error}
@@ -136,3 +152,11 @@ export default function KayitPage() {
 
 const labelStyle: React.CSSProperties = { fontSize: 13, fontWeight: 600, color: '#444', display: 'block', marginBottom: 7 }
 const inputStyle: React.CSSProperties = { width: '100%', padding: '13px 16px', borderRadius: 12, border: '1.5px solid #E8E8E8', fontSize: 14, outline: 'none', backgroundColor: '#FAFAFA', color: '#111', boxSizing: 'border-box', transition: 'border-color 0.15s' }
+
+export default function KayitPage() {
+  return (
+    <Suspense>
+      <KayitForm />
+    </Suspense>
+  )
+}

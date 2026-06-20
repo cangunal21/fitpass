@@ -8,12 +8,12 @@ import Navbar from '@/components/Navbar'
 import { api, getUser, getToken } from '@/lib/api'
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 import type { ReactNode } from 'react'
-import { User, Users, Ticket, Award, ClipboardList, BarChart2, BookOpen, Calendar, Flame, Dumbbell, Heart, Building, MapPin, Gift, Medal, Check, X, Lock, CreditCard } from 'lucide-react'
+import { User, Users, Ticket, Award, ClipboardList, BarChart2, BookOpen, Calendar, Flame, Dumbbell, Heart, Building, MapPin, Gift, Medal, Check, X, Lock, CreditCard, Copy, CheckCheck } from 'lucide-react'
 import { SportIcon, SportIconBox, getIconKeyForCategory, getColorForCategory } from '@/lib/sportIcons'
 import AvatarUpload from '@/components/AvatarUpload'
 import { getInitialsAvatar } from '@/lib/cloudinary'
 
-type OwnTab = 'aktivite' | 'rezervasyonlar' | 'hesap' | 'ödeme' | 'favoriler'
+type OwnTab = 'aktivite' | 'rezervasyonlar' | 'hesap' | 'ödeme' | 'favoriler' | 'referans'
 type PublicTab = 'aktivite' | 'arkadaşlar' | 'istatistik'
 
 export default function ProfilPage() {
@@ -54,6 +54,8 @@ export default function ProfilPage() {
 
   const [activeTab, setActiveTab] = useState<OwnTab | PublicTab>('aktivite')
   const [isFollowing, setIsFollowing] = useState(false)
+  const [referralInfo, setReferralInfo] = useState<any>(null)
+  const [copied, setCopied] = useState(false)
 
   // Follow system state
   const [followers, setFollowers] = useState<any[]>([])
@@ -191,6 +193,7 @@ export default function ProfilPage() {
     { key: 'hesap', label: <><User size={15} style={{ marginRight: 5 }} />Hesap Bilgilerim</> },
     { key: 'ödeme', label: <><CreditCard size={15} style={{ marginRight: 5 }} />Ödeme Bilgilerim</> },
     { key: 'favoriler', label: <><Heart size={15} style={{ marginRight: 5 }} />Favori Salonlar</> },
+    { key: 'referans', label: <><Gift size={15} style={{ marginRight: 5 }} />Davet Et</> },
   ]
 
   const publicTabs: { key: PublicTab; label: ReactNode }[] = [
@@ -922,6 +925,11 @@ export default function ProfilPage() {
           </div>
         )}
 
+        {/* REFERANS */}
+        {activeTab === 'referans' && isOwnProfile && (
+          <ReferralTab referralInfo={referralInfo} setReferralInfo={setReferralInfo} copied={copied} setCopied={setCopied} />
+        )}
+
         {/* Arkadaşlar — public profiles only */}
         {activeTab === 'arkadaşlar' && !isOwnProfile && (
           <div>
@@ -1026,6 +1034,100 @@ function CheckInQR({ code }: { code: string }) {
           <canvas ref={canvasRef} style={{ borderRadius: 8, display: 'block', margin: '0 auto 10px' }} />
           <div style={{ fontSize: 20, fontWeight: 900, color: '#1a1a1a', letterSpacing: 4, fontFamily: 'monospace' }}>{code}</div>
           <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>Salona QR veya kodu göster</div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const API_URL_REF = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+
+function ReferralTab({ referralInfo, setReferralInfo, copied, setCopied }: any) {
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (referralInfo) return
+    setLoading(true)
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+    if (!token) { setLoading(false); return }
+    fetch(`${API_URL_REF}/api/referral`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => { setReferralInfo(d); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [])
+
+  const referralLink = referralInfo?.referralCode
+    ? `https://sipsakspor.com/kayit?ref=${referralInfo.referralCode}`
+    : ''
+
+  const handleCopy = () => {
+    if (!referralLink) return
+    navigator.clipboard.writeText(referralLink)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  if (loading) return <div style={{ textAlign: 'center', padding: 40, color: '#aaa', fontSize: 14 }}>Yükleniyor...</div>
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Kredi bakiyesi */}
+      <div style={{ backgroundColor: '#4F46E5', borderRadius: 20, padding: '24px 28px', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <div style={{ fontSize: 13, opacity: 0.8, marginBottom: 4 }}>Uygulama Kredisi</div>
+          <div style={{ fontSize: 36, fontWeight: 900 }}>₺{referralInfo?.creditBalance || 0}</div>
+          <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>Ders rezervasyonlarında kullanabilirsin</div>
+        </div>
+        <Gift size={44} style={{ opacity: 0.3 }} />
+      </div>
+
+      {/* Nasıl çalışır */}
+      <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 14 }}>🎁 Arkadaşını Davet Et</div>
+        {[
+          { step: '1', text: 'Linki arkadaşınla paylaş' },
+          { step: '2', text: 'Arkadaşın kayıt olunca 150 TL kredi kazanır' },
+          { step: '3', text: 'Arkadaşın ilk dersini alınca sen de 150 TL kazanırsın' },
+        ].map(({ step, text }) => (
+          <div key={step} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', backgroundColor: '#EEF2FF', color: '#4F46E5', fontSize: 13, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{step}</div>
+            <span style={{ fontSize: 14, color: '#444' }}>{text}</span>
+          </div>
+        ))}
+        <div style={{ marginTop: 6, padding: '10px 14px', backgroundColor: '#FEF9C3', borderRadius: 10, fontSize: 13, color: '#92400e' }}>
+          ⚠️ En fazla 3 arkadaş davet edebilirsin. ({referralInfo?.referralCount || 0}/3 kullanıldı)
+        </div>
+      </div>
+
+      {/* Referral linki */}
+      <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: '#555', marginBottom: 10 }}>Davet Linkin</div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ flex: 1, padding: '12px 14px', backgroundColor: '#F5F5F5', borderRadius: 10, fontSize: 13, color: '#333', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+            {referralLink || 'Yükleniyor...'}
+          </div>
+          <button onClick={handleCopy} style={{ padding: '12px 16px', borderRadius: 10, border: 'none', background: copied ? '#10B981' : '#4F46E5', color: '#fff', cursor: 'pointer', flexShrink: 0, transition: 'background 0.2s' }}>
+            {copied ? <CheckCheck size={18} /> : <Copy size={18} />}
+          </button>
+        </div>
+        {copied && <div style={{ fontSize: 12, color: '#10B981', marginTop: 6, fontWeight: 600 }}>✓ Link kopyalandı!</div>}
+      </div>
+
+      {/* Davet edilenler listesi */}
+      {referralInfo?.referrals?.length > 0 && (
+        <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 12 }}>Davet Ettiklerin</div>
+          {referralInfo.referrals.map((r: any) => (
+            <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #F5F5F5' }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>{r.fullName}</div>
+                <div style={{ fontSize: 12, color: '#aaa' }}>@{r.username}</div>
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 20, backgroundColor: r.status === 'completed' ? '#F0FDF4' : '#FEF9C3', color: r.status === 'completed' ? '#16a34a' : '#92400e' }}>
+                {r.status === 'completed' ? '✓ +150 ₺ kazandın' : '⏳ Bekliyor'}
+              </span>
+            </div>
+          ))}
         </div>
       )}
     </div>
