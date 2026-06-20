@@ -12,7 +12,7 @@ import { SportIconBox } from '@/lib/sportIcons'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
-const BRANCHES = ['Tümü', 'Yoga', 'Pilates', 'Boks', 'Padel', 'Halı Saha', 'Basketbol', 'HIIT', 'Dans', 'Yüzme', 'Crossfit', 'Binicilik']
+// Kategoriler API'dan yüklenir
 
 const MOCK_USERS = [
   { id: 'm1', username: 'zeynep_aktif', avatarUrl: null, lessonCount: 42, neighborhood: { name: 'Kadıköy' } },
@@ -47,10 +47,14 @@ export default function SosyalPage() {
   const [followers, setFollowers] = useState<any[]>([])
   const [suggestions, setSuggestions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [branches, setBranches] = useState<string[]>(['Tümü'])
   const currentUser = getUser()
 
   useEffect(() => {
     fetch(`${API_URL}/api/public/neighborhoods`).then(r => r.json()).then(d => setNeighborhoods(d.neighborhoods || []))
+    fetch(`${API_URL}/api/public/categories`).then(r => r.json()).then(d => {
+      if (d.categories) setBranches(['Tümü', ...d.categories.map((c: any) => c.name)])
+    })
   }, [])
 
   useEffect(() => {
@@ -184,7 +188,7 @@ export default function SosyalPage() {
             <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
               <select value={selectedBranch} onChange={e => setSelectedBranch(e.target.value)}
                 style={{ padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', background: '#fff', cursor: 'pointer' }}>
-                {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
+                {branches.map(b => <option key={b} value={b}>{b}</option>)}
               </select>
               <select value={selectedNeighborhood} onChange={e => setSelectedNeighborhood(e.target.value)}
                 style={{ padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', background: '#fff', cursor: 'pointer' }}>
