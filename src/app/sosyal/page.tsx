@@ -34,7 +34,9 @@ const MOCK_VENUES = [
 
 export default function SosyalPage() {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<'siralama' | 'arkadaslar'>('siralama')
+  const [activeTab, setActiveTab] = useState<'siralama' | 'arkadaslar' | 'feed'>('siralama')
+  const [feed, setFeed] = useState<any[]>([])
+  const [feedLoading, setFeedLoading] = useState(false)
   const [siralamaType, setSiralamaType] = useState<'kullanici' | 'salon'>('kullanici')
   const [selectedBranch, setSelectedBranch] = useState('Tümü')
   const [neighborhoods, setNeighborhoods] = useState<{ id: number; name: string }[]>([])
@@ -56,9 +58,8 @@ export default function SosyalPage() {
   }, [siralamaType, selectedBranch, selectedNeighborhood])
 
   useEffect(() => {
-    if (activeTab === 'arkadaslar' && currentUser) {
-      fetchFriends()
-    }
+    if (activeTab === 'arkadaslar' && currentUser) fetchFriends()
+    if (activeTab === 'feed' && currentUser) fetchFeed()
   }, [activeTab])
 
   const fetchLeaderboard = async () => {
@@ -98,6 +99,29 @@ export default function SosyalPage() {
     setLoading(false)
   }
 
+  const fetchFeed = async () => {
+    const token = getToken()
+    if (!token) return
+    setFeedLoading(true)
+    try {
+      const res = await fetch(`${API_URL}/api/social/feed`, { headers: { Authorization: `Bearer ${token}` } })
+      const data = await res.json()
+      setFeed(data.feed || [])
+    } catch {}
+    setFeedLoading(false)
+  }
+
+  const timeAgo = (date: string) => {
+    const diff = Date.now() - new Date(date).getTime()
+    const mins = Math.floor(diff / 60000)
+    if (mins < 60) return `${mins} dakika önce`
+    const hours = Math.floor(mins / 60)
+    if (hours < 24) return `${hours} saat önce`
+    const days = Math.floor(hours / 24)
+    if (days === 1) return 'Dün'
+    return `${days} gün önce`
+  }
+
   const handleFollow = async (username: string) => {
     const token = getToken()
     if (!token) { router.push('/giris?redirect=/sosyal'); return }
@@ -133,6 +157,7 @@ export default function SosyalPage() {
         <div style={{ display: 'flex', gap: 4, backgroundColor: '#eee', borderRadius: 16, padding: 4, marginTop: -20, marginBottom: 24, width: 'fit-content' }}>
           {[
             { key: 'siralama', label: 'Sıralama' },
+            { key: 'feed', label: 'Feed' },
             { key: 'arkadaslar', label: 'Arkadaşlar' },
           ].map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key as any)}
@@ -241,6 +266,58 @@ export default function SosyalPage() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* FEED TAB */}
+        {activeTab === 'feed' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {!currentUser ? (
+              <div style={{ textAlign: 'center', padding: '48px 0', color: '#888' }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>📰</div>
+                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>Feed'i görmek için giriş yap</div>
+                <Link href="/giris?redirect=/sosyal" style={{ color: '#4F46E5', fontWeight: 700, textDecoration: 'none' }}>Giriş Yap →</Link>
+              </div>
+            ) : feedLoading ? (
+              <SkeletonList count={5} />
+            ) : feed.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '48px 0', color: '#888' }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>👥</div>
+                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>Henüz aktivite yok</div>
+                <div style={{ fontSize: 13, color: '#bbb' }}>Arkadaş ekleyince onların aktiviteleri burada görünür</div>
+              </div>
+            ) : feed.map(item => {
+              const initialsData = getInitialsAvatar(item.user.fullName || item.user.username)
+              return (
+                <div key={item.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'flex', gap: 14, alignItems: 'center' }}>
+                  {/* Avatar */}
+                  <Link href={`/profil/${item.user.username}`} style={{ textDecoration: 'none', flexShrink: 0 }}>
+                    {item.user.avatarUrl ? (
+                      <img src={item.user.avatarUrl} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover' }} alt="" />
+                    ) : (
+                      <div style={{ width: 44, height: 44, borderRadius: '50%', backgroundColor: initialsData.color + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: initialsData.color }}>{initialsData.initials}</div>
+                    )}
+                  </Link>
+                  {/* İçerik */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, color: '#333', lineHeight: 1.5 }}>
+                      <Link href={`/profil/${item.user.username}`} style={{ fontWeight: 700, color: '#111', textDecoration: 'none' }}>{item.user.fullName}</Link>
+                      {' '}{item.type === 'dropin' ? 'drop-in etkinliğine katıldı' : 'dersine katıldı'}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 20, backgroundColor: (item.categoryColor || '#4F46E5') + '18', color: item.categoryColor || '#4F46E5' }}>{item.category}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: '#444' }}>{item.title}</span>
+                    </div>
+                    <div style={{ fontSize: 12, color: '#aaa', marginTop: 4 }}>
+                      {item.venueName && <span>📍 {item.venueName} · </span>}
+                      {timeAgo(item.date)}
+                    </div>
+                  </div>
+                  {/* Tip ikonu */}
+                  <div style={{ fontSize: 20, flexShrink: 0 }}>{item.type === 'dropin' ? '⚡' : '✅'}</div>
+                </div>
+              )
+            })}
           </div>
         )}
 
