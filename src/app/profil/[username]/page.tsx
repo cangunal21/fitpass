@@ -1048,7 +1048,7 @@ function ReferralTab({ referralInfo, setReferralInfo, copied, setCopied }: any) 
   useEffect(() => {
     if (referralInfo) return
     setLoading(true)
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+    const token = typeof window !== 'undefined' ? localStorage.getItem('fitpass_token') : null
     if (!token) { setLoading(false); return }
     fetch(`${API_URL_REF}/api/referral`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
