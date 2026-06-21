@@ -137,7 +137,7 @@ export default function Home() {
       const sessions: unknown[] = result?.sessions ?? []
       if (Array.isArray(sessions) && sessions.length > 0) {
         const mapped = sessions.map(mapSessionToItem)
-        setAllItems([...mapped, ...mockDropInItems])
+        setAllItems(mapped)
       } else {
         setAllItems([...mockClassItems, ...mockDropInItems])
       }
@@ -419,7 +419,13 @@ export default function Home() {
                       </div>
                       <h3 style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 3, lineHeight: 1.3 }}>{item.title}</h3>
                       <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', fontWeight: 500 }}>
-                        {'venue' in item && typeof item.venue === 'string' ? item.venue : ''} · {item.neighborhood}
+                        {'venueId' in item && item.venueId ? (
+                          <Link href={`/venue/${item.venueId}`} onClick={e => e.stopPropagation()} style={{ color: 'rgba(255,255,255,0.9)', textDecoration: 'underline', fontWeight: 600 }}>
+                            {'venue' in item && typeof item.venue === 'string' ? item.venue : ''}
+                          </Link>
+                        ) : (
+                          'venue' in item && typeof item.venue === 'string' ? item.venue : ''
+                        )} · {item.neighborhood}
                       </p>
                     </div>
 

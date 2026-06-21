@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { mockClasses, mockVenues, mockInstructors } from '@/lib/mockData'
 import Navbar from '@/components/Navbar'
 import { api, getToken, getUser } from '@/lib/api'
-import { MapPin, Calendar, Clock, Timer, Users, ShieldCheck, Flame, AlertCircle, X } from 'lucide-react'
+import { MapPin, Calendar, Clock, Timer, Users, User, ShieldCheck, Flame, AlertCircle, X } from 'lucide-react'
 import { SportIconBox } from '@/lib/sportIcons'
 
 const categoryColorMap: Record<string, string> = {
@@ -196,7 +196,21 @@ export default function DersDetay() {
             {isReal && (cls as ReturnType<typeof mapSessionToDisplay>).instructorName && (
               <div style={{ backgroundColor: '#fff', borderRadius: 24, padding: '28px 32px', border: '1px solid #F0F0F0' }}>
                 <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111', marginBottom: 16 }}>Eğitmen</h2>
-                <div style={{ fontSize: 16, fontWeight: 600, color: '#111' }}>{(cls as ReturnType<typeof mapSessionToDisplay>).instructorName}</div>
+                {(cls as ReturnType<typeof mapSessionToDisplay>).instructorId ? (
+                  <Link href={`/instructor/${(cls as ReturnType<typeof mapSessionToDisplay>).instructorId}`} style={{ textDecoration: 'none' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', backgroundColor: '#FAFAFA', borderRadius: 14, cursor: 'pointer' }}
+                      onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.backgroundColor = '#F0F0F0'}
+                      onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.backgroundColor = '#FAFAFA'}
+                    >
+                      <div style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <User size={20} color="#4F46E5" />
+                      </div>
+                      <div style={{ fontSize: 16, fontWeight: 600, color: '#4F46E5' }}>{(cls as ReturnType<typeof mapSessionToDisplay>).instructorName}</div>
+                    </div>
+                  </Link>
+                ) : (
+                  <div style={{ fontSize: 16, fontWeight: 600, color: '#111' }}>{(cls as ReturnType<typeof mapSessionToDisplay>).instructorName}</div>
+                )}
               </div>
             )}
 
@@ -297,8 +311,38 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
   const [tagInputs, setTagInputs] = useState<string[]>([])
   const [tagSuggestions, setTagSuggestions] = useState<Record<number, any[]>>({})
   const [tagFocus, setTagFocus] = useState<number | null>(null)
+  const [couponCode, setCouponCode] = useState('')
+  const [couponStatus, setCouponStatus] = useState<{ checking: boolean; valid?: boolean; discountType?: string; discountValue?: number; error?: string }>({ checking: false })
 
   const sessionId = (cls as { sessionId?: number }).sessionId
+  const venueId = (cls as { venueId?: number }).venueId
+
+  const handleCheckCoupon = async () => {
+    const code = couponCode.trim()
+    if (!code || !venueId) return
+    setCouponStatus({ checking: true })
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/public/validate-coupon`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, venueId }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.valid) {
+        setCouponStatus({ checking: false, valid: false, error: data?.error || 'Geçersiz kupon kodu.' })
+      } else {
+        setCouponStatus({ checking: false, valid: true, discountType: data.coupon.discountType, discountValue: data.coupon.discountValue })
+      }
+    } catch {
+      setCouponStatus({ checking: false, valid: false, error: 'Bir hata oluştu, tekrar dene.' })
+    }
+  }
+
+  const totalBeforeDiscount = (cls.basePrice || 0) * groupSize
+  const couponDiscountAmount = couponStatus.valid
+    ? (couponStatus.discountType === 'percent' ? totalBeforeDiscount * ((couponStatus.discountValue || 0) / 100) : Math.min(couponStatus.discountValue || 0, totalBeforeDiscount))
+    : 0
+  const totalAfterDiscount = Math.max(0, totalBeforeDiscount - couponDiscountAmount)
 
   const searchUsers = async (idx: number, q: string) => {
     const clean = q.replace(/^@/, '').trim()
@@ -326,7 +370,7 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/bookings`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ sessionId, bookingType: 'class', groupSize, taggedUsernames: tagInputs.filter(Boolean) }),
+          body: JSON.stringify({ sessionId, bookingType: 'class', groupSize, taggedUsernames: tagInputs.filter(Boolean), couponCode: couponStatus.valid ? couponCode.trim() : undefined }),
         })
         const data = await res.json()
         if (!res.ok) {
@@ -429,9 +473,43 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
                 </div>
               )}
               <div style={{ height: 1, backgroundColor: '#EBEBEB', marginBottom: 14 }} />
+
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>Kupon kodu (opsiyonel)</div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type="text"
+                    placeholder="KUPON10"
+                    value={couponCode}
+                    onChange={e => { setCouponCode(e.target.value.toUpperCase()); setCouponStatus({ checking: false }) }}
+                    style={{ flex: 1, padding: '9px 14px', borderRadius: 10, border: '1.5px solid #E5E7EB', fontSize: 13, outline: 'none', boxSizing: 'border-box' as const, fontFamily: 'inherit' }}
+                  />
+                  <button
+                    onClick={handleCheckCoupon}
+                    disabled={!couponCode.trim() || couponStatus.checking}
+                    style={{ padding: '9px 16px', borderRadius: 10, border: 'none', background: '#EEF2FF', color: '#4F46E5', fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                  >
+                    {couponStatus.checking ? '...' : 'Uygula'}
+                  </button>
+                </div>
+                {couponStatus.valid && (
+                  <div style={{ fontSize: 12, color: '#15803D', marginTop: 6, fontWeight: 600 }}>
+                    ✓ Kupon uygulandı: {couponStatus.discountType === 'percent' ? `%${couponStatus.discountValue}` : `₺${couponStatus.discountValue}`} indirim
+                  </div>
+                )}
+                {couponStatus.valid === false && (
+                  <div style={{ fontSize: 12, color: '#DC2626', marginTop: 6, fontWeight: 600 }}>{couponStatus.error}</div>
+                )}
+              </div>
+
+              <div style={{ height: 1, backgroundColor: '#EBEBEB', marginBottom: 14 }} />
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>Toplam</span>
-                <span style={{ fontSize: 18, fontWeight: 800, color: '#4F46E5' }}>₺{(cls.basePrice || 0) * groupSize}{groupSize > 1 && <span style={{ fontSize: 13, fontWeight: 500, color: '#888', marginLeft: 6 }}>({groupSize} × ₺{cls.basePrice})</span>}</span>
+                <span style={{ fontSize: 18, fontWeight: 800, color: '#4F46E5' }}>
+                  ₺{totalAfterDiscount}
+                  {groupSize > 1 && <span style={{ fontSize: 13, fontWeight: 500, color: '#888', marginLeft: 6 }}>({groupSize} × ₺{cls.basePrice})</span>}
+                  {couponDiscountAmount > 0 && <span style={{ fontSize: 13, fontWeight: 500, color: '#aaa', marginLeft: 6, textDecoration: 'line-through' }}>₺{totalBeforeDiscount}</span>}
+                </span>
               </div>
             </div>
 

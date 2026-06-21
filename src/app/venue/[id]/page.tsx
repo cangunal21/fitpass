@@ -451,38 +451,45 @@ export default function VenuePage() {
             )}
             {isMock ? (
               instructors.map((instructor: any) => (
-                <div
-                  key={instructor.id}
-                  style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px', border: '1px solid #F0F0F0', textAlign: 'center', cursor: 'pointer', transition: 'all 0.15s' }}
-                  onMouseEnter={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor = '#E0E0E0'; el.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)' }}
-                  onMouseLeave={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor = '#F0F0F0'; el.style.boxShadow = 'none' }}
-                >
-                  <div style={{ margin: '0 auto 16px', display: 'flex', justifyContent: 'center' }}><SportIconBox name={instructor.icon} bgColor={instructor.color + '30'} iconColor={instructor.color} boxSize={72} borderRadius={36} size={32} /></div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: '#111', marginBottom: 4 }}>{instructor.fullName}</div>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: '#6366F1', background: '#EEF2FF', padding: '3px 12px', borderRadius: 100, display: 'inline-block', marginBottom: 10 }}>{instructor.specialty}</div>
-                  <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
-                    <span style={{ fontSize: 13, color: '#F59E0B', fontWeight: 700 }}>★ {instructor.avgRating}</span>
-                    <span style={{ fontSize: 13, color: '#bbb' }}>·</span>
-                    <span style={{ fontSize: 13, color: '#999' }}>{instructor.totalReviews} yorum</span>
+                <Link key={instructor.id} href={`/instructor/${instructor.id}`} style={{ textDecoration: 'none', display: 'block' }}>
+                  <div
+                    style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px', border: '1px solid #F0F0F0', textAlign: 'center', cursor: 'pointer', transition: 'all 0.15s' }}
+                    onMouseEnter={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor = '#E0E0E0'; el.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)' }}
+                    onMouseLeave={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor = '#F0F0F0'; el.style.boxShadow = 'none' }}
+                  >
+                    <div style={{ margin: '0 auto 16px', display: 'flex', justifyContent: 'center' }}><SportIconBox name={instructor.icon} bgColor={instructor.color + '30'} iconColor={instructor.color} boxSize={72} borderRadius={36} size={32} /></div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#111', marginBottom: 4 }}>{instructor.fullName}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#6366F1', background: '#EEF2FF', padding: '3px 12px', borderRadius: 100, display: 'inline-block', marginBottom: 10 }}>{instructor.specialty}</div>
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+                      <span style={{ fontSize: 13, color: '#F59E0B', fontWeight: 700 }}>★ {instructor.avgRating}</span>
+                      <span style={{ fontSize: 13, color: '#bbb' }}>·</span>
+                      <span style={{ fontSize: 13, color: '#999' }}>{instructor.totalReviews} yorum</span>
+                    </div>
                   </div>
-                </div>
+                </Link>
               ))
             ) : (
               instructors.map((instructor: any) => (
-                <div
-                  key={instructor.id}
-                  style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px', border: '1px solid #F0F0F0', textAlign: 'center', cursor: 'pointer', transition: 'all 0.15s' }}
-                  onMouseEnter={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor = '#E0E0E0'; el.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)' }}
-                  onMouseLeave={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor = '#F0F0F0'; el.style.boxShadow = 'none' }}
-                >
-                  <div style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}><User size={32} color="#4F46E5" /></div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: '#111', marginBottom: 4 }}>{instructor.fullName}</div>
-                  {instructor.bio && <div style={{ fontSize: 13, color: '#888', marginBottom: 10, lineHeight: 1.5 }}>{instructor.bio}</div>}
-                  <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
-                    {instructor.avgRating != null && <span style={{ fontSize: 13, color: '#F59E0B', fontWeight: 700 }}>★ {instructor.avgRating}</span>}
-                    {instructor.totalReviews != null && <><span style={{ fontSize: 13, color: '#bbb' }}>·</span><span style={{ fontSize: 13, color: '#999' }}>{instructor.totalReviews} yorum</span></>}
+                <Link key={instructor.id} href={`/instructor/${instructor.id}`} style={{ textDecoration: 'none', display: 'block' }}>
+                  <div
+                    style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px', border: '1px solid #F0F0F0', textAlign: 'center', cursor: 'pointer', transition: 'all 0.15s' }}
+                    onMouseEnter={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor = '#E0E0E0'; el.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)' }}
+                    onMouseLeave={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor = '#F0F0F0'; el.style.boxShadow = 'none' }}
+                  >
+                    {instructor.avatarUrl ? (
+                      <img src={instructor.avatarUrl} style={{ width: 72, height: 72, borderRadius: 36, objectFit: 'cover', margin: '0 auto 16px', display: 'block' }} alt="" />
+                    ) : (
+                      <div style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}><User size={32} color="#4F46E5" /></div>
+                    )}
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#111', marginBottom: 4 }}>{instructor.fullName}</div>
+                    {instructor.specialty && <div style={{ fontSize: 12, fontWeight: 600, color: '#6366F1', background: '#EEF2FF', padding: '3px 12px', borderRadius: 100, display: 'inline-block', marginBottom: 10 }}>{instructor.specialty}</div>}
+                    {instructor.bio && <div style={{ fontSize: 13, color: '#888', marginBottom: 10, lineHeight: 1.5 }}>{instructor.bio}</div>}
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+                      {instructor.avgRating != null && <span style={{ fontSize: 13, color: '#F59E0B', fontWeight: 700 }}>★ {instructor.avgRating}</span>}
+                      {instructor.totalReviews != null && <><span style={{ fontSize: 13, color: '#bbb' }}>·</span><span style={{ fontSize: 13, color: '#999' }}>{instructor.totalReviews} yorum</span></>}
+                    </div>
                   </div>
-                </div>
+                </Link>
               ))
             )}
           </div>
