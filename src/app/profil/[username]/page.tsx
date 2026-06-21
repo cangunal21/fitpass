@@ -13,7 +13,7 @@ import { SportIcon, SportIconBox, getIconKeyForCategory, getColorForCategory } f
 import AvatarUpload from '@/components/AvatarUpload'
 import { getInitialsAvatar } from '@/lib/cloudinary'
 
-type OwnTab = 'aktivite' | 'rezervasyonlar' | 'hesap' | 'ödeme' | 'favoriler' | 'referans'
+type OwnTab = 'aktivite' | 'gecmis' | 'hesap' | 'ödeme' | 'favoriler' | 'referans'
 type PublicTab = 'aktivite' | 'arkadaşlar' | 'istatistik'
 
 export default function ProfilPage() {
@@ -30,6 +30,11 @@ export default function ProfilPage() {
   const [loadingBookings, setLoadingBookings] = useState(isOwnProfile)
   const [cancelConfirm, setCancelConfirm] = useState<number | null>(null)
   const [cancelError, setCancelError] = useState<string | null>(null)
+  const [reviewModal, setReviewModal] = useState<{ bookingId: number } | null>(null)
+  const [reviewRating, setReviewRating] = useState(5)
+  const [reviewComment, setReviewComment] = useState('')
+  const [reviewAnonymous, setReviewAnonymous] = useState(true)
+  const [submittingReview, setSubmittingReview] = useState(false)
   const [favorites, setFavorites] = useState<any[]>([])
 
   // Public profile data
@@ -152,6 +157,32 @@ export default function ProfilPage() {
     setCancelConfirm(null)
   }
 
+  const openReviewModal = (bookingId: number) => {
+    setReviewRating(5)
+    setReviewComment('')
+    setReviewAnonymous(true)
+    setReviewModal({ bookingId })
+  }
+
+  const submitReview = async () => {
+    const token = getToken()
+    if (!token || !reviewModal) return
+    setSubmittingReview(true)
+    try {
+      const res = await fetch(`${API_URL}/api/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ bookingId: reviewModal.bookingId, rating: reviewRating, comment: reviewComment, isAnonymous: reviewAnonymous }),
+      })
+      const data = await res.json()
+      if (!data.error) {
+        setBookings(prev => prev.map(b => b.id === reviewModal.bookingId ? { ...b, review: data.review || { rating: reviewRating, comment: reviewComment } } : b))
+        setReviewModal(null)
+      }
+    } catch {}
+    setSubmittingReview(false)
+  }
+
   // Tiers for progress bar
   const tiers = [
     { name: 'Acemi', min: 1 }, { name: 'Aday', min: 10 }, { name: 'Sporcu', min: 35 },
@@ -188,8 +219,8 @@ export default function ProfilPage() {
   ].sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 20)
 
   const ownTabs: { key: OwnTab; label: ReactNode }[] = [
-    { key: 'aktivite', label: <><ClipboardList size={15} style={{ marginRight: 5 }} />Aktivite</> },
-    { key: 'rezervasyonlar', label: <><Ticket size={15} style={{ marginRight: 5 }} />Aktivitelerim</> },
+    { key: 'aktivite', label: <><ClipboardList size={15} style={{ marginRight: 5 }} />Aktivitelerim</> },
+    { key: 'gecmis', label: <><Ticket size={15} style={{ marginRight: 5 }} />Geçmiş Aktivitelerim</> },
     { key: 'hesap', label: <><User size={15} style={{ marginRight: 5 }} />Hesap Bilgilerim</> },
     { key: 'ödeme', label: <><CreditCard size={15} style={{ marginRight: 5 }} />Ödeme Bilgilerim</> },
     { key: 'favoriler', label: <><Heart size={15} style={{ marginRight: 5 }} />Favori Salonlar</> },
@@ -437,71 +468,6 @@ export default function ProfilPage() {
           ))}
         </div>
 
-        {/* Aktivite — kendi profilim */}
-        {activeTab === 'aktivite' && isOwnProfile && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {loadingBookings ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 14 }}>
-                    <div style={{ width: 46, height: 46, borderRadius: 14, background: 'linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.4s ease-in-out infinite', flexShrink: 0 }} />
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <div style={{ height: 14, width: '55%', borderRadius: 6, background: 'linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.4s ease-in-out infinite' }} />
-                      <div style={{ height: 12, width: '35%', borderRadius: 6, background: 'linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.4s ease-in-out infinite' }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : realActivities.length === 0 ? (
-              <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '48px', textAlign: 'center', border: '1px solid #F0F0F0' }}>
-                <div style={{ fontSize: 36, marginBottom: 12 }}>🏃</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 6 }}>Henüz aktivite yok</div>
-                <div style={{ fontSize: 13, color: '#aaa' }}>Bir derse katıl veya drop-in maça kaydol — burada görünecek.</div>
-              </div>
-            ) : realActivities.map((item, idx) => {
-              if (item.type === 'booking') {
-                const b = item.data
-                const session = b.session
-                const classObj = session?.class
-                const venue = classObj?.venue
-                const catName = classObj?.category || classObj?.sportCategory?.name || ''
-                const icon = getIconKeyForCategory(catName)
-                const color = getColorForCategory(catName)
-                return (
-                  <div key={`a-b-${b.id}`} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 14 }}>
-                    <SportIconBox name={icon} bgColor={color + '18'} iconColor={color} boxSize={46} borderRadius={14} size={20} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: '#111' }}>{classObj?.title || 'Ders'}</div>
-                      <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>{venue?.name || ''}</div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: 11, color: '#bbb', whiteSpace: 'nowrap' }}>{timeAgo(item.date)}</div>
-                      <span style={{ fontSize: 11, color: '#10B981', fontWeight: 600 }}>Ders</span>
-                    </div>
-                  </div>
-                )
-              } else {
-                const dp = item.data
-                const slot = dp.slot
-                const cat = slot?.sportCategory
-                const iconColor = cat?.colorHex ? `#${cat.colorHex}` : '#3B82F6'
-                return (
-                  <div key={`a-dp-${dp.id}`} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 14 }}>
-                    <SportIconBox name={cat?.iconUrl || 'football'} bgColor={iconColor + '18'} iconColor={iconColor} boxSize={46} borderRadius={14} size={20} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: '#111' }}>{slot?.title || 'Maç'}</div>
-                      <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>{slot?.venue?.name || ''}</div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: 11, color: '#bbb', whiteSpace: 'nowrap' }}>{timeAgo(item.date)}</div>
-                      <span style={{ fontSize: 11, color: '#3B82F6', fontWeight: 600 }}>Drop-in</span>
-                    </div>
-                  </div>
-                )
-              }
-            })}
-          </div>
-        )}
 
         {/* Aktivite — public profile */}
         {activeTab === 'aktivite' && !isOwnProfile && (
@@ -596,7 +562,7 @@ export default function ProfilPage() {
         )}
 
         {/* Rezervasyonlarım — own profile only */}
-        {activeTab === 'rezervasyonlar' && (
+        {activeTab === 'aktivite' && isOwnProfile && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {cancelError && (
               <div style={{ backgroundColor: cancelError.startsWith('✓') ? '#F0FDF4' : '#FEF2F2', border: `1px solid ${cancelError.startsWith('✓') ? '#BBF7D0' : '#FECACA'}`, borderRadius: 12, padding: '12px 16px', fontSize: 13, color: cancelError.startsWith('✓') ? '#16a34a' : '#DC2626', fontWeight: 500 }}>{cancelError}</div>
@@ -612,11 +578,21 @@ export default function ProfilPage() {
               </div>
             ) : (
               (() => {
-                // Bookings ve drop-ins birleştir, tarihe göre sırala
+                // Bookings ve drop-ins birleştir, sadece gelecek olanlar, tarihe göre sırala
                 const allActivities = [
                   ...bookings.map((b: any) => ({ type: 'booking', date: new Date(b.session?.startsAt || b.createdAt), data: b })),
                   ...dropIns.map((dp: any) => ({ type: 'dropin', date: new Date(dp.slot?.startsAt || dp.joinedAt), data: dp })),
-                ].sort((a, b) => b.date.getTime() - a.date.getTime())
+                ].filter(a => a.date > new Date()).sort((a, b) => a.date.getTime() - b.date.getTime())
+
+                if (allActivities.length === 0) {
+                  return (
+                    <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '48px', textAlign: 'center', border: '1px solid #F0F0F0' }}>
+                      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}><Ticket size={52} color="#ccc" /></div>
+                      <div style={{ fontSize: 17, fontWeight: 700, color: '#111', marginBottom: 8 }}>Yaklaşan aktivite yok</div>
+                      <div style={{ fontSize: 14, color: '#888' }}>Yeni bir derse veya drop-in maça kaydol</div>
+                    </div>
+                  )
+                }
 
                 return (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -715,6 +691,130 @@ export default function ProfilPage() {
                 )
               })()
             )}
+          </div>
+        )}
+
+        {/* Geçmiş Aktivitelerim — own profile only */}
+        {activeTab === 'gecmis' && isOwnProfile && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {loadingBookings ? (
+              <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '48px', textAlign: 'center', border: '1px solid #F0F0F0', color: '#999', fontSize: 14 }}>Yükleniyor...</div>
+            ) : (
+              (() => {
+                const pastActivities = [
+                  ...bookings.map((b: any) => ({ type: 'booking', date: new Date(b.session?.startsAt || b.createdAt), data: b })),
+                  ...dropIns.map((dp: any) => ({ type: 'dropin', date: new Date(dp.slot?.startsAt || dp.joinedAt), data: dp })),
+                ].filter(a => a.date <= new Date()).sort((a, b) => b.date.getTime() - a.date.getTime())
+
+                if (pastActivities.length === 0) {
+                  return (
+                    <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '48px', textAlign: 'center', border: '1px solid #F0F0F0' }}>
+                      <div style={{ fontSize: 36, marginBottom: 12 }}>🏃</div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 6 }}>Henüz geçmiş aktivite yok</div>
+                    </div>
+                  )
+                }
+
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {pastActivities.map((item) => {
+                      if (item.type === 'booking') {
+                        const b = item.data
+                        const session = b.session
+                        const classObj = session?.class
+                        const venue = classObj?.venue
+                        const startsAt = session?.startsAt ? new Date(session.startsAt) : null
+                        const dateStr = startsAt ? startsAt.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : ''
+                        const timeStr = startsAt ? startsAt.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : ''
+                        const isCancelled = b.status === 'cancelled'
+                        const canReview = b.status === 'confirmed' && !b.review
+                        const catName = classObj?.category || ''
+                        const icon = getIconKeyForCategory(catName)
+                        const color = getColorForCategory(catName)
+
+                        return (
+                          <div key={`b-${b.id}`} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '18px 22px', border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 14 }}>
+                            <SportIconBox name={icon} bgColor={isCancelled ? '#F5F5F5' : color + '18'} iconColor={isCancelled ? '#ccc' : color} boxSize={50} borderRadius={14} size={22} />
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: 15, fontWeight: 700, color: isCancelled ? '#bbb' : '#111', textDecoration: isCancelled ? 'line-through' : 'none', marginBottom: 3 }}>{classObj?.title || 'Ders'}</div>
+                              <div style={{ fontSize: 13, color: '#aaa', marginBottom: 2 }}>{venue?.name || ''}</div>
+                              <div style={{ fontSize: 12, color: '#bbb' }}>{dateStr}{timeStr ? ` · ${timeStr}` : ''}</div>
+                            </div>
+                            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                              <div style={{ fontSize: 15, fontWeight: 800, color: isCancelled ? '#bbb' : '#4F46E5' }}>₺{b.finalAmount}</div>
+                              {isCancelled ? (
+                                <span style={{ fontSize: 12, color: '#EF4444', fontWeight: 600, backgroundColor: '#FEF2F2', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><X size={12} /> İptal edildi</span>
+                              ) : canReview ? (
+                                <button onClick={() => openReviewModal(b.id)} style={{ fontSize: 12, color: '#4F46E5', fontWeight: 600, background: '#EEF2FF', border: 'none', borderRadius: 100, padding: '5px 12px', cursor: 'pointer' }}>Yorum Yap</button>
+                              ) : (
+                                <span style={{ fontSize: 12, color: '#10B981', fontWeight: 600, backgroundColor: '#F0FDF4', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Check size={12} /> Tamamlandı</span>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      } else {
+                        const dp = item.data
+                        const slot = dp.slot
+                        const cat = slot?.sportCategory
+                        const slotStartsAt = slot?.startsAt ? new Date(slot.startsAt) : null
+                        const dpDateStr = slotStartsAt ? slotStartsAt.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : ''
+                        const dpTimeStr = slotStartsAt ? slotStartsAt.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : ''
+                        const dpCancelled = dp.status === 'cancelled' || slot?.status === 'cancelled'
+                        const iconColor = cat?.colorHex ? `#${cat.colorHex}` : '#3B82F6'
+
+                        return (
+                          <div key={`dp-${dp.id}`} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '18px 22px', border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 14 }}>
+                            <SportIconBox name={cat?.iconUrl || 'football'} bgColor={dpCancelled ? '#F5F5F5' : iconColor + '18'} iconColor={dpCancelled ? '#ccc' : iconColor} boxSize={50} borderRadius={14} size={22} />
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: 15, fontWeight: 700, color: dpCancelled ? '#bbb' : '#111', textDecoration: dpCancelled ? 'line-through' : 'none', marginBottom: 3 }}>{slot?.title || 'Maç'}</div>
+                              <div style={{ fontSize: 13, color: '#aaa', marginBottom: 2 }}>{slot?.venue?.name || ''}</div>
+                              <div style={{ fontSize: 12, color: '#bbb' }}>{dpDateStr}{dpTimeStr ? ` · ${dpTimeStr}` : ''}</div>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              {dpCancelled
+                                ? <span style={{ fontSize: 12, color: '#EF4444', fontWeight: 600, backgroundColor: '#FEF2F2', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><X size={12} /> İptal</span>
+                                : <span style={{ fontSize: 12, color: '#10B981', fontWeight: 600, backgroundColor: '#F0FDF4', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Check size={12} /> Katıldı</span>
+                              }
+                            </div>
+                          </div>
+                        )
+                      }
+                    })}
+                  </div>
+                )
+              })()
+            )}
+          </div>
+        )}
+
+        {reviewModal && (
+          <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={() => setReviewModal(null)}>
+            <div style={{ backgroundColor: '#fff', borderRadius: 20, width: '100%', maxWidth: 420, padding: 28 }} onClick={e => e.stopPropagation()}>
+              <div style={{ fontSize: 17, fontWeight: 800, color: '#111', marginBottom: 4, textAlign: 'center' }}>Dersini nasıl değerlendirirsin?</div>
+              <div style={{ fontSize: 12, color: '#999', textAlign: 'center', marginBottom: 18 }}>Puanın diğer kullanıcılara yardımcı olur</div>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 18 }}>
+                {[1, 2, 3, 4, 5].map(n => (
+                  <button key={n} onClick={() => setReviewRating(n)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 28, color: n <= reviewRating ? '#F59E0B' : '#e5e5e5' }}>★</button>
+                ))}
+              </div>
+              <textarea
+                value={reviewComment}
+                onChange={e => setReviewComment(e.target.value)}
+                placeholder="Deneyimini paylaş (opsiyonel)"
+                rows={4}
+                style={{ width: '100%', padding: '10px 14px', borderRadius: 12, border: '1.5px solid #E5E7EB', fontSize: 14, outline: 'none', resize: 'vertical', boxSizing: 'border-box' as const, fontFamily: 'inherit' }}
+              />
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#666', cursor: 'pointer', marginTop: 12 }}>
+                <input type="checkbox" checked={reviewAnonymous} onChange={e => setReviewAnonymous(e.target.checked)} />
+                Anonim olarak paylaş
+              </label>
+              <button onClick={submitReview} disabled={submittingReview} style={{ width: '100%', padding: 14, borderRadius: 12, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', marginTop: 16 }}>
+                {submittingReview ? 'Gönderiliyor...' : 'Gönder'}
+              </button>
+              <button onClick={() => setReviewModal(null)} style={{ width: '100%', padding: 10, borderRadius: 12, border: 'none', background: 'none', color: '#999', fontSize: 13, fontWeight: 600, cursor: 'pointer', marginTop: 4 }}>
+                Daha sonra
+              </button>
+            </div>
           </div>
         )}
 
