@@ -6,7 +6,7 @@ import Navbar from '@/components/Navbar'
 import { SkeletonList } from '@/components/Skeleton'
 import { getUser, getToken } from '@/lib/api'
 import { getInitialsAvatar } from '@/lib/cloudinary'
-import { MapPin } from 'lucide-react'
+import { MapPin, Heart, MessageCircle, X, Send } from 'lucide-react'
 import Link from 'next/link'
 import { SportIconBox } from '@/lib/sportIcons'
 
@@ -48,6 +48,11 @@ export default function SosyalPage() {
   const [suggestions, setSuggestions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [branches, setBranches] = useState<string[]>(['Tümü'])
+  const [commentModal, setCommentModal] = useState<string | null>(null)
+  const [comments, setComments] = useState<any[]>([])
+  const [commentsLoading, setCommentsLoading] = useState(false)
+  const [commentInput, setCommentInput] = useState('')
+  const [submittingComment, setSubmittingComment] = useState(false)
   const currentUser = getUser()
 
   useEffect(() => {
@@ -113,6 +118,50 @@ export default function SosyalPage() {
       setFeed(data.feed || [])
     } catch {}
     setFeedLoading(false)
+  }
+
+  const toggleLike = async (item: any) => {
+    const token = getToken()
+    if (!token) return
+    setFeed(prev => prev.map(f => f.id === item.id
+      ? { ...f, likedByMe: !f.likedByMe, likeCount: f.likedByMe ? f.likeCount - 1 : f.likeCount + 1 }
+      : f
+    ))
+    await fetch(`${API_URL}/api/social/feed/${item.id}/like`, {
+      method: item.likedByMe ? 'DELETE' : 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+  }
+
+  const openComments = async (feedKey: string) => {
+    setCommentModal(feedKey)
+    setCommentsLoading(true)
+    try {
+      const res = await fetch(`${API_URL}/api/social/feed/${feedKey}/comments`)
+      const data = await res.json()
+      setComments(Array.isArray(data?.comments) ? data.comments : [])
+    } catch {}
+    setCommentsLoading(false)
+  }
+
+  const submitComment = async () => {
+    const token = getToken()
+    if (!token || !commentModal || !commentInput.trim()) return
+    setSubmittingComment(true)
+    try {
+      const res = await fetch(`${API_URL}/api/social/feed/${commentModal}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ content: commentInput.trim() }),
+      })
+      const data = await res.json()
+      if (data?.comment) {
+        setComments(prev => [...prev, data.comment])
+        setCommentInput('')
+        setFeed(prev => prev.map(f => f.id === commentModal ? { ...f, commentCount: (f.commentCount || 0) + 1 } : f))
+      }
+    } catch {}
+    setSubmittingComment(false)
   }
 
   const timeAgo = (date: string) => {
@@ -293,32 +342,45 @@ export default function SosyalPage() {
             ) : feed.map(item => {
               const initialsData = getInitialsAvatar(item.user.fullName || item.user.username)
               return (
-                <div key={item.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'flex', gap: 14, alignItems: 'center' }}>
-                  {/* Avatar */}
-                  <Link href={`/profil/${item.user.username}`} style={{ textDecoration: 'none', flexShrink: 0 }}>
-                    {item.user.avatarUrl ? (
-                      <img src={item.user.avatarUrl} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover' }} alt="" />
-                    ) : (
-                      <div style={{ width: 44, height: 44, borderRadius: '50%', backgroundColor: initialsData.color + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: initialsData.color }}>{initialsData.initials}</div>
-                    )}
-                  </Link>
-                  {/* İçerik */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, color: '#333', lineHeight: 1.5 }}>
-                      <Link href={`/profil/${item.user.username}`} style={{ fontWeight: 700, color: '#111', textDecoration: 'none' }}>{item.user.fullName}</Link>
-                      {' '}{item.type === 'dropin' ? 'drop-in etkinliğine katıldı' : 'dersine katıldı'}
+                <div key={item.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                  <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+                    {/* Avatar */}
+                    <Link href={`/profil/${item.user.username}`} style={{ textDecoration: 'none', flexShrink: 0 }}>
+                      {item.user.avatarUrl ? (
+                        <img src={item.user.avatarUrl} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover' }} alt="" />
+                      ) : (
+                        <div style={{ width: 44, height: 44, borderRadius: '50%', backgroundColor: initialsData.color + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: initialsData.color }}>{initialsData.initials}</div>
+                      )}
+                    </Link>
+                    {/* İçerik */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, color: '#333', lineHeight: 1.5 }}>
+                        <Link href={`/profil/${item.user.username}`} style={{ fontWeight: 700, color: '#111', textDecoration: 'none' }}>{item.user.fullName}</Link>
+                        {' '}{item.type === 'dropin' ? 'drop-in etkinliğine katıldı' : 'dersine katıldı'}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 20, backgroundColor: (item.categoryColor || '#4F46E5') + '18', color: item.categoryColor || '#4F46E5' }}>{item.category}</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: '#444' }}>{item.title}</span>
+                      </div>
+                      <div style={{ fontSize: 12, color: '#aaa', marginTop: 4 }}>
+                        {item.venueName && <span>📍 {item.venueName} · </span>}
+                        {timeAgo(item.date)}
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 20, backgroundColor: (item.categoryColor || '#4F46E5') + '18', color: item.categoryColor || '#4F46E5' }}>{item.category}</span>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: '#444' }}>{item.title}</span>
-                    </div>
-                    <div style={{ fontSize: 12, color: '#aaa', marginTop: 4 }}>
-                      {item.venueName && <span>📍 {item.venueName} · </span>}
-                      {timeAgo(item.date)}
-                    </div>
+                    {/* Tip ikonu */}
+                    <div style={{ fontSize: 20, flexShrink: 0 }}>{item.type === 'dropin' ? '⚡' : '✅'}</div>
                   </div>
-                  {/* Tip ikonu */}
-                  <div style={{ fontSize: 20, flexShrink: 0 }}>{item.type === 'dropin' ? '⚡' : '✅'}</div>
+
+                  <div style={{ display: 'flex', gap: 20, marginTop: 12, paddingTop: 10, borderTop: '1px solid #f5f5f5' }}>
+                    <button onClick={() => toggleLike(item)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                      <Heart size={16} color={item.likedByMe ? '#DC2626' : '#999'} fill={item.likedByMe ? '#DC2626' : 'none'} />
+                      <span style={{ fontSize: 12, fontWeight: 600, color: item.likedByMe ? '#DC2626' : '#999' }}>{item.likeCount || 0}</span>
+                    </button>
+                    <button onClick={() => openComments(item.id)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                      <MessageCircle size={16} color="#999" />
+                      <span style={{ fontSize: 12, fontWeight: 600, color: '#999' }}>{item.commentCount || 0}</span>
+                    </button>
+                  </div>
                 </div>
               )
             })}
@@ -422,6 +484,46 @@ export default function SosyalPage() {
 
         <div style={{ height: 40 }} />
       </div>
+
+      {commentModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={() => setCommentModal(null)}>
+          <div style={{ backgroundColor: '#fff', borderRadius: 20, width: '100%', maxWidth: 440, padding: 24, maxHeight: '70vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div style={{ fontSize: 17, fontWeight: 800, color: '#111' }}>Yorumlar</div>
+              <button onClick={() => setCommentModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} color="#999" /></button>
+            </div>
+
+            <div style={{ flex: 1, overflowY: 'auto', minHeight: 80 }}>
+              {commentsLoading ? (
+                <div style={{ textAlign: 'center', padding: 20, color: '#999', fontSize: 13 }}>Yükleniyor...</div>
+              ) : comments.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 20, color: '#999', fontSize: 13 }}>Henüz yorum yok, ilk sen yaz!</div>
+              ) : (
+                comments.map(c => (
+                  <div key={c.id} style={{ backgroundColor: '#FAFAFA', borderRadius: 12, padding: 10, marginBottom: 8 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#4F46E5' }}>{c.user?.fullName || c.user?.username}</div>
+                    <div style={{ fontSize: 13, color: '#333', marginTop: 2 }}>{c.content}</div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, marginTop: 14, borderTop: '1px solid #f0f0f0', paddingTop: 14 }}>
+              <input
+                type="text"
+                placeholder="Yorum yaz..."
+                value={commentInput}
+                onChange={e => setCommentInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && submitComment()}
+                style={{ flex: 1, padding: '10px 14px', borderRadius: 12, border: '1.5px solid #E5E7EB', fontSize: 13, outline: 'none', fontFamily: 'inherit' }}
+              />
+              <button onClick={submitComment} disabled={submittingComment || !commentInput.trim()} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                <Send size={20} color="#4F46E5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

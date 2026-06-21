@@ -2,18 +2,56 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { getUser, removeToken, removeUser } from '@/lib/api'
+import { getUser, getToken, removeToken, removeUser } from '@/lib/api'
 import { useRouter } from 'next/navigation'
-import { User, LogOut } from 'lucide-react'
+import { User, LogOut, Bell } from 'lucide-react'
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
 export default function Navbar() {
   const router = useRouter()
   const [user, setUser] = useState<{ username: string; fullName: string } | null>(null)
   const [showMenu, setShowMenu] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [notifications, setNotifications] = useState<any[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
 
   useEffect(() => {
-    setUser(getUser())
+    const u = getUser()
+    setUser(u)
+    if (u) {
+      const token = getToken()
+      if (token) {
+        fetch(`${API_URL}/api/social/notifications`, { headers: { Authorization: `Bearer ${token}` } })
+          .then(r => r.json())
+          .then(d => {
+            setNotifications(Array.isArray(d?.notifications) ? d.notifications : [])
+            setUnreadCount(d?.unreadCount || 0)
+          })
+          .catch(() => {})
+      }
+    }
   }, [])
+
+  const openNotifications = () => {
+    setShowNotifications(v => !v)
+    if (!showNotifications && unreadCount > 0) {
+      const token = getToken()
+      if (token) {
+        fetch(`${API_URL}/api/social/notifications/read`, { method: 'PUT', headers: { Authorization: `Bearer ${token}` } })
+        setUnreadCount(0)
+      }
+    }
+  }
+
+  const timeAgo = (date: string) => {
+    const diff = Date.now() - new Date(date).getTime()
+    const mins = Math.floor(diff / 60000)
+    if (mins < 60) return `${mins} dakika önce`
+    const hours = Math.floor(mins / 60)
+    if (hours < 24) return `${hours} saat önce`
+    return `${Math.floor(hours / 24)} gün önce`
+  }
 
   const handleLogout = () => {
     removeToken()
@@ -32,6 +70,31 @@ export default function Navbar() {
       </Link>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {user && (
+          <div style={{ position: 'relative' }}>
+            <button onClick={openNotifications} style={{ position: 'relative', width: 38, height: 38, borderRadius: '50%', border: '1.5px solid #EBEBEB', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Bell size={17} color="#444" />
+              {unreadCount > 0 && (
+                <div style={{ position: 'absolute', top: 4, right: 4, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#DC2626' }} />
+              )}
+            </button>
+            {showNotifications && (
+              <div style={{ position: 'absolute', right: 0, top: 46, backgroundColor: '#fff', borderRadius: 16, boxShadow: '0 8px 40px rgba(0,0,0,0.14)', border: '1px solid #F0F0F0', minWidth: 300, maxHeight: 360, overflowY: 'auto', zIndex: 200 }}>
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid #F5F5F5', fontSize: 13, fontWeight: 700, color: '#111' }}>Bildirimler</div>
+                {notifications.length === 0 ? (
+                  <div style={{ padding: 20, textAlign: 'center', fontSize: 13, color: '#999' }}>Henüz bildirim yok</div>
+                ) : (
+                  notifications.map(n => (
+                    <div key={n.id} style={{ padding: '12px 16px', borderBottom: '1px solid #FAFAFA', backgroundColor: n.isRead ? '#fff' : '#EEF2FF' }}>
+                      <div style={{ fontSize: 13, color: '#222' }}>{n.message}</div>
+                      <div style={{ fontSize: 11, color: '#999', marginTop: 3 }}>{timeAgo(n.createdAt)}</div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        )}
         {user ? (
           <div style={{ position: 'relative' }}>
             <button
