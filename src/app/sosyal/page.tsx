@@ -52,6 +52,7 @@ export default function SosyalPage() {
   const [comments, setComments] = useState<any[]>([])
   const [commentsLoading, setCommentsLoading] = useState(false)
   const [commentInput, setCommentInput] = useState('')
+  const [replyTo, setReplyTo] = useState<{ id: number; name: string } | null>(null)
   const [submittingComment, setSubmittingComment] = useState(false)
   const currentUser = getUser()
 
@@ -135,6 +136,7 @@ export default function SosyalPage() {
 
   const openComments = async (feedKey: string) => {
     setCommentModal(feedKey)
+    setReplyTo(null)
     setCommentsLoading(true)
     try {
       const res = await fetch(`${API_URL}/api/social/feed/${feedKey}/comments`)
@@ -152,12 +154,17 @@ export default function SosyalPage() {
       const res = await fetch(`${API_URL}/api/social/feed/${commentModal}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ content: commentInput.trim() }),
+        body: JSON.stringify({ content: commentInput.trim(), parentId: replyTo?.id }),
       })
       const data = await res.json()
       if (data?.comment) {
-        setComments(prev => [...prev, data.comment])
+        if (replyTo) {
+          setComments(prev => prev.map(c => c.id === replyTo.id ? { ...c, replies: [...(c.replies || []), data.comment] } : c))
+        } else {
+          setComments(prev => [...prev, { ...data.comment, replies: [] }])
+        }
         setCommentInput('')
+        setReplyTo(null)
         setFeed(prev => prev.map(f => f.id === commentModal ? { ...f, commentCount: (f.commentCount || 0) + 1 } : f))
       }
     } catch {}
@@ -500,18 +507,34 @@ export default function SosyalPage() {
                 <div style={{ textAlign: 'center', padding: 20, color: '#999', fontSize: 13 }}>Henüz yorum yok, ilk sen yaz!</div>
               ) : (
                 comments.map(c => (
-                  <div key={c.id} style={{ backgroundColor: '#FAFAFA', borderRadius: 12, padding: 10, marginBottom: 8 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#4F46E5' }}>{c.user?.fullName || c.user?.username}</div>
-                    <div style={{ fontSize: 13, color: '#333', marginTop: 2 }}>{c.content}</div>
+                  <div key={c.id}>
+                    <div style={{ backgroundColor: '#FAFAFA', borderRadius: 12, padding: 10, marginBottom: 8 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: '#4F46E5' }}>{c.user?.fullName || c.user?.username}</div>
+                      <div style={{ fontSize: 13, color: '#333', marginTop: 2 }}>{c.content}</div>
+                      <button onClick={() => setReplyTo({ id: c.id, name: c.user?.fullName || c.user?.username })} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: 6, fontSize: 11, fontWeight: 700, color: '#4F46E5' }}>Cevapla</button>
+                    </div>
+                    {(c.replies || []).map((r: any) => (
+                      <div key={r.id} style={{ backgroundColor: '#F0F0F5', borderRadius: 12, padding: 10, marginBottom: 8, marginLeft: 24 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#4F46E5' }}>{r.user?.fullName || r.user?.username}</div>
+                        <div style={{ fontSize: 13, color: '#333', marginTop: 2 }}>{r.content}</div>
+                      </div>
+                    ))}
                   </div>
                 ))
               )}
             </div>
 
+            {replyTo && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#EEF2FF', borderRadius: 10, padding: 8, marginTop: 10 }}>
+                <span style={{ fontSize: 12, color: '#4F46E5', fontWeight: 600 }}>{replyTo.name} kullanıcısına cevap yazıyorsun</span>
+                <button onClick={() => setReplyTo(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={14} color="#999" /></button>
+              </div>
+            )}
+
             <div style={{ display: 'flex', gap: 10, marginTop: 14, borderTop: '1px solid #f0f0f0', paddingTop: 14 }}>
               <input
                 type="text"
-                placeholder="Yorum yaz..."
+                placeholder={replyTo ? 'Cevap yaz...' : 'Yorum yaz...'}
                 value={commentInput}
                 onChange={e => setCommentInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && submitComment()}
