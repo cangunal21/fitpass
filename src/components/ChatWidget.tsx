@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { X, Send, MessageCircle } from 'lucide-react'
+import { getToken } from '@/lib/api'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
@@ -35,6 +36,19 @@ export default function ChatWidget() {
     }
   }, [open, messages])
 
+  useEffect(() => {
+    const token = getToken()
+    if (!token) return
+    fetch(`${API_URL}/api/chat/history`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data?.messages) && data.messages.length > 0) {
+          setMessages(data.messages.map((m: any) => ({ role: m.role, content: m.content })))
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   const sendMessage = async (text?: string) => {
     const content = (text || input).trim()
     if (!content || loading) return
@@ -46,9 +60,13 @@ export default function ChatWidget() {
     setLoading(true)
 
     try {
+      const token = getToken()
       const res = await fetch(`${API_URL}/api/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ messages: newMessages }),
       })
       const data = await res.json()
