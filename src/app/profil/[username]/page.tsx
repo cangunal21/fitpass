@@ -13,7 +13,7 @@ import { SportIcon, SportIconBox, getIconKeyForCategory, getColorForCategory } f
 import AvatarUpload from '@/components/AvatarUpload'
 import { getInitialsAvatar } from '@/lib/cloudinary'
 
-type OwnTab = 'aktivite' | 'gecmis' | 'hesap' | 'ödeme' | 'favoriler' | 'referans'
+type OwnTab = 'rezervasyonlar' | 'hesap' | 'ödeme' | 'favoriler' | 'referans'
 type PublicTab = 'aktivite' | 'arkadaşlar' | 'istatistik'
 
 export default function ProfilPage() {
@@ -57,7 +57,8 @@ export default function ProfilPage() {
   const [editError, setEditError] = useState('')
   const [neighborhoods, setNeighborhoods] = useState<{ id: number; name: string }[]>([])
 
-  const [activeTab, setActiveTab] = useState<OwnTab | PublicTab>('aktivite')
+  const [activeTab, setActiveTab] = useState<OwnTab | PublicTab>(isOwnProfile ? 'rezervasyonlar' : 'aktivite')
+  const [reservationSubTab, setReservationSubTab] = useState<'upcoming' | 'past'>('upcoming')
   const [isFollowing, setIsFollowing] = useState(false)
   const [referralInfo, setReferralInfo] = useState<any>(null)
   const [copied, setCopied] = useState(false)
@@ -219,8 +220,7 @@ export default function ProfilPage() {
   ].sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 20)
 
   const ownTabs: { key: OwnTab; label: ReactNode }[] = [
-    { key: 'aktivite', label: <><ClipboardList size={15} style={{ marginRight: 5 }} />Aktivitelerim</> },
-    { key: 'gecmis', label: <><Ticket size={15} style={{ marginRight: 5 }} />Geçmiş Aktivitelerim</> },
+    { key: 'rezervasyonlar', label: <><Ticket size={15} style={{ marginRight: 5 }} />Rezervasyonlarım</> },
     { key: 'hesap', label: <><User size={15} style={{ marginRight: 5 }} />Hesap Bilgilerim</> },
     { key: 'ödeme', label: <><CreditCard size={15} style={{ marginRight: 5 }} />Ödeme Bilgilerim</> },
     { key: 'favoriler', label: <><Heart size={15} style={{ marginRight: 5 }} />Favori Salonlar</> },
@@ -562,7 +562,24 @@ export default function ProfilPage() {
         )}
 
         {/* Rezervasyonlarım — own profile only */}
-        {activeTab === 'aktivite' && isOwnProfile && (
+        {activeTab === 'rezervasyonlar' && isOwnProfile && (
+          <div style={{ display: 'inline-flex', gap: 6, backgroundColor: '#F5F5F5', borderRadius: 12, padding: 4, marginBottom: 16 }}>
+            <button
+              onClick={() => setReservationSubTab('upcoming')}
+              style={{ padding: '8px 18px', borderRadius: 9, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700, background: reservationSubTab === 'upcoming' ? '#fff' : 'transparent', color: reservationSubTab === 'upcoming' ? '#4F46E5' : '#888', boxShadow: reservationSubTab === 'upcoming' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none' }}
+            >
+              Aktivitelerim
+            </button>
+            <button
+              onClick={() => setReservationSubTab('past')}
+              style={{ padding: '8px 18px', borderRadius: 9, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700, background: reservationSubTab === 'past' ? '#fff' : 'transparent', color: reservationSubTab === 'past' ? '#4F46E5' : '#888', boxShadow: reservationSubTab === 'past' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none' }}
+            >
+              Geçmiş Aktivitelerim
+            </button>
+          </div>
+        )}
+
+        {activeTab === 'rezervasyonlar' && isOwnProfile && reservationSubTab === 'upcoming' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {cancelError && (
               <div style={{ backgroundColor: cancelError.startsWith('✓') ? '#F0FDF4' : '#FEF2F2', border: `1px solid ${cancelError.startsWith('✓') ? '#BBF7D0' : '#FECACA'}`, borderRadius: 12, padding: '12px 16px', fontSize: 13, color: cancelError.startsWith('✓') ? '#16a34a' : '#DC2626', fontWeight: 500 }}>{cancelError}</div>
@@ -695,7 +712,7 @@ export default function ProfilPage() {
         )}
 
         {/* Geçmiş Aktivitelerim — own profile only */}
-        {activeTab === 'gecmis' && isOwnProfile && (
+        {activeTab === 'rezervasyonlar' && isOwnProfile && reservationSubTab === 'past' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {loadingBookings ? (
               <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '48px', textAlign: 'center', border: '1px solid #F0F0F0', color: '#999', fontSize: 14 }}>Yükleniyor...</div>
