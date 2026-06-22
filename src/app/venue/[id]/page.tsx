@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { mockVenues, mockClasses, mockInstructors } from '@/lib/mockData'
 import Navbar from '@/components/Navbar'
-import { MapPin, Calendar, User, Star, Clock, Timer, Flame } from 'lucide-react'
+import { MapPin, Calendar, User, Star, Clock, Timer, Flame, Bookmark } from 'lucide-react'
 import { SportIconBox } from '@/lib/sportIcons'
 import { api } from '@/lib/api'
 import { SkeletonVenuePage } from '@/components/Skeleton'
@@ -285,7 +285,8 @@ export default function VenuePage() {
                     fontSize: 13, fontWeight: 700, cursor: 'pointer'
                   }}
                 >
-                  {isFavorite ? '❤️ Favoride' : '🤍 Favoriye Ekle'}
+                  <Bookmark size={15} color={isFavorite ? '#DC2626' : '#666'} fill={isFavorite ? '#DC2626' : 'none'} />
+                  {isFavorite ? 'Favoride' : 'Favoriye Ekle'}
                 </button>
               )}
             </div>
