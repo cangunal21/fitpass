@@ -24,6 +24,12 @@ const MOCK_USERS = [
   { id: 'm7', username: 'dila_dans', avatarUrl: null, lessonCount: 15, neighborhood: { name: 'Maltepe' } },
 ]
 
+const MOCK_FEED = [
+  { id: 'f1', type: 'class', user: { username: 'selin_y', fullName: 'Selin Yıldız', avatarUrl: null }, category: 'Yoga', categoryColor: '#C4A882', title: 'Vinyasa Flow Yoga', venueName: 'Zen Studio Beşiktaş', date: new Date(Date.now() - 2 * 3600 * 1000).toISOString(), likeCount: 4, commentCount: 1, likedByMe: false },
+  { id: 'f2', type: 'dropin', user: { username: 'ali_demir', fullName: 'Ali Demir', avatarUrl: null }, category: 'Halı Saha', categoryColor: '#16A34A', title: '7v7 Halı Saha Maçı', venueName: 'Spor Arena Ataşehir', date: new Date(Date.now() - 5 * 3600 * 1000).toISOString(), likeCount: 9, commentCount: 3, likedByMe: false },
+  { id: 'f3', type: 'class', user: { username: 'mert_boks', fullName: 'Mert Boks', avatarUrl: null }, category: 'Boks', categoryColor: '#DC2626', title: 'Kickboks Başlangıç', venueName: 'Fight Club Şişli', date: new Date(Date.now() - 26 * 3600 * 1000).toISOString(), likeCount: 2, commentCount: 0, likedByMe: false },
+]
+
 const MOCK_VENUES = [
   { id: 'v1', name: 'Kadıköy Spor Merkezi', avgRating: 4.9, totalReviews: 128, coverImageUrl: null, mainIcon: 'yoga', iconBg: '#F0FDF4', iconColor: '#16A34A', neighborhood: { name: 'Kadıköy' }, sportCategories: [{ sportCategory: { name: 'Yoga' } }, { sportCategory: { name: 'Pilates' } }, { sportCategory: { name: 'HIIT' } }] },
   { id: 'v2', name: 'Beşiktaş Boks Kulübü', avgRating: 4.8, totalReviews: 94, coverImageUrl: null, mainIcon: 'boxing', iconBg: '#FFF1F2', iconColor: '#E11D48', neighborhood: { name: 'Beşiktaş' }, sportCategories: [{ sportCategory: { name: 'Boks' } }, { sportCategory: { name: 'Crossfit' } }] },
@@ -36,6 +42,7 @@ export default function SosyalPage() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<'siralama' | 'arkadaslar' | 'feed'>('siralama')
   const [feed, setFeed] = useState<any[]>([])
+  const [isMockFeed, setIsMockFeed] = useState(false)
   const [feedLoading, setFeedLoading] = useState(false)
   const [siralamaType, setSiralamaType] = useState<'kullanici' | 'salon'>('kullanici')
   const [selectedBranch, setSelectedBranch] = useState('Tümü')
@@ -116,12 +123,15 @@ export default function SosyalPage() {
     try {
       const res = await fetch(`${API_URL}/api/social/feed`, { headers: { Authorization: `Bearer ${token}` } })
       const data = await res.json()
-      setFeed(data.feed || [])
+      const realFeed = data.feed || []
+      setIsMockFeed(realFeed.length === 0)
+      setFeed(realFeed.length === 0 ? MOCK_FEED : realFeed)
     } catch {}
     setFeedLoading(false)
   }
 
   const toggleLike = async (item: any) => {
+    if (isMockFeed) return
     const token = getToken()
     if (!token) return
     setFeed(prev => prev.map(f => f.id === item.id
@@ -135,6 +145,7 @@ export default function SosyalPage() {
   }
 
   const openComments = async (feedKey: string) => {
+    if (isMockFeed) return
     setCommentModal(feedKey)
     setReplyTo(null)
     setCommentsLoading(true)
@@ -260,10 +271,11 @@ export default function SosyalPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {loading ? (
                   <SkeletonList count={5} />
-                ) : (userLeaderboard.length === 0 ? MOCK_USERS : userLeaderboard).map((user, i) => {
-                  const { initials, color } = getInitialsAvatar(user.username || '?')
-                  return (
-                    <Link key={user.id} href={user.username ? `/profil/${user.username}` : '#'} style={{ textDecoration: 'none' }}>
+                ) : (() => {
+                  const isMock = userLeaderboard.length === 0
+                  return (isMock ? MOCK_USERS : userLeaderboard).map((user, i) => {
+                    const { initials, color } = getInitialsAvatar(user.username || '?')
+                    const card = (
                       <div style={{ backgroundColor: i < 3 ? '#FFFBEB' : '#fff', borderRadius: 16, padding: '14px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 14, border: i === 0 ? '2px solid #F59E0B' : '1px solid transparent' }}>
                         <div style={{ width: 36, textAlign: 'center', fontSize: i < 3 ? 22 : 14, fontWeight: 800, color: medalColor(i) }}>
                           {medalEmoji(i)}
@@ -280,9 +292,14 @@ export default function SosyalPage() {
                           <div style={{ fontSize: 11, color: '#888' }}>ders</div>
                         </div>
                       </div>
-                    </Link>
-                  )
-                })}
+                    )
+                    return isMock ? (
+                      <div key={user.id} style={{ cursor: 'default' }}>{card}</div>
+                    ) : (
+                      <Link key={user.id} href={user.username ? `/profil/${user.username}` : '#'} style={{ textDecoration: 'none' }}>{card}</Link>
+                    )
+                  })
+                })()}
               </div>
             )}
 
@@ -379,11 +396,11 @@ export default function SosyalPage() {
                   </div>
 
                   <div style={{ display: 'flex', gap: 20, marginTop: 12, paddingTop: 10, borderTop: '1px solid #f5f5f5' }}>
-                    <button onClick={() => toggleLike(item)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                    <button onClick={() => toggleLike(item)} disabled={isMockFeed} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: isMockFeed ? 'default' : 'pointer', padding: 0, opacity: isMockFeed ? 0.5 : 1 }}>
                       <Heart size={16} color={item.likedByMe ? '#DC2626' : '#999'} fill={item.likedByMe ? '#DC2626' : 'none'} />
                       <span style={{ fontSize: 12, fontWeight: 600, color: item.likedByMe ? '#DC2626' : '#999' }}>{item.likeCount || 0}</span>
                     </button>
-                    <button onClick={() => openComments(item.id)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                    <button onClick={() => openComments(item.id)} disabled={isMockFeed} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: isMockFeed ? 'default' : 'pointer', padding: 0, opacity: isMockFeed ? 0.5 : 1 }}>
                       <MessageCircle size={16} color="#999" />
                       <span style={{ fontSize: 12, fontWeight: 600, color: '#999' }}>{item.commentCount || 0}</span>
                     </button>
