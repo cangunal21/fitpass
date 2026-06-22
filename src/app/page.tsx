@@ -81,6 +81,8 @@ export default function Home() {
   const [neighborhoods, setNeighborhoods] = useState<{ id: number; name: string }[]>([])
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [searchInput, setSearchInput] = useState('')
+  const [venueResults, setVenueResults] = useState<any[]>([])
+  const [allVenues, setAllVenues] = useState<any[]>([])
 
   // Fetch neighborhoods + categories on mount
   useEffect(() => {
@@ -96,6 +98,9 @@ export default function Home() {
           color: c.colorHex || getColorForCategory(c.name),
         })))
       }
+    }).catch(() => {})
+    api.getVenues().then((r: any) => {
+      if (Array.isArray(r?.venues)) setAllVenues(r.venues)
     }).catch(() => {})
   }, [])
 
@@ -159,6 +164,14 @@ export default function Home() {
     searchDebounceRef.current = setTimeout(() => {
       setFilters(f => ({ ...f, search: searchInput }))
       fetchSessions({ ...filters, search: searchInput }, sort, timeFilter)
+      const s = searchInput.trim().toLowerCase()
+      if (s) {
+        setVenueResults(allVenues.filter(v =>
+          v.name?.toLowerCase().includes(s) || v.neighborhood?.name?.toLowerCase().includes(s)
+        ))
+      } else {
+        setVenueResults([])
+      }
     }, 400)
     return () => { if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -360,6 +373,27 @@ export default function Home() {
 
       {/* İçerik */}
       <div className="page-container" style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 24px' }}>
+        {venueResults.length > 0 && (
+          <div style={{ marginBottom: 28 }}>
+            <span style={{ fontSize: 15, fontWeight: 700, color: '#888' }}>Salonlar</span>
+            <div className="cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 14, marginTop: 10 }}>
+              {venueResults.map(v => (
+                <Link key={v.id} href={`/venue/${v.id}`} style={{ textDecoration: 'none' }}>
+                  <div style={{ backgroundColor: '#fff', borderRadius: 14, padding: '14px 16px', border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: '#EEF2FF', color: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 15, flexShrink: 0 }}>
+                      {v.name?.[0]?.toUpperCase() || '?'}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>{v.name}</div>
+                      {v.neighborhood?.name && <div style={{ fontSize: 12, color: '#888' }}>{v.neighborhood.name}</div>}
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <div>
             {loading ? (
