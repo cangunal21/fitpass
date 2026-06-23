@@ -5,9 +5,11 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { api, saveToken, saveUser } from '@/lib/api'
 import { AlertCircle, Gift } from 'lucide-react'
+import { useT } from '@/lib/i18n'
 
 function KayitForm() {
   const router = useRouter()
+  const { t } = useT()
   const searchParams = useSearchParams()
   const [form, setForm] = useState({ fullName: '', username: '', email: '', phone: '', password: '', passwordConfirm: '', referralCode: '' })
 
@@ -38,8 +40,8 @@ function KayitForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (form.password !== form.passwordConfirm) { setError('Şifreler eşleşmiyor.'); return }
-    if (form.password.length < 6) { setError('Şifre en az 6 karakter olmalı.'); return }
+    if (form.password !== form.passwordConfirm) { setError(t('register.passwordMismatch')); return }
+    if (form.password.length < 6) { setError(t('register.passwordShort')); return }
 
     setLoading(true)
     try {
@@ -60,7 +62,7 @@ function KayitForm() {
       saveUser(res.user)
       router.push('/')
     } catch {
-      setError('Bağlantı hatası. Lütfen tekrar dene.')
+      setError(t('common.connectionError'))
       setLoading(false)
     }
   }
@@ -72,15 +74,15 @@ function KayitForm() {
         <div style={{ position: 'absolute', top: -80, right: -80, width: 300, height: 300, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
         <div style={{ position: 'absolute', bottom: -60, left: -60, width: 240, height: 240, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
         <Link href="/" style={{ fontSize: 28, fontWeight: 800, color: '#fff', textDecoration: 'none', marginBottom: 48, display: 'block' }}>şipşakspor</Link>
-        <h2 style={{ fontSize: 36, fontWeight: 800, color: '#fff', marginBottom: 16, lineHeight: 1.2 }}>Spor hayatın<br />başlıyor</h2>
+        <h2 style={{ fontSize: 36, fontWeight: 800, color: '#fff', marginBottom: 16, lineHeight: 1.2 }}>{t('register.heroTitle')}</h2>
         <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.8)', lineHeight: 1.7, maxWidth: 320 }}>
-          Yoga'dan boksa, halı sahadan pilates'e — İstanbul'un en iyi spor derslerini tek platformda keşfet.
+          {t('auth.heroDesc')}
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 40 }}>
-          {['Ücretsiz hesap oluştur', 'Sınırsız keşfet ve rezervasyon yap', 'İstediğin zaman iptal et'].map((t, i) => (
+          {[t('register.feat1'), t('register.feat2'), t('register.feat3')].map((feat, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, color: '#fff' }}>
               <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700 }}>✓</div>
-              <span style={{ fontSize: 14, fontWeight: 500, opacity: 0.9 }}>{t}</span>
+              <span style={{ fontSize: 14, fontWeight: 500, opacity: 0.9 }}>{feat}</span>
             </div>
           ))}
         </div>
@@ -89,57 +91,57 @@ function KayitForm() {
       {/* Sağ panel */}
       <div className="split-right" style={{ width: 520, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '60px 48px', backgroundColor: '#fff', overflowY: 'auto' }}>
         <div style={{ marginBottom: 32 }}>
-          <h1 style={{ fontSize: 28, fontWeight: 800, color: '#111', marginBottom: 8 }}>Hesap oluştur</h1>
-          <p style={{ fontSize: 15, color: '#888' }}>Birkaç saniyede başla, ücretsiz</p>
+          <h1 style={{ fontSize: 28, fontWeight: 800, color: '#111', marginBottom: 8 }}>{t('register.title')}</h1>
+          <p style={{ fontSize: 15, color: '#888' }}>{t('register.subtitle2')}</p>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {/* İsim + Kullanıcı adı yan yana */}
           <div className="form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
-              <label style={labelStyle}>Ad Soyad</label>
+              <label style={labelStyle}>{t('auth.fullName')}</label>
               <input name="fullName" type="text" placeholder="Adın Soyadın" value={form.fullName} onChange={handleChange} required style={inputStyle} />
             </div>
             <div>
-              <label style={labelStyle}>Kullanıcı Adı</label>
+              <label style={labelStyle}>{t('register.usernameLabel')}</label>
               <input name="username" type="text" placeholder="kullaniciadi" value={form.username} onChange={handleChange} required style={inputStyle} />
             </div>
           </div>
 
           <div>
-            <label style={labelStyle}>E-posta adresi</label>
+            <label style={labelStyle}>{t('auth.emailLabel')}</label>
             <input name="email" type="email" placeholder="ornek@email.com" value={form.email} onChange={handleChange} required style={inputStyle} />
           </div>
 
           <div>
-            <label style={labelStyle}>Telefon <span style={{ fontWeight: 400, color: '#bbb' }}>(isteğe bağlı)</span></label>
+            <label style={labelStyle}>{t('auth.phone')} <span style={{ fontWeight: 400, color: '#bbb' }}>{t('register.optional')}</span></label>
             <input name="phone" type="tel" placeholder="05XX XXX XX XX" value={form.phone} onChange={handleChange} style={inputStyle} />
           </div>
 
           {/* Şifre yan yana */}
           <div className="form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
-              <label style={labelStyle}>Şifre</label>
-              <input name="password" type="password" placeholder="En az 6 karakter" value={form.password} onChange={handleChange} required style={inputStyle} />
+              <label style={labelStyle}>{t('auth.password')}</label>
+              <input name="password" type="password" placeholder={t('register.passwordPlaceholder')} value={form.password} onChange={handleChange} required style={inputStyle} />
             </div>
             <div>
-              <label style={labelStyle}>Şifre Tekrar</label>
+              <label style={labelStyle}>{t('register.passwordConfirm')}</label>
               <input name="passwordConfirm" type="password" placeholder="••••••••" value={form.passwordConfirm} onChange={handleChange} required style={inputStyle} />
             </div>
           </div>
 
           <div>
-            <label style={labelStyle}>Davet Kodu <span style={{ fontWeight: 400, color: '#bbb' }}>(isteğe bağlı)</span></label>
+            <label style={labelStyle}>{t('register.referral')} <span style={{ fontWeight: 400, color: '#bbb' }}>{t('register.optional')}</span></label>
             <div style={{ position: 'relative' }}>
               <Gift size={15} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#A5B4FC' }} />
               <input name="referralCode" type="text" placeholder="örn. A1B2C3D4" value={form.referralCode} onChange={e => setForm(f => ({ ...f, referralCode: e.target.value.toUpperCase() }))} style={{ ...inputStyle, paddingLeft: 38 }} />
             </div>
-            {form.referralCode && <p style={{ fontSize: 12, color: '#10B981', marginTop: 5, fontWeight: 600 }}>🎁 İlk dersin için 150 TL kredi kazanacaksın!</p>}
+            {form.referralCode && <p style={{ fontSize: 12, color: '#10B981', marginTop: 5, fontWeight: 600 }}>{t('register.referralBonus')}</p>}
           </div>
 
           {categories.length > 0 && (
             <div>
-              <label style={labelStyle}>İlgilendiğin sporlar <span style={{ fontWeight: 400, color: '#bbb' }}>(birden fazla seçebilirsin)</span></label>
+              <label style={labelStyle}>{t('register.sportsLabel')} <span style={{ fontWeight: 400, color: '#bbb' }}>{t('register.multiHint')}</span></label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {categories.map(c => {
                   const on = selectedSports.includes(c.name)
@@ -153,7 +155,7 @@ function KayitForm() {
 
           {neighborhoods.length > 0 && (
             <div>
-              <label style={labelStyle}>Hangi ilçelerde spor yaparsın <span style={{ fontWeight: 400, color: '#bbb' }}>(birden fazla seçebilirsin)</span></label>
+              <label style={labelStyle}>{t('register.neighborhoodsLabel')} <span style={{ fontWeight: 400, color: '#bbb' }}>{t('register.multiHint')}</span></label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, maxHeight: 140, overflowY: 'auto' }}>
                 {[...neighborhoods].sort((a, b) => a.name.localeCompare(b.name, 'tr')).map(n => {
                   const on = selectedNeighborhoods.includes(n.id)
@@ -172,14 +174,14 @@ function KayitForm() {
           )}
 
           <button type="submit" disabled={loading} style={{ marginTop: 4, padding: '14px', borderRadius: 12, border: 'none', background: loading ? '#A5B4FC' : '#4F46E5', color: '#fff', fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', transition: 'background 0.15s' }}>
-            {loading ? 'Hesap oluşturuluyor...' : 'Kayıt Ol'}
+            {loading ? t('register.loading') : t('register.button')}
           </button>
         </form>
 
         <div style={{ textAlign: 'center', marginTop: 28, paddingTop: 28, borderTop: '1px solid #F0F0F0' }}>
           <p style={{ fontSize: 14, color: '#888' }}>
-            Zaten hesabın var mı?{' '}
-            <Link href="/giris" style={{ color: '#4F46E5', fontWeight: 700, textDecoration: 'none' }}>Giriş Yap</Link>
+            {t('register.haveAccount')}{' '}
+            <Link href="/giris" style={{ color: '#4F46E5', fontWeight: 700, textDecoration: 'none' }}>{t('register.loginLink')}</Link>
           </p>
         </div>
 

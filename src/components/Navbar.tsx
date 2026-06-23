@@ -5,11 +5,13 @@ import Link from 'next/link'
 import { getUser, getToken, removeToken, removeUser } from '@/lib/api'
 import { useRouter } from 'next/navigation'
 import { User, LogOut, Bell } from 'lucide-react'
+import { useT } from '@/lib/i18n'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
 export default function Navbar() {
   const router = useRouter()
+  const { t, lang, setLang } = useT()
   const [user, setUser] = useState<{ username: string; fullName: string } | null>(null)
   const [showMenu, setShowMenu] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
@@ -66,10 +68,17 @@ export default function Navbar() {
       <Link href="/" style={{ fontSize: 24, fontWeight: 800, color: '#4F46E5', letterSpacing: -0.5, textDecoration: 'none' }}>şipşakspor</Link>
 
       <Link href="/sosyal" style={{ fontSize: 16, fontWeight: 800, color: '#4F46E5', textDecoration: 'none', padding: '6px 12px', borderRadius: 8, letterSpacing: -0.3 }}>
-        Sosyal
+        {t('nav.social')}
       </Link>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <button
+          onClick={() => setLang(lang === 'tr' ? 'en' : 'tr')}
+          aria-label="Dil / Language"
+          style={{ width: 42, height: 34, borderRadius: 100, border: '1.5px solid #EBEBEB', background: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 800, color: '#4F46E5', letterSpacing: 0.5 }}
+        >
+          {lang === 'tr' ? 'EN' : 'TR'}
+        </button>
         {user && (
           <div style={{ position: 'relative' }}>
             <button onClick={openNotifications} style={{ position: 'relative', width: 38, height: 38, borderRadius: '50%', border: '1.5px solid #EBEBEB', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -80,9 +89,9 @@ export default function Navbar() {
             </button>
             {showNotifications && (
               <div style={{ position: 'absolute', right: 0, top: 46, backgroundColor: '#fff', borderRadius: 16, boxShadow: '0 8px 40px rgba(0,0,0,0.14)', border: '1px solid #F0F0F0', minWidth: 300, maxHeight: 360, overflowY: 'auto', zIndex: 200 }}>
-                <div style={{ padding: '12px 16px', borderBottom: '1px solid #F5F5F5', fontSize: 13, fontWeight: 700, color: '#111' }}>Bildirimler</div>
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid #F5F5F5', fontSize: 13, fontWeight: 700, color: '#111' }}>{t("nav.notifications")}</div>
                 {notifications.length === 0 ? (
-                  <div style={{ padding: 20, textAlign: 'center', fontSize: 13, color: '#999' }}>Henüz bildirim yok</div>
+                  <div style={{ padding: 20, textAlign: 'center', fontSize: 13, color: '#999' }}>{t("nav.noNotifications")}</div>
                 ) : (
                   notifications.map(n => (
                     <div key={n.id} style={{ padding: '12px 16px', borderBottom: '1px solid #FAFAFA', backgroundColor: n.isRead ? '#fff' : '#EEF2FF' }}>
@@ -114,11 +123,11 @@ export default function Navbar() {
                   <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>@{user.username}</div>
                 </div>
                 <Link href={`/profil/${user.username}`} onClick={() => setShowMenu(false)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', fontSize: 14, color: '#333', textDecoration: 'none', fontWeight: 500, backgroundColor: 'transparent' }}>
-                  <User size={16} /> Profilim
+                  <User size={16} /> {t("nav.profile")}
                 </Link>
                 <div style={{ height: 1, backgroundColor: '#F5F5F5' }} />
                 <button onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', fontSize: 14, color: '#4F46E5', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500 }}>
-                  <LogOut size={14} /> Çıkış Yap
+                  <LogOut size={14} /> {t("nav.logout")}
                 </button>
               </div>
             )}
@@ -126,10 +135,10 @@ export default function Navbar() {
         ) : (
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <Link href="/giris" style={{ padding: '9px 18px', borderRadius: 100, border: '1.5px solid #EBEBEB', background: '#fff', fontSize: 14, fontWeight: 600, color: '#333', textDecoration: 'none' }}>
-              Giriş Yap
+              {t("nav.login")}
             </Link>
             <Link href="/kayit" style={{ padding: '9px 18px', borderRadius: 100, border: 'none', background: '#4F46E5', fontSize: 14, fontWeight: 600, color: '#fff', textDecoration: 'none' }}>
-              Kayıt Ol
+              {t("nav.register")}
             </Link>
           </div>
         )}
