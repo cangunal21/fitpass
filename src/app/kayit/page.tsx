@@ -17,6 +17,19 @@ function KayitForm() {
   }, [searchParams])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>([])
+  const [neighborhoods, setNeighborhoods] = useState<{ id: number; name: string }[]>([])
+  const [selectedSports, setSelectedSports] = useState<string[]>([])
+  const [selectedNeighborhoods, setSelectedNeighborhoods] = useState<number[]>([])
+
+  useEffect(() => {
+    const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+    fetch(`${API}/api/public/categories`).then(r => r.json()).then(d => setCategories(d.categories || [])).catch(() => {})
+    fetch(`${API}/api/public/neighborhoods`).then(r => r.json()).then(d => setNeighborhoods(d.neighborhoods || [])).catch(() => {})
+  }, [])
+
+  const toggleSport = (name: string) => setSelectedSports(s => s.includes(name) ? s.filter(x => x !== name) : [...s, name])
+  const toggleNeighborhood = (id: number) => setSelectedNeighborhoods(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -37,6 +50,8 @@ function KayitForm() {
         phone: form.phone || undefined,
         password: form.password,
         referralCode: form.referralCode || undefined,
+        preferredSports: selectedSports,
+        preferredNeighborhoods: selectedNeighborhoods,
       })
 
       if (res.error) { setError(res.error); setLoading(false); return }
@@ -121,6 +136,34 @@ function KayitForm() {
             </div>
             {form.referralCode && <p style={{ fontSize: 12, color: '#10B981', marginTop: 5, fontWeight: 600 }}>🎁 İlk dersin için 150 TL kredi kazanacaksın!</p>}
           </div>
+
+          {categories.length > 0 && (
+            <div>
+              <label style={labelStyle}>İlgilendiğin sporlar <span style={{ fontWeight: 400, color: '#bbb' }}>(birden fazla seçebilirsin)</span></label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {categories.map(c => {
+                  const on = selectedSports.includes(c.name)
+                  return (
+                    <button key={c.id} type="button" onClick={() => toggleSport(c.name)} style={{ padding: '7px 14px', borderRadius: 100, border: `1.5px solid ${on ? '#4F46E5' : '#E5E7EB'}`, background: on ? '#EEF2FF' : '#fff', color: on ? '#4F46E5' : '#666', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>{c.name}</button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {neighborhoods.length > 0 && (
+            <div>
+              <label style={labelStyle}>Hangi ilçelerde spor yaparsın <span style={{ fontWeight: 400, color: '#bbb' }}>(birden fazla seçebilirsin)</span></label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, maxHeight: 140, overflowY: 'auto' }}>
+                {[...neighborhoods].sort((a, b) => a.name.localeCompare(b.name, 'tr')).map(n => {
+                  const on = selectedNeighborhoods.includes(n.id)
+                  return (
+                    <button key={n.id} type="button" onClick={() => toggleNeighborhood(n.id)} style={{ padding: '7px 14px', borderRadius: 100, border: `1.5px solid ${on ? '#4F46E5' : '#E5E7EB'}`, background: on ? '#EEF2FF' : '#fff', color: on ? '#4F46E5' : '#666', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>{n.name}</button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {error && (
             <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 12, padding: '12px 16px', fontSize: 13, color: '#DC2626', display: 'flex', alignItems: 'center', gap: 8 }}>
