@@ -7,6 +7,13 @@ import { mockUsers } from '@/lib/mockData'
 import Navbar from '@/components/Navbar'
 import { api, getUser, getToken } from '@/lib/api'
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+
+const REPORT_REASONS = [
+  'Uygunsuz veya müstehcen profil fotoğrafı',
+  'Sahte veya yanıltıcı profil',
+  'Taciz, hakaret veya zorbalık',
+  'Spam veya dolandırıcılık',
+]
 import type { ReactNode } from 'react'
 import { User, Users, Ticket, Award, ClipboardList, BarChart2, BookOpen, Calendar, Flame, Dumbbell, Heart, Building, MapPin, Gift, Medal, Check, X, Lock, CreditCard, Copy, CheckCheck, Flag } from 'lucide-react'
 import { SportIcon, SportIconBox, getIconKeyForCategory, getColorForCategory } from '@/lib/sportIcons'
@@ -34,6 +41,10 @@ export default function ProfilPage() {
   const [transferOptions, setTransferOptions] = useState<any[]>([])
   const [transferLoading, setTransferLoading] = useState(false)
   const [transferMsg, setTransferMsg] = useState<string | null>(null)
+  const [reportOpen, setReportOpen] = useState(false)
+  const [reportReason, setReportReason] = useState('')
+  const [reportCustom, setReportCustom] = useState('')
+  const [reportSent, setReportSent] = useState<string | null>(null)
   const [reviewModal, setReviewModal] = useState<{ bookingId: number } | null>(null)
   const [reviewRating, setReviewRating] = useState(5)
   const [reviewComment, setReviewComment] = useState('')
@@ -385,17 +396,7 @@ export default function ProfilPage() {
             )}
             {!isOwnProfile && loggedInUser && (
               <button
-                onClick={async () => {
-                  const reason = prompt('Şikayet sebebi (opsiyonel):') ?? ''
-                  const token = localStorage.getItem('fitpass_token')
-                  const res = await fetch(`${API_URL}/api/social/report`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                    body: JSON.stringify({ username: displayUsername, reason }),
-                  })
-                  const d = await res.json().catch(() => ({}))
-                  alert(d.message || d.error || 'Şikayetiniz alındı.')
-                }}
+                onClick={() => { setReportReason(''); setReportCustom(''); setReportSent(null); setReportOpen(true) }}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#999', background: 'transparent', border: '1px solid #E5E7EB', borderRadius: 10, padding: '6px 12px', cursor: 'pointer', marginBottom: 12 }}
               >
                 <Flag size={13} /> Şikayet et
@@ -1219,6 +1220,50 @@ export default function ProfilPage() {
           </div>
         )}
       </div>
+
+      {/* Şikayet modalı */}
+      {reportOpen && (
+        <div onClick={() => setReportOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 20, padding: 24, width: '100%', maxWidth: 420 }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#111', marginBottom: 4 }}>Kullanıcıyı şikayet et</div>
+            <div style={{ fontSize: 13, color: '#888', marginBottom: 18 }}>@{displayUsername} için bir sebep seç</div>
+            {reportSent ? (
+              <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: 16, fontSize: 14, color: '#16a34a', textAlign: 'center' }}>{reportSent}</div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+                  {REPORT_REASONS.map(r => (
+                    <button key={r} onClick={() => setReportReason(r)} style={{ textAlign: 'left', padding: '12px 14px', borderRadius: 12, border: `1.5px solid ${reportReason === r ? '#4F46E5' : '#E5E7EB'}`, background: reportReason === r ? '#EEF2FF' : '#fff', color: '#111', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>{r}</button>
+                  ))}
+                  <button onClick={() => setReportReason('__other__')} style={{ textAlign: 'left', padding: '12px 14px', borderRadius: 12, border: `1.5px solid ${reportReason === '__other__' ? '#4F46E5' : '#E5E7EB'}`, background: reportReason === '__other__' ? '#EEF2FF' : '#fff', color: '#111', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Diğer</button>
+                </div>
+                {reportReason === '__other__' && (
+                  <textarea value={reportCustom} onChange={e => setReportCustom(e.target.value)} placeholder="Sorununu kısaca yaz..." rows={3} style={{ width: '100%', borderRadius: 12, border: '1.5px solid #E5E7EB', padding: 12, fontSize: 14, marginBottom: 14, resize: 'vertical', fontFamily: 'inherit' }} />
+                )}
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button onClick={() => setReportOpen(false)} style={{ flex: 1, padding: '12px', borderRadius: 12, border: '1.5px solid #eee', background: '#fff', fontSize: 14, fontWeight: 600, color: '#555', cursor: 'pointer' }}>Vazgeç</button>
+                  <button
+                    disabled={!reportReason || (reportReason === '__other__' && !reportCustom.trim())}
+                    onClick={async () => {
+                      const finalReason = reportReason === '__other__' ? reportCustom.trim() : reportReason
+                      const token = localStorage.getItem('fitpass_token')
+                      const res = await fetch(`${API_URL}/api/social/report`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                        body: JSON.stringify({ username: displayUsername, reason: finalReason }),
+                      })
+                      const d = await res.json().catch(() => ({}))
+                      setReportSent(d.message || d.error || 'Şikayetiniz alındı.')
+                      setTimeout(() => setReportOpen(false), 2200)
+                    }}
+                    style={{ flex: 1, padding: '12px', borderRadius: 12, border: 'none', background: (!reportReason || (reportReason === '__other__' && !reportCustom.trim())) ? '#C7D2FE' : '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                  >Gönder</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

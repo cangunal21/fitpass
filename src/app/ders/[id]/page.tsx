@@ -305,6 +305,7 @@ export default function DersDetay() {
 function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void }) {
   const router = useRouter()
   const [step, setStep] = useState(1)
+  const [cashbackEarned, setCashbackEarned] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [groupSize, setGroupSize] = useState(1)
@@ -377,6 +378,7 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
           setError(data?.error || data?.message || 'Bir hata oluştu, tekrar dene.')
           return
         }
+        setCashbackEarned(data?.booking?.cashbackEarned || 0)
       } else {
         // Mock fallback — save to localStorage
         const booking = {
@@ -537,9 +539,14 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
           <div style={{ textAlign: 'center', padding: '24px 0' }}>
             <div style={{ fontSize: 72, marginBottom: 20 }}>🎉</div>
             <h2 style={{ fontSize: 24, fontWeight: 800, color: '#111', marginBottom: 10 }}>Rezervasyon Tamam!</h2>
-            <p style={{ fontSize: 15, color: '#666', marginBottom: 28, lineHeight: 1.7 }}>
+            <p style={{ fontSize: 15, color: '#666', marginBottom: cashbackEarned > 0 ? 16 : 28, lineHeight: 1.7 }}>
               <strong>{cls.title}</strong> dersine başarıyla kayıt oldun.<br />Seni bekliyoruz!
             </p>
+            {cashbackEarned > 0 && (
+              <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 14, padding: '14px 16px', marginBottom: 24, color: '#15803D', fontSize: 14, fontWeight: 600 }}>
+                🎁 ₺{cashbackEarned} cashback kazandın! Kredine eklendi, bir sonraki rezervasyonunda kullanabilirsin.
+              </div>
+            )}
             <button onClick={onClose} style={{ width: '100%', padding: '15px', borderRadius: 14, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
               Harika! 🚀
             </button>
