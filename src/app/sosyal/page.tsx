@@ -9,6 +9,7 @@ import { getInitialsAvatar } from '@/lib/cloudinary'
 import { MapPin, Heart, MessageCircle, X, Send, Award, Flag, Target, Flame, Compass, Users, Trophy } from 'lucide-react'
 import Link from 'next/link'
 import { SportIconBox, SportIcon, getIconKeyForCategory } from '@/lib/sportIcons'
+import { useT } from '@/lib/i18n'
 
 const FEED_BADGE_ICONS: Record<string, any> = { Flag, Target, Flame, Compass, Heart, Users, Trophy }
 function FeedBadgeIcon({ icon, sportName, size = 16, color = '#4F46E5' }: { icon: string; sportName?: string | null; size?: number; color?: string }) {
@@ -46,6 +47,7 @@ const MOCK_VENUES = [
 ]
 
 export default function SosyalPage() {
+  const { t } = useT()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<'siralama' | 'arkadaslar' | 'feed'>('siralama')
   const [feed, setFeed] = useState<any[]>([])
@@ -230,8 +232,8 @@ export default function SosyalPage() {
       {/* Header */}
       <div style={{ background: '#fff', borderBottom: '1px solid #f0f0f0', padding: '28px 24px 32px' }}>
         <div style={{ maxWidth: 800, margin: '0 auto', textAlign: 'center' }}>
-          <h1 style={{ fontSize: 36, fontWeight: 900, color: '#4F46E5', marginBottom: 6, letterSpacing: -1 }}>Sosyal</h1>
-          <p style={{ fontSize: 15, color: '#888' }}>İstanbul&apos;un en aktif sporcularını keşfet</p>
+          <h1 style={{ fontSize: 36, fontWeight: 900, color: '#4F46E5', marginBottom: 6, letterSpacing: -1 }}>{t('nav.social')}</h1>
+          <p style={{ fontSize: 15, color: '#888' }}>{t('social.subtitle')}</p>
         </div>
       </div>
 
@@ -239,9 +241,9 @@ export default function SosyalPage() {
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 4, backgroundColor: '#eee', borderRadius: 16, padding: 4, marginTop: -20, marginBottom: 24, width: 'fit-content' }}>
           {[
-            { key: 'siralama', label: 'Sıralama' },
-            { key: 'feed', label: 'Feed' },
-            { key: 'arkadaslar', label: 'Arkadaşlar' },
+            { key: 'siralama', label: t('social.tabLeaderboard') },
+            { key: 'feed', label: t('social.tabFeed') },
+            { key: 'arkadaslar', label: t('social.tabFriends') },
           ].map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key as any)}
               style={{ padding: '10px 24px', borderRadius: 12, border: 'none', background: activeTab === tab.key ? '#fff' : 'transparent', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: activeTab === tab.key ? '#1a1a1a' : '#888', boxShadow: activeTab === tab.key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
@@ -255,7 +257,7 @@ export default function SosyalPage() {
           <div>
             {/* Type toggle */}
             <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-              {[{ key: 'kullanici', label: 'Sporcular' }, { key: 'streak', label: '🔥 Seri' }, { key: 'salon', label: 'Salonlar' }].map(t => (
+              {[{ key: 'kullanici', label: t('lb.users') }, { key: 'streak', label: t('lb.streak') }, { key: 'salon', label: t('lb.venues') }].map(t => (
                 <button key={t.key} onClick={() => setSiralamaType(t.key as any)}
                   style={{ padding: '8px 20px', borderRadius: 100, border: siralamaType === t.key ? 'none' : '1.5px solid #e5e5e5', background: siralamaType === t.key ? '#4F46E5' : '#fff', color: siralamaType === t.key ? '#fff' : '#666', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
                   {t.label}
@@ -267,11 +269,11 @@ export default function SosyalPage() {
             <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
               <select value={selectedBranch} onChange={e => setSelectedBranch(e.target.value)}
                 style={{ padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', background: '#fff', cursor: 'pointer' }}>
-                {branches.map(b => <option key={b} value={b}>{b}</option>)}
+                {branches.map(b => <option key={b} value={b}>{b === 'Tümü' ? t('time.all') : b}</option>)}
               </select>
               <select value={selectedNeighborhood} onChange={e => setSelectedNeighborhood(e.target.value)}
                 style={{ padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', background: '#fff', cursor: 'pointer' }}>
-                <option value="">İstanbul Geneli</option>
+                <option value="">{t('common.istanbulAll')}</option>
                 {[...neighborhoods].sort((a, b) => a.name.localeCompare(b.name, 'tr')).map(n => (
                   <option key={n.id} value={String(n.id)}>{n.name}</option>
                 ))}
@@ -301,7 +303,7 @@ export default function SosyalPage() {
                         </div>
                         <div style={{ textAlign: 'right' }}>
                           <div style={{ fontSize: 18, fontWeight: 800, color: '#4F46E5' }}>{user.lessonCount}</div>
-                          <div style={{ fontSize: 11, color: '#888' }}>ders</div>
+                          <div style={{ fontSize: 11, color: '#888' }}>{t('lb.lessons')}</div>
                         </div>
                       </div>
                     )
@@ -340,7 +342,7 @@ export default function SosyalPage() {
                         </div>
                         <div style={{ textAlign: 'right' }}>
                           <div style={{ fontSize: 18, fontWeight: 800, color: '#F97316' }}>🔥 {user.streak}</div>
-                          <div style={{ fontSize: 11, color: '#888' }}>gün seri</div>
+                          <div style={{ fontSize: 11, color: '#888' }}>{t('lb.dayStreak')}</div>
                         </div>
                       </div>
                     </Link>
@@ -397,7 +399,7 @@ export default function SosyalPage() {
             {!currentUser ? (
               <div style={{ textAlign: 'center', padding: '48px 0', color: '#888' }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>📰</div>
-                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>Feed'i görmek için giriş yap</div>
+                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>{t('feed.loginPrompt')}</div>
                 <Link href="/giris?redirect=/sosyal" style={{ color: '#4F46E5', fontWeight: 700, textDecoration: 'none' }}>Giriş Yap →</Link>
               </div>
             ) : feedLoading ? (
@@ -405,8 +407,8 @@ export default function SosyalPage() {
             ) : feed.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '48px 0', color: '#888' }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>👥</div>
-                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>Henüz aktivite yok</div>
-                <div style={{ fontSize: 13, color: '#bbb' }}>Arkadaş ekleyince onların aktiviteleri burada görünür</div>
+                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>{t('feed.empty')}</div>
+                <div style={{ fontSize: 13, color: '#bbb' }}>{t('feed.emptySub')}</div>
               </div>
             ) : feed.map(item => {
               const initialsData = getInitialsAvatar(item.user.fullName || item.user.username)
@@ -490,15 +492,15 @@ export default function SosyalPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
             {!currentUser ? (
               <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '40px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-                <div style={{ fontSize: 15, color: '#888', marginBottom: 16 }}>Arkadaşlarını görmek için giriş yap</div>
-                <Link href="/giris?redirect=/sosyal" style={{ padding: '12px 24px', borderRadius: 12, background: '#4F46E5', color: '#fff', textDecoration: 'none', fontWeight: 700, fontSize: 14 }}>Giriş Yap</Link>
+                <div style={{ fontSize: 15, color: '#888', marginBottom: 16 }}>{t('friends.loginPrompt')}</div>
+                <Link href="/giris?redirect=/sosyal" style={{ padding: '12px 24px', borderRadius: 12, background: '#4F46E5', color: '#fff', textDecoration: 'none', fontWeight: 700, fontSize: 14 }}>{t('nav.login')}</Link>
               </div>
             ) : (
               <>
                 {/* Suggestions */}
                 {suggestions.length > 0 && (
                   <div>
-                    <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 12 }}>Tanıyor Olabileceğin Kişiler</h3>
+                    <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 12 }}>{t('friends.suggestions')}</h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {suggestions.map(u => {
                         const { initials, color } = getInitialsAvatar(u.username || '?')
@@ -526,7 +528,7 @@ export default function SosyalPage() {
                 <div>
                   <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 12 }}>Takip Ettiklerim ({following.length})</h3>
                   {following.length === 0 ? (
-                    <div style={{ backgroundColor: '#fff', borderRadius: 14, padding: '24px', textAlign: 'center', color: '#aaa', fontSize: 14 }}>Henüz kimseyi takip etmiyorsun.</div>
+                    <div style={{ backgroundColor: '#fff', borderRadius: 14, padding: '24px', textAlign: 'center', color: '#aaa', fontSize: 14 }}>{t('friends.notFollowing')}</div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {following.map(u => {
@@ -555,7 +557,7 @@ export default function SosyalPage() {
                 <div>
                   <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 12 }}>Takipçilerim ({followers.length})</h3>
                   {followers.length === 0 ? (
-                    <div style={{ backgroundColor: '#fff', borderRadius: 14, padding: '24px', textAlign: 'center', color: '#aaa', fontSize: 14 }}>Henüz takipçin yok.</div>
+                    <div style={{ backgroundColor: '#fff', borderRadius: 14, padding: '24px', textAlign: 'center', color: '#aaa', fontSize: 14 }}>{t('friends.noFollowers')}</div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {followers.map(u => {
@@ -587,22 +589,22 @@ export default function SosyalPage() {
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={() => setCommentModal(null)}>
           <div style={{ backgroundColor: '#fff', borderRadius: 20, width: '100%', maxWidth: 440, padding: 24, maxHeight: '70vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <div style={{ fontSize: 17, fontWeight: 800, color: '#111' }}>Yorumlar</div>
+              <div style={{ fontSize: 17, fontWeight: 800, color: '#111' }}>{t('comments.title')}</div>
               <button onClick={() => setCommentModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} color="#999" /></button>
             </div>
 
             <div style={{ flex: 1, overflowY: 'auto', minHeight: 80 }}>
               {commentsLoading ? (
-                <div style={{ textAlign: 'center', padding: 20, color: '#999', fontSize: 13 }}>Yükleniyor...</div>
+                <div style={{ textAlign: 'center', padding: 20, color: '#999', fontSize: 13 }}>{t('common.loading')}</div>
               ) : comments.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: 20, color: '#999', fontSize: 13 }}>Henüz yorum yok, ilk sen yaz!</div>
+                <div style={{ textAlign: 'center', padding: 20, color: '#999', fontSize: 13 }}>{t('comments.empty')}</div>
               ) : (
                 comments.map(c => (
                   <div key={c.id}>
                     <div style={{ backgroundColor: '#FAFAFA', borderRadius: 12, padding: 10, marginBottom: 8 }}>
                       <div style={{ fontSize: 12, fontWeight: 700, color: '#4F46E5' }}>{c.user?.fullName || c.user?.username}</div>
                       <div style={{ fontSize: 13, color: '#333', marginTop: 2 }}>{c.content}</div>
-                      <button onClick={() => setReplyTo({ id: c.id, name: c.user?.fullName || c.user?.username })} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: 6, fontSize: 11, fontWeight: 700, color: '#4F46E5' }}>Cevapla</button>
+                      <button onClick={() => setReplyTo({ id: c.id, name: c.user?.fullName || c.user?.username })} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: 6, fontSize: 11, fontWeight: 700, color: '#4F46E5' }}>{t('comments.reply')}</button>
                     </div>
                     {(c.replies || []).map((r: any) => (
                       <div key={r.id} style={{ backgroundColor: '#F0F0F5', borderRadius: 12, padding: 10, marginBottom: 8, marginLeft: 24 }}>
@@ -617,7 +619,7 @@ export default function SosyalPage() {
 
             {replyTo && (
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#EEF2FF', borderRadius: 10, padding: 8, marginTop: 10 }}>
-                <span style={{ fontSize: 12, color: '#4F46E5', fontWeight: 600 }}>{replyTo.name} kullanıcısına cevap yazıyorsun</span>
+                <span style={{ fontSize: 12, color: '#4F46E5', fontWeight: 600 }}>{t('comments.replyingTo').replace('{name}', replyTo.name)}</span>
                 <button onClick={() => setReplyTo(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={14} color="#999" /></button>
               </div>
             )}
@@ -625,7 +627,7 @@ export default function SosyalPage() {
             <div style={{ display: 'flex', gap: 10, marginTop: 14, borderTop: '1px solid #f0f0f0', paddingTop: 14 }}>
               <input
                 type="text"
-                placeholder={replyTo ? 'Cevap yaz...' : 'Yorum yaz...'}
+                placeholder={replyTo ? t('comments.replyPlaceholder') : t('comments.commentPlaceholder')}
                 value={commentInput}
                 onChange={e => setCommentInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && submitComment()}
