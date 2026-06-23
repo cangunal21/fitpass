@@ -265,7 +265,7 @@ export default function VenuePage() {
                 {isMock && <p style={{ fontSize: 14, color: '#888', marginBottom: 10, fontWeight: 500 }}>{lang === 'en' && (venue as any).categoryEn ? (venue as any).categoryEn : venue.category}</p>}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <span style={{ fontSize: 14, color: '#F59E0B', fontWeight: 700 }}>★ {venue.avgRating ?? avgRating}</span>
-                  <span style={{ fontSize: 13, color: '#999' }}>({venue.totalReviews ?? totalReviews} değerlendirme)</span>
+                  <span style={{ fontSize: 13, color: '#999' }}>({venue.totalReviews ?? totalReviews} {t('cls.reviews')})</span>
                   {neighborhoodName && (
                     <>
                       <span style={{ fontSize: 13, color: '#bbb' }}>·</span>
@@ -466,7 +466,7 @@ export default function VenuePage() {
                     <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
                       <span style={{ fontSize: 13, color: '#F59E0B', fontWeight: 700 }}>★ {instructor.avgRating}</span>
                       <span style={{ fontSize: 13, color: '#bbb' }}>·</span>
-                      <span style={{ fontSize: 13, color: '#999' }}>{instructor.totalReviews} yorum</span>
+                      <span style={{ fontSize: 13, color: '#999' }}>{instructor.totalReviews} {t('cls.reviews')}</span>
                     </div>
                   </div>
                 </Link>
@@ -489,7 +489,7 @@ export default function VenuePage() {
                     {instructor.bio && <div style={{ fontSize: 13, color: '#888', marginBottom: 10, lineHeight: 1.5 }}>{lang === 'en' && instructor.bioEn ? instructor.bioEn : instructor.bio}</div>}
                     <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
                       {instructor.avgRating != null && <span style={{ fontSize: 13, color: '#F59E0B', fontWeight: 700 }}>★ {instructor.avgRating}</span>}
-                      {instructor.totalReviews != null && <><span style={{ fontSize: 13, color: '#bbb' }}>·</span><span style={{ fontSize: 13, color: '#999' }}>{instructor.totalReviews} yorum</span></>}
+                      {instructor.totalReviews != null && <><span style={{ fontSize: 13, color: '#bbb' }}>·</span><span style={{ fontSize: 13, color: '#999' }}>{instructor.totalReviews} {t('cls.reviews')}</span></>}
                     </div>
                   </div>
                 </Link>
@@ -506,7 +506,7 @@ export default function VenuePage() {
               <div style={{ textAlign: 'center', flexShrink: 0 }}>
                 <div style={{ fontSize: 52, fontWeight: 800, color: '#111', lineHeight: 1 }}>{avgRating}</div>
                 <div style={{ color: '#F59E0B', fontSize: 18, margin: '8px 0 4px' }}>★★★★★</div>
-                <div style={{ fontSize: 12, color: '#999' }}>{totalReviews} değerlendirme</div>
+                <div style={{ fontSize: 12, color: '#999' }}>{totalReviews} {t('cls.reviews')}</div>
               </div>
               <div style={{ flex: 1 }}>
                 {[5, 4, 3, 2, 1].map(star => (

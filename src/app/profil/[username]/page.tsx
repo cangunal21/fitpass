@@ -1255,7 +1255,7 @@ export default function ProfilPage() {
         <div onClick={() => setReportOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 20, padding: 24, width: '100%', maxWidth: 420 }}>
             <div style={{ fontSize: 18, fontWeight: 800, color: '#111', marginBottom: 4 }}>{t('report.title')}</div>
-            <div style={{ fontSize: 13, color: '#888', marginBottom: 18 }}>@{displayUsername} için bir sebep seç</div>
+            <div style={{ fontSize: 13, color: '#888', marginBottom: 18 }}>{t('report.subtitle').replace('{u}', displayUsername)}</div>
             {reportSent ? (
               <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: 16, fontSize: 14, color: '#16a34a', textAlign: 'center' }}>{reportSent}</div>
             ) : (

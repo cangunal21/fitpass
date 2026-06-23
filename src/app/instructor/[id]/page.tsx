@@ -87,7 +87,7 @@ export default function InstructorPage() {
             {(instructor.avgRating > 0) && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                 <span style={{ fontSize: 14, color: '#F59E0B', fontWeight: 700 }}>★ {instructor.avgRating?.toFixed(1)}</span>
-                <span style={{ fontSize: 13, color: '#999' }}>({instructor.totalReviews} değerlendirme)</span>
+                <span style={{ fontSize: 13, color: '#999' }}>({instructor.totalReviews} {t('cls.reviews')})</span>
               </div>
             )}
             {instructor.bio && (

@@ -361,7 +361,7 @@ export default function SosyalPage() {
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: 18, fontWeight: 800, color: '#F59E0B' }}>★ {venue.avgRating?.toFixed(1) || '—'}</div>
-                        <div style={{ fontSize: 11, color: '#888' }}>{venue.totalReviews} yorum</div>
+                        <div style={{ fontSize: 11, color: '#888' }}>{venue.totalReviews} {t('cls.reviews')}</div>
                       </div>
                     </div>
                   </Link>
@@ -507,7 +507,7 @@ export default function SosyalPage() {
 
                 {/* Following */}
                 <div>
-                  <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 12 }}>Takip Ettiklerim ({following.length})</h3>
+                  <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 12 }}>{t('social.following')} ({following.length})</h3>
                   {following.length === 0 ? (
                     <div style={{ backgroundColor: '#fff', borderRadius: 14, padding: '24px', textAlign: 'center', color: '#aaa', fontSize: 14 }}>{t('friends.notFollowing')}</div>
                   ) : (
@@ -536,7 +536,7 @@ export default function SosyalPage() {
 
                 {/* Followers */}
                 <div>
-                  <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 12 }}>Takipçilerim ({followers.length})</h3>
+                  <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 12 }}>{t('social.followers')} ({followers.length})</h3>
                   {followers.length === 0 ? (
                     <div style={{ backgroundColor: '#fff', borderRadius: 14, padding: '24px', textAlign: 'center', color: '#aaa', fontSize: 14 }}>{t('friends.noFollowers')}</div>
                   ) : (

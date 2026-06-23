@@ -423,7 +423,7 @@ export default function Home() {
               <>
                 <span style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a' }}>{filtered.length} {t('home.events')}</span>
                 {activeCategory && <span style={{ fontSize: 14, color: '#888', marginLeft: 8 }}>· {categories.find(c => c.id === activeCategory)?.name}</span>}
-                {filters.search && <span style={{ fontSize: 14, color: '#888', marginLeft: 8 }}>· "{filters.search}" için</span>}
+                {filters.search && <span style={{ fontSize: 14, color: '#888', marginLeft: 8 }}>· {t('home.searchFor').replace('{q}', filters.search)}</span>}
               </>
             )}
           </div>

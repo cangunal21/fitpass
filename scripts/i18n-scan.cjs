@@ -41,19 +41,20 @@ const TR_WORDS = new RegExp(
 )
 
 function isTurkish(text) {
-  const trimmed = text.trim()
+  let trimmed = text.trim()
   if (trimmed.length < 2) return false
   if (!/[A-Za-zĞğŞşİıÇçÖöÜü]/.test(trimmed)) return false // harf yoksa atla (sayı/emoji/ikon)
   if (trimmed.startsWith('/')) return false                // route/path (/giris, /kayit ...)
   if (BRAND_RE.test(trimmed)) return false                 // marka adı
+  trimmed = trimmed.replace(/İstanbul/g, '')           // özel isim, iki dilde aynı
   return TR_CHARS.test(trimmed) || TR_WORDS.test(trimmed)
 }
 
 // Bir satırdaki "güvenli" (zaten çevrili/teknik) parçaları maskele ki geriye sadece şüpheli kalsın
 function maskSafe(line) {
   let s = line
-  // lang === 'en'|'tr' ? 'A' : 'B'  → her iki dal zaten elde ele alınmış
-  s = s.replace(/lang\s*===\s*['"](?:en|tr)['"]\s*\?\s*(['"])(?:\\.|(?!\1).)*\1\s*:\s*(['"])(?:\\.|(?!\2).)*\2/g, ' __L__ ')
+  // lang === 'en'|'tr' ? 'A' : 'B'  → her iki dal zaten ele alınmış (tırnak veya backtick)
+  s = s.replace(/lang\s*===\s*['"](?:en|tr)['"]\s*\?\s*([`'"])(?:\\.|(?!\1).)*\1\s*:\s*([`'"])(?:\\.|(?!\2).)*\2/g, ' __L__ ')
   // t('...') / t("...") / t(`...`)  → çağrı içeriği çevrilidir
   s = s.replace(/\bt\(\s*(['"`])(?:\\.|(?!\1).)*\1\s*\)/g, ' __T__ ')
   // çeviri helper çağrıları (içlerindeki literal değil değişken çevirir)
@@ -82,9 +83,10 @@ function scanFile(abs, rel) {
 
     const line = maskSafe(raw)
 
-    // (a) JSX metin düğümleri:  >  metin  <
-    for (const m of line.matchAll(/>([^<>{}]+)</g)) {
-      if (isTurkish(m[1])) findings.push({ rel, line: i + 1, kind: 'JSX', text: m[1].trim() })
+    // (a) JSX metin düğümleri:  >  metin  <  (ortada {ifade} olabilir: "({n} değerlendirme)")
+    for (const m of line.matchAll(/>([^<]*)</g)) {
+      const txt = m[1].replace(/\{[^{}]*\}/g, '').trim()   // gömülü {ifade}'leri çıkar
+      if (isTurkish(txt)) findings.push({ rel, line: i + 1, kind: 'JSX', text: txt })
     }
     // Kenar JSX metinleri kod-noktalama içermez (TS generic'leri <T>('x') vb. elemek için)
     const isProse = (txt) => isTurkish(txt) && !/[()[\]'"=;|`]/.test(txt)
