@@ -59,6 +59,8 @@ import type { ReactNode } from 'react'
 import { User, Users, Ticket, Award, ClipboardList, BarChart2, BookOpen, Calendar, Flame, Dumbbell, Heart, Building, MapPin, Gift, Medal, Check, X, Lock, CreditCard, Copy, CheckCheck, Flag, Target, Compass, Trophy } from 'lucide-react'
 import { SportIcon, SportIconBox, getIconKeyForCategory, getColorForCategory } from '@/lib/sportIcons'
 import { useT, translateTier, translateBadge, translateCategory } from '@/lib/i18n'
+
+const dateLocale = () => (typeof window !== 'undefined' && localStorage.getItem('fitpass_lang') === 'en') ? 'en-US' : 'tr-TR'
 import AvatarUpload from '@/components/AvatarUpload'
 import { getInitialsAvatar } from '@/lib/cloudinary'
 
@@ -211,7 +213,7 @@ export default function ProfilPage() {
         setTimeout(() => setCancelError(null), 5000)
       }
     } catch {
-      setCancelError('İptal edilirken bir hata oluştu.')
+      setCancelError(t('prof.cancelError'))
     }
     setCancelConfirm(null)
   }
@@ -228,7 +230,7 @@ export default function ProfilPage() {
       const d = await res.json()
       setTransferOptions(d.options || [])
     } catch {
-      setTransferMsg('Seçenekler yüklenemedi.')
+      setTransferMsg(t('prof.optionsError'))
     }
     setTransferLoading(false)
   }
@@ -250,7 +252,7 @@ export default function ProfilPage() {
       if (my.bookings) setBookings(my.bookings)
       setTimeout(() => { setTransferFor(null); setTransferMsg(null) }, 2500)
     } catch {
-      setTransferMsg('Transfer sırasında hata oluştu.')
+      setTransferMsg(t('prof.transferError'))
     }
   }
 
@@ -302,7 +304,7 @@ export default function ProfilPage() {
     const days = Math.floor(hours / 24)
     if (days === 1) return 'Dün'
     if (days < 7) return `${days} gün önce`
-    return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' })
+    return date.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long' })
   }
 
   // Kendi profilinde gerçek aktivite listesi (booking + drop-in birleşik, en yeni önce)
@@ -621,8 +623,8 @@ export default function ProfilPage() {
                         const classObj = session?.class
                         const venue = classObj?.venue
                         const startsAt = session?.startsAt ? new Date(session.startsAt) : null
-                        const dateStr = startsAt ? startsAt.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : ''
-                        const timeStr = startsAt ? startsAt.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : ''
+                        const dateStr = startsAt ? startsAt.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long', year: 'numeric' }) : ''
+                        const timeStr = startsAt ? startsAt.toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }) : ''
                         const catName = classObj?.category || ''
                         const icon = getIconKeyForCategory(catName)
                         const color = getColorForCategory(catName)
@@ -642,8 +644,8 @@ export default function ProfilPage() {
                         const slot = dp.slot
                         const cat = slot?.sportCategory
                         const slotStartsAt = slot?.startsAt ? new Date(slot.startsAt) : null
-                        const dpDateStr = slotStartsAt ? slotStartsAt.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : ''
-                        const dpTimeStr = slotStartsAt ? slotStartsAt.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : ''
+                        const dpDateStr = slotStartsAt ? slotStartsAt.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long', year: 'numeric' }) : ''
+                        const dpTimeStr = slotStartsAt ? slotStartsAt.toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }) : ''
                         const iconColor = cat?.colorHex ? `#${cat.colorHex}` : '#3B82F6'
                         return (
                           <div key={`pdp-${dp.id}`} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '18px 22px', border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -730,8 +732,8 @@ export default function ProfilPage() {
                         const classObj = session?.class
                         const venue = classObj?.venue
                         const startsAt = session?.startsAt ? new Date(session.startsAt) : null
-                        const dateStr = startsAt ? startsAt.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : ''
-                        const timeStr = startsAt ? startsAt.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : ''
+                        const dateStr = startsAt ? startsAt.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long', year: 'numeric' }) : ''
+                        const timeStr = startsAt ? startsAt.toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }) : ''
                         const isFuture = startsAt ? startsAt > new Date() : false
                         const isConfirmed = b.status === 'confirmed'
                         const isCancelled = b.status === 'cancelled'
@@ -792,7 +794,7 @@ export default function ProfilPage() {
                                               {transferOptions.map((o: any) => (
                                                 <button key={o.sessionId} onClick={() => doTransfer(b.id, o.sessionId)} style={{ textAlign: 'left', background: '#fff', border: '1px solid #E0E7FF', borderRadius: 10, padding: '8px 10px', cursor: 'pointer' }}>
                                                   <div style={{ fontSize: 12, fontWeight: 700, color: '#111' }}>{o.title} · ₺{o.basePrice}</div>
-                                                  <div style={{ fontSize: 11, color: '#888' }}>{new Date(o.startsAt).toLocaleString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · {o.available} yer boş{o.priceRefund > 0 ? ` · ₺${o.priceRefund} kredi iade` : ''}</div>
+                                                  <div style={{ fontSize: 11, color: '#888' }}>{new Date(o.startsAt).toLocaleString(dateLocale(), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · {o.available} {lang === 'en' ? 'spots free' : 'yer boş'}{o.priceRefund > 0 ? ` · ₺${o.priceRefund} ${lang === 'en' ? 'credit refund' : 'kredi iade'}` : ''}</div>
                                                 </button>
                                               ))}
                                             </div>
@@ -812,8 +814,8 @@ export default function ProfilPage() {
                         const slot = dp.slot
                         const cat = slot?.sportCategory
                         const slotStartsAt = slot?.startsAt ? new Date(slot.startsAt) : null
-                        const dpDateStr = slotStartsAt ? slotStartsAt.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : ''
-                        const dpTimeStr = slotStartsAt ? slotStartsAt.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : ''
+                        const dpDateStr = slotStartsAt ? slotStartsAt.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long', year: 'numeric' }) : ''
+                        const dpTimeStr = slotStartsAt ? slotStartsAt.toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }) : ''
                         const dpCancelled = dp.status === 'cancelled' || slot?.status === 'cancelled'
                         const iconColor = cat?.colorHex ? `#${cat.colorHex}` : '#3B82F6'
 
@@ -875,8 +877,8 @@ export default function ProfilPage() {
                         const classObj = session?.class
                         const venue = classObj?.venue
                         const startsAt = session?.startsAt ? new Date(session.startsAt) : null
-                        const dateStr = startsAt ? startsAt.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : ''
-                        const timeStr = startsAt ? startsAt.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : ''
+                        const dateStr = startsAt ? startsAt.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long', year: 'numeric' }) : ''
+                        const timeStr = startsAt ? startsAt.toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }) : ''
                         const isCancelled = b.status === 'cancelled'
                         const canReview = b.status === 'confirmed' && !b.review
                         const catName = classObj?.category || ''
@@ -908,8 +910,8 @@ export default function ProfilPage() {
                         const slot = dp.slot
                         const cat = slot?.sportCategory
                         const slotStartsAt = slot?.startsAt ? new Date(slot.startsAt) : null
-                        const dpDateStr = slotStartsAt ? slotStartsAt.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : ''
-                        const dpTimeStr = slotStartsAt ? slotStartsAt.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : ''
+                        const dpDateStr = slotStartsAt ? slotStartsAt.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long', year: 'numeric' }) : ''
+                        const dpTimeStr = slotStartsAt ? slotStartsAt.toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }) : ''
                         const dpCancelled = dp.status === 'cancelled' || slot?.status === 'cancelled'
                         const iconColor = cat?.colorHex ? `#${cat.colorHex}` : '#3B82F6'
 
@@ -982,7 +984,7 @@ export default function ProfilPage() {
               { label: t('auth.fullName'), value: meData?.fullName },
               { label: t('auth.email'), value: meData?.email },
               { label: t('auth.phone'), value: meData?.phone || 'Eklenmemiş' },
-              { label: t('acc.memberSince'), value: meData?.createdAt ? new Date(meData.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : '-' },
+              { label: t('acc.memberSince'), value: meData?.createdAt ? new Date(meData.createdAt).toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long', year: 'numeric' }) : '-' },
               { label: t('acc.tier'), value: meData?.tier?.name || '-' },
               { label: t('acc.points'), value: meData?.rewardPoints ?? '-' },
             ].map((row, i) => (
@@ -1152,7 +1154,7 @@ export default function ProfilPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {favorites.length === 0 ? (
               <div style={{ textAlign: 'center', color: '#aaa', padding: '40px 0', fontSize: 14 }}>
-                {isOwnProfile ? 'Henüz favori salon eklemediniz.' : 'Favori salon yok.'}
+                {isOwnProfile ? t('prof.noFavoritesOwn') : t('prof.noFavoritesOther')}
               </div>
             ) : favorites.map((v: any) => (
               <a key={v.id} href={`/venue/${v.id}`} style={{ textDecoration: 'none' }}>
@@ -1246,9 +1248,9 @@ export default function ProfilPage() {
             {[
               { label: t('prof.statTotalLessons'), value: mockUser.stats.totalLessons, icon: <BookOpen size={32} />, color: '#8B5CF6' },
               { label: t('prof.statThisMonth'), value: mockUser.stats.thisMonth, icon: <Calendar size={32} />, color: '#3B82F6' },
-              { label: 'Günlük Seri', value: mockUser.stats.streak, icon: <Flame size={32} />, color: '#EF4444' },
-              { label: 'İptal Yok', value: mockUser.stats.noCancel, icon: <Dumbbell size={32} />, color: '#10B981' },
-              { label: 'Favori Salon', value: mockUser.stats.sameVenue, icon: <Heart size={32} />, color: '#EC4899' },
+              { label: t('prof.statStreak'), value: mockUser.stats.streak, icon: <Flame size={32} />, color: '#EF4444' },
+              { label: t('prof.statNoCancel'), value: mockUser.stats.noCancel, icon: <Dumbbell size={32} />, color: '#10B981' },
+              { label: t('prof.statFavVenue'), value: mockUser.stats.sameVenue, icon: <Heart size={32} />, color: '#EC4899' },
             ].map((stat, i) => (
               <div key={i} style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px 20px', border: '1px solid #F0F0F0', textAlign: 'center' }}>
                 <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}>{stat.icon}</div>
