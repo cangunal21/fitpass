@@ -355,8 +355,18 @@ export default function ProfilPage() {
             )}
 
             {displayTierDiscount > 0 && (
-              <div style={{ backgroundColor: '#F0FDF4', borderRadius: 12, padding: '10px 16px', display: 'inline-flex', alignItems: 'center', gap: 8, border: '1px solid #BBF7D0' }}>
+              <div style={{ backgroundColor: '#F0FDF4', borderRadius: 12, padding: '10px 16px', display: 'inline-flex', alignItems: 'center', gap: 8, border: '1px solid #BBF7D0', marginBottom: isOwnProfile ? 16 : 0 }}>
                 <span style={{ fontSize: 13, color: '#15803D', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Gift size={16} /> {displayTierName} avantajı: rezervasyonlarında %{displayTierDiscount} cashback</span>
+              </div>
+            )}
+
+            {isOwnProfile && meData && (
+              <div style={{ backgroundColor: '#4F46E5', borderRadius: 16, padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#fff' }}>
+                <div>
+                  <div style={{ fontSize: 12, opacity: 0.8 }}>Kredi Bakiyen</div>
+                  <div style={{ fontSize: 26, fontWeight: 800, marginTop: 2 }}>₺{meData.creditBalance ?? 0}</div>
+                </div>
+                <Gift size={28} style={{ opacity: 0.5 }} />
               </div>
             )}
           </div>
@@ -1188,16 +1198,6 @@ function ReferralTab({ referralInfo, setReferralInfo, copied, setCopied }: any) 
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* Kredi bakiyesi */}
-      <div style={{ backgroundColor: '#4F46E5', borderRadius: 20, padding: '24px 28px', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <div style={{ fontSize: 13, opacity: 0.8, marginBottom: 4 }}>Uygulama Kredisi</div>
-          <div style={{ fontSize: 36, fontWeight: 900 }}>₺{referralInfo?.creditBalance || 0}</div>
-          <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>Ders rezervasyonlarında kullanabilirsin</div>
-        </div>
-        <Gift size={44} style={{ opacity: 0.3 }} />
-      </div>
-
       {/* Nasıl çalışır */}
       <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 14 }}>🎁 Arkadaşını Davet Et</div>
