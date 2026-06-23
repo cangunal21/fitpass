@@ -8,6 +8,7 @@ import Navbar from '@/components/Navbar'
 import { api, getToken, getUser } from '@/lib/api'
 import { MapPin, Calendar, Clock, Timer, Users, User, ShieldCheck, Flame, AlertCircle, X } from 'lucide-react'
 import { SportIconBox } from '@/lib/sportIcons'
+import { useT } from '@/lib/i18n'
 
 const categoryColorMap: Record<string, string> = {
   'Yoga': '#C4A882', 'Pilates': '#C9849A', 'Boks': '#DC2626',
@@ -53,6 +54,7 @@ function mapSessionToDisplay(session: any) {
 type DisplayClass = ReturnType<typeof mapSessionToDisplay> | (typeof mockClasses[0] & { sessionId?: number; isRealSession?: boolean })
 
 export default function DersDetay() {
+  const { t } = useT()
   const params = useParams()
   const [cls, setCls] = useState<DisplayClass | null>(null)
   const [loading, setLoading] = useState(true)
@@ -136,17 +138,17 @@ export default function DersDetay() {
                   </div>
                   <div style={{ background: cls.color, color: '#fff', borderRadius: 16, padding: '14px 20px', textAlign: 'center', flexShrink: 0, marginLeft: 20 }}>
                     <div style={{ fontSize: 26, fontWeight: 800 }}>₺{cls.basePrice}</div>
-                    <div style={{ fontSize: 12, opacity: 0.85, marginTop: 2 }}>kişi başı</div>
+                    <div style={{ fontSize: 12, opacity: 0.85, marginTop: 2 }}>{t('cls.perPersonShort')}</div>
                   </div>
                 </div>
               </div>
 
               <div style={{ padding: '20px 32px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, borderTop: '1px solid #F5F5F5' }}>
                 {[
-                  { icon: <Calendar size={18} />, label: 'Tarih', value: cls.date },
-                  { icon: <Clock size={18} />, label: 'Saat', value: cls.time },
-                  { icon: <Timer size={18} />, label: 'Süre', value: cls.duration },
-                  { icon: <Users size={18} />, label: 'Kontenjan', value: `${cls.spots} yer kaldı` },
+                  { icon: <Calendar size={18} />, label: t('cls.date'), value: cls.date },
+                  { icon: <Clock size={18} />, label: t('cls.time'), value: cls.time },
+                  { icon: <Timer size={18} />, label: t('cls.duration'), value: cls.duration },
+                  { icon: <Users size={18} />, label: t('cls.capacity'), value: t('card.spotsLeft').replace('{n}', String(cls.spots)) },
                 ].map((item, i) => (
                   <div key={i} style={{ padding: '12px 14px', backgroundColor: '#FAFAFA', borderRadius: 12 }}>
                     <div style={{ marginBottom: 6 }}>{item.icon}</div>
@@ -160,12 +162,12 @@ export default function DersDetay() {
             {/* Açıklama */}
             {'description' in cls && (cls as typeof mockClasses[0]).description && (
               <div style={{ backgroundColor: '#fff', borderRadius: 24, padding: '28px 32px', border: '1px solid #F0F0F0' }}>
-                <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111', marginBottom: 14 }}>Ders Hakkında</h2>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111', marginBottom: 14 }}>{t('cls.about')}</h2>
                 <p style={{ fontSize: 15, color: '#555', lineHeight: 1.8 }}>{(cls as typeof mockClasses[0]).description}</p>
 
                 {'amenities' in cls && Array.isArray((cls as typeof mockClasses[0]).amenities) && (cls as typeof mockClasses[0]).amenities.length > 0 && (
                   <>
-                    <h3 style={{ fontSize: 16, fontWeight: 700, color: '#111', marginTop: 24, marginBottom: 14 }}>Dahil Olanlar</h3>
+                    <h3 style={{ fontSize: 16, fontWeight: 700, color: '#111', marginTop: 24, marginBottom: 14 }}>{t('cls.included')}</h3>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       {(cls as typeof mockClasses[0]).amenities.map((a, i) => (
                         <span key={i} style={{ padding: '7px 16px', backgroundColor: '#F0FDF4', color: '#16A34A', borderRadius: 100, fontSize: 13, fontWeight: 500 }}>✓ {a}</span>
@@ -179,12 +181,12 @@ export default function DersDetay() {
             {/* Eğitmen */}
             {instructor && (
               <div style={{ backgroundColor: '#fff', borderRadius: 24, padding: '28px 32px', border: '1px solid #F0F0F0' }}>
-                <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111', marginBottom: 20 }}>Eğitmen</h2>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111', marginBottom: 20 }}>{t('cls.instructor')}</h2>
                 <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start' }}>
                   <SportIconBox name={instructor.icon} bgColor={instructor.color + '30'} iconColor={instructor.color} boxSize={64} borderRadius={32} size={28} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 17, fontWeight: 700, color: '#111', marginBottom: 4 }}>{instructor.fullName}</div>
-                    <div style={{ fontSize: 13, color: '#F59E0B', fontWeight: 600, marginBottom: 6 }}>★ {instructor.avgRating} · {instructor.totalReviews} değerlendirme</div>
+                    <div style={{ fontSize: 13, color: '#F59E0B', fontWeight: 600, marginBottom: 6 }}>★ {instructor.avgRating} · {instructor.totalReviews} {t('cls.reviews')}</div>
                     <div style={{ display: 'inline-block', fontSize: 12, fontWeight: 600, color: '#6366F1', background: '#EEF2FF', padding: '3px 10px', borderRadius: 20, marginBottom: 10 }}>{instructor.specialty}</div>
                     <p style={{ fontSize: 14, color: '#666', lineHeight: 1.7 }}>{instructor.bio}</p>
                   </div>
@@ -195,7 +197,7 @@ export default function DersDetay() {
             {/* Real session instructor (inline) */}
             {isReal && (cls as ReturnType<typeof mapSessionToDisplay>).instructorName && (
               <div style={{ backgroundColor: '#fff', borderRadius: 24, padding: '28px 32px', border: '1px solid #F0F0F0' }}>
-                <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111', marginBottom: 16 }}>Eğitmen</h2>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111', marginBottom: 16 }}>{t('cls.instructor')}</h2>
                 {(cls as ReturnType<typeof mapSessionToDisplay>).instructorId ? (
                   <Link href={`/instructor/${(cls as ReturnType<typeof mapSessionToDisplay>).instructorId}`} style={{ textDecoration: 'none' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', backgroundColor: '#FAFAFA', borderRadius: 14, cursor: 'pointer' }}
@@ -216,7 +218,7 @@ export default function DersDetay() {
 
             {/* Salon */}
             <div style={{ backgroundColor: '#fff', borderRadius: 24, padding: '28px 32px', border: '1px solid #F0F0F0' }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111', marginBottom: 16 }}>Salon</h2>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111', marginBottom: 16 }}>{t('cls.venue')}</h2>
               {venue ? (
                 <Link href={`/venue/${venue.id}`} style={{ textDecoration: 'none' }}>
                   <div
@@ -228,7 +230,7 @@ export default function DersDetay() {
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 16, fontWeight: 700, color: '#4F46E5' }}>{venue.name}</div>
                       <div style={{ fontSize: 13, color: '#888', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={14} /> {venue.address}</div>
-                      <div style={{ fontSize: 13, color: '#F59E0B', fontWeight: 600, marginTop: 4 }}>★ {venue.avgRating} · {venue.totalReviews} değerlendirme</div>
+                      <div style={{ fontSize: 13, color: '#F59E0B', fontWeight: 600, marginTop: 4 }}>★ {venue.avgRating} · {venue.totalReviews} {t('cls.reviews')}</div>
                     </div>
                     <span style={{ fontSize: 18, color: '#ccc' }}>→</span>
                   </div>
@@ -247,30 +249,30 @@ export default function DersDetay() {
             <div style={{ backgroundColor: '#fff', borderRadius: 24, padding: '28px', border: '1px solid #F0F0F0', boxShadow: '0 8px 40px rgba(0,0,0,0.1)' }}>
               <div style={{ marginBottom: 20 }}>
                 <span style={{ fontSize: 28, fontWeight: 800, color: '#111' }}>₺{cls.basePrice}</span>
-                <span style={{ fontSize: 14, fontWeight: 400, color: '#999', marginLeft: 4 }}> / kişi</span>
-                <div style={{ fontSize: 13, color: '#F59E0B', fontWeight: 600, marginTop: 4 }}>★ {cls.rating} · {cls.totalReviews} değerlendirme</div>
+                <span style={{ fontSize: 14, fontWeight: 400, color: '#999', marginLeft: 4 }}>{' '}/ {t('card.perPerson').replace('/ ','')}</span>
+                <div style={{ fontSize: 13, color: '#F59E0B', fontWeight: 600, marginTop: 4 }}>★ {cls.rating} · {cls.totalReviews} {t('cls.reviews')}</div>
               </div>
 
               <div style={{ backgroundColor: '#FAFAFA', borderRadius: 16, overflow: 'hidden', marginBottom: 20, border: '1px solid #F0F0F0' }}>
                 <div style={{ padding: '14px 16px', display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 13, color: '#666', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Calendar size={16} /> Tarih</span>
+                  <span style={{ fontSize: 13, color: '#666', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Calendar size={16} /> {t('cls.date')}</span>
                   <span style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{cls.date}</span>
                 </div>
                 <div style={{ height: 1, backgroundColor: '#F0F0F0' }} />
                 <div style={{ padding: '14px 16px', display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 13, color: '#666', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Clock size={16} /> Saat</span>
+                  <span style={{ fontSize: 13, color: '#666', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Clock size={16} /> {t('cls.time')}</span>
                   <span style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{cls.time}</span>
                 </div>
               </div>
 
               <div style={{ marginBottom: 20 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-                  <span style={{ fontSize: 14, color: '#555' }}>Ders ücreti</span>
+                  <span style={{ fontSize: 14, color: '#555' }}>{t('cls.classFee')}</span>
                   <span style={{ fontSize: 14, color: '#111' }}>₺{cls.basePrice}</span>
                 </div>
                 <div style={{ height: 1, backgroundColor: '#F0F0F0', margin: '14px 0' }} />
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>Toplam</span>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>{t('cls.total')}</span>
                   <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>₺{cls.basePrice}</span>
                 </div>
               </div>
@@ -282,14 +284,14 @@ export default function DersDetay() {
                 onMouseEnter={e => { if (cls.spots > 0) (e.currentTarget as HTMLButtonElement).style.background = '#4338CA' }}
                 onMouseLeave={e => { if (cls.spots > 0) (e.currentTarget as HTMLButtonElement).style.background = '#4F46E5' }}
               >
-                {cls.spots === 0 ? 'Seans Dolu' : 'Rezervasyon Yap'}
+                {cls.spots === 0 ? t('cls.sessionFull') : t('cls.bookNow')}
               </button>
 
-              <p style={{ textAlign: 'center', fontSize: 12, color: '#bbb', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><ShieldCheck size={14} /> 12 saat öncesine kadar ücretsiz iptal</p>
+              <p style={{ textAlign: 'center', fontSize: 12, color: '#bbb', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><ShieldCheck size={14} /> {t('cls.freeCancel')}</p>
 
               {cls.spots <= 3 && (
                 <div style={{ marginTop: 14, padding: '12px 14px', backgroundColor: '#FFF7ED', borderRadius: 12, border: '1px solid #FED7AA' }}>
-                  <p style={{ fontSize: 12, color: '#92400E', textAlign: 'center', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><Flame size={12} /> Son <strong>{cls.spots} yer</strong> kaldı!</p>
+                  <p style={{ fontSize: 12, color: '#92400E', textAlign: 'center', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><Flame size={12} /> {t('cls.lastSpotsWarn').replace('{n}', String(cls.spots))}</p>
                 </div>
               )}
             </div>
@@ -303,6 +305,7 @@ export default function DersDetay() {
 }
 
 function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void }) {
+  const { t } = useT()
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [cashbackEarned, setCashbackEarned] = useState(0)
@@ -330,12 +333,12 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
       })
       const data = await res.json()
       if (!res.ok || !data.valid) {
-        setCouponStatus({ checking: false, valid: false, error: data?.error || 'Geçersiz kupon kodu.' })
+        setCouponStatus({ checking: false, valid: false, error: data?.error || t('booking.invalidCoupon') })
       } else {
         setCouponStatus({ checking: false, valid: true, discountType: data.coupon.discountType, discountValue: data.coupon.discountValue })
       }
     } catch {
-      setCouponStatus({ checking: false, valid: false, error: 'Bir hata oluştu, tekrar dene.' })
+      setCouponStatus({ checking: false, valid: false, error: t('common.error') })
     }
   }
 
@@ -375,7 +378,7 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
         })
         const data = await res.json()
         if (!res.ok) {
-          setError(data?.error || data?.message || 'Bir hata oluştu, tekrar dene.')
+          setError(data?.error || data?.message || t('common.error'))
           return
         }
         setCashbackEarned(data?.booking?.cashbackEarned || 0)
@@ -397,7 +400,7 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
       }
       setStep(2)
     } catch {
-      setError('Bir hata oluştu, tekrar dene.')
+      setError(t('common.error'))
     } finally {
       setLoading(false)
     }
@@ -410,8 +413,8 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
 
         {step === 1 && (
           <div>
-            <h2 style={{ fontSize: 22, fontWeight: 800, color: '#111', marginBottom: 6 }}>Rezervasyonu Onayla</h2>
-            <p style={{ fontSize: 14, color: '#888', marginBottom: 28 }}>Ders detaylarını kontrol et ve onayla</p>
+            <h2 style={{ fontSize: 22, fontWeight: 800, color: '#111', marginBottom: 6 }}>{t('booking.confirmTitle')}</h2>
+            <p style={{ fontSize: 14, color: '#888', marginBottom: 28 }}>{t('booking.confirmSub')}</p>
 
             <div style={{ backgroundColor: '#FAFAFA', borderRadius: 18, padding: '20px', marginBottom: 20, border: '1px solid #F0F0F0' }}>
               <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 16 }}>
@@ -423,7 +426,7 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
               </div>
               <div style={{ height: 1, backgroundColor: '#EBEBEB', marginBottom: 14 }} />
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: groupSize > 1 ? 12 : 14 }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: '#555' }}>Kişi Sayısı</span>
+                <span style={{ fontSize: 14, fontWeight: 600, color: '#555' }}>{t('booking.groupSize')}</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <button onClick={() => { setGroupSize(g => Math.max(1, g - 1)); setTagInputs(t => t.slice(0, groupSize - 2)) }} style={{ width: 30, height: 30, borderRadius: 8, border: '1.5px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontSize: 18, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
                   <span style={{ fontSize: 16, fontWeight: 700, color: '#111', minWidth: 20, textAlign: 'center' }}>{groupSize}</span>
@@ -432,12 +435,12 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
               </div>
               {groupSize > 1 && (
                 <div style={{ marginBottom: 14 }}>
-                  <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>Birlikte gelecek kişileri etiketle (opsiyonel)</div>
+                  <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>{t('booking.tagPeople')}</div>
                   {Array.from({ length: groupSize - 1 }).map((_, idx) => (
                     <div key={idx} style={{ position: 'relative', marginBottom: 8 }}>
                       <input
                         type="text"
-                        placeholder={`@kullanıcıadı ${idx + 2}`}
+                        placeholder={`${t('booking.tagPlaceholder')} ${idx + 2}`}
                         value={tagInputs[idx] || ''}
                         onChange={e => {
                           const val = e.target.value
@@ -477,7 +480,7 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
               <div style={{ height: 1, backgroundColor: '#EBEBEB', marginBottom: 14 }} />
 
               <div style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>Kupon kodu (opsiyonel)</div>
+                <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>{t('booking.couponLabel')}</div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <input
                     type="text"
@@ -491,12 +494,12 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
                     disabled={!couponCode.trim() || couponStatus.checking}
                     style={{ padding: '9px 16px', borderRadius: 10, border: 'none', background: '#EEF2FF', color: '#4F46E5', fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
                   >
-                    {couponStatus.checking ? '...' : 'Uygula'}
+                    {couponStatus.checking ? '...' : t('booking.apply')}
                   </button>
                 </div>
                 {couponStatus.valid && (
                   <div style={{ fontSize: 12, color: '#15803D', marginTop: 6, fontWeight: 600 }}>
-                    ✓ Kupon uygulandı: {couponStatus.discountType === 'percent' ? `%${couponStatus.discountValue}` : `₺${couponStatus.discountValue}`} indirim
+                    {t('booking.couponApplied')} {couponStatus.discountType === 'percent' ? `%${couponStatus.discountValue}` : `₺${couponStatus.discountValue}`} {t('booking.discount')}
                   </div>
                 )}
                 {couponStatus.valid === false && (
@@ -506,7 +509,7 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
 
               <div style={{ height: 1, backgroundColor: '#EBEBEB', marginBottom: 14 }} />
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>Toplam</span>
+                <span style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>{t('cls.total')}</span>
                 <span style={{ fontSize: 18, fontWeight: 800, color: '#4F46E5' }}>
                   ₺{totalAfterDiscount}
                   {groupSize > 1 && <span style={{ fontSize: 13, fontWeight: 500, color: '#888', marginLeft: 6 }}>({groupSize} × ₺{cls.basePrice})</span>}
@@ -516,7 +519,7 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
             </div>
 
             <div style={{ backgroundColor: '#FFF7ED', borderRadius: 12, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#92400E', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <ShieldCheck size={14} /> 12 saat öncesine kadar ücretsiz iptal
+              <ShieldCheck size={14} /> {t('cls.freeCancel')}
             </div>
 
             {error && (
@@ -530,7 +533,7 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
               disabled={loading}
               style={{ width: '100%', padding: '15px', borderRadius: 14, border: 'none', background: loading ? '#A5B4FC' : '#4F46E5', color: '#fff', fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer' }}
             >
-              {loading ? 'İşleniyor...' : 'Rezervasyonu Onayla →'}
+              {loading ? t('booking.processing') : t('booking.confirmButton')}
             </button>
           </div>
         )}
@@ -538,17 +541,17 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
         {step === 2 && (
           <div style={{ textAlign: 'center', padding: '24px 0' }}>
             <div style={{ fontSize: 72, marginBottom: 20 }}>🎉</div>
-            <h2 style={{ fontSize: 24, fontWeight: 800, color: '#111', marginBottom: 10 }}>Rezervasyon Tamam!</h2>
+            <h2 style={{ fontSize: 24, fontWeight: 800, color: '#111', marginBottom: 10 }}>{t('booking.successTitle')}</h2>
             <p style={{ fontSize: 15, color: '#666', marginBottom: cashbackEarned > 0 ? 16 : 28, lineHeight: 1.7 }}>
-              <strong>{cls.title}</strong> dersine başarıyla kayıt oldun.<br />Seni bekliyoruz!
+              <strong>{cls.title}</strong> {t('booking.successText')}
             </p>
             {cashbackEarned > 0 && (
               <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 14, padding: '14px 16px', marginBottom: 24, color: '#15803D', fontSize: 14, fontWeight: 600 }}>
-                🎁 ₺{cashbackEarned} cashback kazandın! Kredine eklendi, bir sonraki rezervasyonunda kullanabilirsin.
+                {t('booking.cashback').replace('{n}', String(cashbackEarned))}
               </div>
             )}
             <button onClick={onClose} style={{ width: '100%', padding: '15px', borderRadius: 14, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
-              Harika! 🚀
+              {t('booking.great')}
             </button>
           </div>
         )}
