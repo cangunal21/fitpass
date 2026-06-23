@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useT } from '@/lib/i18n'
+import { useT, localizeText } from '@/lib/i18n'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { mockDropInSlots, mockVenues } from '@/lib/mockData'
@@ -44,7 +44,7 @@ function mapApiSlot(slot: any) {
 }
 
 export default function DropInPage() {
-  const { t } = useT()
+  const { t, lang } = useT()
   const params = useParams()
   const router = useRouter()
   const [slot, setSlot] = useState<ReturnType<typeof mapApiSlot> | null>(null)
@@ -143,14 +143,14 @@ export default function DropInPage() {
 
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: '32px 24px', display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24, alignItems: 'start' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#888', fontSize: 14, textDecoration: 'none', fontWeight: 500 }}>← Geri Dön</Link>
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#888', fontSize: 14, textDecoration: 'none', fontWeight: 500 }}>{t('dropin.back')}</Link>
 
           <div style={{ backgroundColor: '#fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.07)' }}>
             <div style={{ background: `linear-gradient(135deg, ${slot.color} 0%, ${slot.color}cc 100%)`, padding: '28px', color: '#fff' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                   <span style={{ fontSize: 11, fontWeight: 700, backgroundColor: 'rgba(255,255,255,0.2)', padding: '4px 12px', borderRadius: 20, marginBottom: 12, display: 'inline-block' }}>DROP-IN · {slot.format}</span>
-                  <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 6 }}>{slot.title}</h1>
+                  <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 6 }}>{lang === 'en' && (slot as any).titleEn ? (slot as any).titleEn : slot.title}</h1>
                   <span style={{ fontSize: 14, opacity: 0.9, color: '#fff' }}>{slot.venueName}{slot.neighborhood ? ` · ${slot.neighborhood}` : ''}</span>
                 </div>
                 <SportIconBox name={slot.icon} bgColor="rgba(255,255,255,0.2)" iconColor="#fff" boxSize={72} borderRadius={20} size={36} />
@@ -158,21 +158,21 @@ export default function DropInPage() {
               <div style={{ marginTop: 20 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                   <span style={{ fontSize: 13, opacity: 0.85 }}>{t('dropin.occupancy')}</span>
-                  <span style={{ fontSize: 13, fontWeight: 700 }}>{slot.currentPlayers}/{slot.totalPlayers} oyuncu</span>
+                  <span style={{ fontSize: 13, fontWeight: 700 }}>{slot.currentPlayers}/{slot.totalPlayers} {t('dropin.players')}</span>
                 </div>
                 <div style={{ height: 8, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 4 }}>
                   <div style={{ height: '100%', backgroundColor: '#fff', borderRadius: 4, width: `${percentage}%`, transition: 'width 0.3s' }} />
                 </div>
                 <div style={{ fontSize: 12, opacity: 0.75, marginTop: 6 }}>
-                  {isFull ? t('dropin.slotFull') : `${slot.totalPlayers - slot.currentPlayers} yer kaldı — dolunca maç başlıyor!`}
+                  {isFull ? t('dropin.slotFull') : t('dropin.spotsLeftMsg').replace('{n}', String(slot.totalPlayers - slot.currentPlayers))}
                 </div>
               </div>
             </div>
             <div style={{ padding: '20px 24px', display: 'flex', gap: 24, flexWrap: 'wrap' }}>
               {[
-                { label: t('cls.date'), value: slot.date, icon: <Calendar size={14} /> },
-                { label: 'Saat', value: `${slot.time}${slot.endsAt ? ` - ${slot.endsAt}` : ''}`, icon: <Clock size={14} /> },
-                { label: 'Süre', value: slot.duration, icon: <Timer size={14} /> },
+                { label: t('cls.date'), value: localizeText(slot.date, lang), icon: <Calendar size={14} /> },
+                { label: t('cls.time'), value: `${localizeText(slot.time, lang)}${slot.endsAt ? ` - ${slot.endsAt}` : ''}`, icon: <Clock size={14} /> },
+                { label: t('cls.duration'), value: localizeText(slot.duration, lang), icon: <Timer size={14} /> },
                 { label: t('dropin.perPerson'), value: `₺${slot.pricePerPerson}`, icon: null },
               ].map((item, i) => (
                 <div key={i}>
@@ -185,7 +185,7 @@ export default function DropInPage() {
 
           {/* Katılımcılar */}
           <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px', boxShadow: '0 2px 12px rgba(0,0,0,0.07)' }}>
-            <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a1a1a', marginBottom: 16 }}>Katılımcılar ({slot.participantCount}/{slot.totalPlayers})</h2>
+            <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a1a1a', marginBottom: 16 }}>{t('dropin.participants')} ({slot.participantCount}/{slot.totalPlayers})</h2>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
               {(slot.participants || []).map((p: any) => {
                 const initials = (p.fullName || p.username || '?').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
@@ -243,7 +243,7 @@ export default function DropInPage() {
               </div>
             )}
             <div style={{ marginTop: 14, padding: '12px 14px', backgroundColor: '#FFFBEB', borderRadius: 12, border: '1px solid #FDE68A' }}>
-              <p style={{ fontSize: 12, color: '#92400E', display: 'flex', alignItems: 'center', gap: 6 }}><AlertCircle size={14} /> Bu etkinlik <strong>{slot.venueName}</strong> tarafından düzenlenmektedir. Şipşakspor yalnızca booking altyapısını sağlar.</p>
+              <p style={{ fontSize: 12, color: '#92400E', display: 'flex', alignItems: 'center', gap: 6 }}><AlertCircle size={14} /> {t('dropin.organizedBy1')}<strong>{slot.venueName}</strong>{t('dropin.organizedBy2')}</p>
             </div>
           </div>
         </div>
@@ -251,8 +251,8 @@ export default function DropInPage() {
         {/* Sağ panel */}
         <div style={{ position: 'sticky', top: 80 }}>
           <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px', boxShadow: '0 4px 24px rgba(0,0,0,0.1)' }}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: '#1a1a1a', marginBottom: 2 }}>₺{slot.pricePerPerson}<span style={{ fontSize: 14, fontWeight: 400, color: '#999' }}> / kişi</span></div>
-            <div style={{ fontSize: 13, color: '#999', marginBottom: 16 }}>Toplam: ₺{slot.totalPrice} · {slot.totalPlayers} kişiye bölünür</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: '#1a1a1a', marginBottom: 2 }}>₺{slot.pricePerPerson}<span style={{ fontSize: 14, fontWeight: 400, color: '#999' }}> {t('card.perPerson')}</span></div>
+            <div style={{ fontSize: 13, color: '#999', marginBottom: 16 }}>{t('dropin.totalSplit').replace('{total}', String(slot.totalPrice)).replace('{n}', String(slot.totalPlayers))}</div>
 
             <div style={{ marginBottom: 20 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>

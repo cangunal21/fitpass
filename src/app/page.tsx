@@ -9,7 +9,7 @@ import { api, getToken, getUser } from '@/lib/api'
 import { Search, LayoutGrid, Map, Flame, Clock, Timer, X } from 'lucide-react'
 import { SportIcon, SportIconBox, getIconKeyForCategory, getColorForCategory } from '@/lib/sportIcons'
 import { SkeletonCardGrid } from '@/components/Skeleton'
-import { useT, translateCategory } from '@/lib/i18n'
+import { useT, translateCategory, localizeText } from '@/lib/i18n'
 
 const dateLocale = () => (typeof window !== 'undefined' && localStorage.getItem('fitpass_lang') === 'en') ? 'en-US' : 'tr-TR'
 
@@ -450,7 +450,7 @@ export default function Home() {
                       <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)' }}>{'venue' in item && typeof item.venue === 'string' ? item.venue : ''} · {item.neighborhood}</p>
                     </div>
                     <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 12, color: '#666', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Clock size={14} /> {'time' in item ? item.time : ''}</span>
+                      <span style={{ fontSize: 12, color: '#666', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Clock size={14} /> {'time' in item ? localizeText(item.time as string, lang) : ''}</span>
                       <span style={{ fontSize: 15, fontWeight: 800, color: '#4F46E5' }}>₺{item.basePrice}</span>
                     </div>
                   </div>
@@ -512,10 +512,10 @@ export default function Home() {
                     <div style={{ padding: '16px 20px 20px' }}>
                       <div style={{ display: 'flex', gap: 16, marginBottom: 14 }}>
                         <div style={{ fontSize: 12, color: '#666', display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <Clock size={16} /> {'time' in item ? item.time : ''}
+                          <Clock size={16} /> {'time' in item ? localizeText(item.time as string, lang) : ''}
                         </div>
                         <div style={{ fontSize: 12, color: '#666', display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <Timer size={16} /> {'duration' in item ? item.duration : ''}
+                          <Timer size={16} /> {'duration' in item ? localizeText(item.duration as string, lang) : ''}
                         </div>
                         <div style={{ fontSize: 12, color: '#F59E0B', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 3 }}>
                           ★ {item.rating}

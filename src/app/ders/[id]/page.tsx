@@ -8,7 +8,7 @@ import Navbar from '@/components/Navbar'
 import { api, getToken, getUser } from '@/lib/api'
 import { MapPin, Calendar, Clock, Timer, Users, User, ShieldCheck, Flame, AlertCircle, X } from 'lucide-react'
 import { SportIconBox } from '@/lib/sportIcons'
-import { useT, translateCategory } from '@/lib/i18n'
+import { useT, translateCategory, localizeText, translateAmenity } from '@/lib/i18n'
 
 const dateLocale = () => (typeof window !== 'undefined' && localStorage.getItem('fitpass_lang') === 'en') ? 'en-US' : 'tr-TR'
 
@@ -134,7 +134,7 @@ export default function DersDetay() {
                     )}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
                       <span style={{ fontSize: 14, color: '#F59E0B', fontWeight: 700 }}>★ {cls.rating}</span>
-                      <span style={{ fontSize: 13, color: '#999' }}>({cls.totalReviews} değerlendirme)</span>
+                      <span style={{ fontSize: 13, color: '#999' }}>({cls.totalReviews} {t('cls.reviews')})</span>
                       <span style={{ fontSize: 13, color: '#bbb' }}>·</span>
                       <span style={{ fontSize: 13, color: '#888', display: 'inline-flex', alignItems: 'center', gap: 4 }}><MapPin size={14} /> {cls.neighborhood}</span>
                     </div>
@@ -148,9 +148,9 @@ export default function DersDetay() {
 
               <div style={{ padding: '20px 32px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, borderTop: '1px solid #F5F5F5' }}>
                 {[
-                  { icon: <Calendar size={18} />, label: t('cls.date'), value: cls.date },
-                  { icon: <Clock size={18} />, label: t('cls.time'), value: cls.time },
-                  { icon: <Timer size={18} />, label: t('cls.duration'), value: cls.duration },
+                  { icon: <Calendar size={18} />, label: t('cls.date'), value: localizeText(cls.date, lang) },
+                  { icon: <Clock size={18} />, label: t('cls.time'), value: localizeText(cls.time, lang) },
+                  { icon: <Timer size={18} />, label: t('cls.duration'), value: localizeText(cls.duration, lang) },
                   { icon: <Users size={18} />, label: t('cls.capacity'), value: t('card.spotsLeft').replace('{n}', String(cls.spots)) },
                 ].map((item, i) => (
                   <div key={i} style={{ padding: '12px 14px', backgroundColor: '#FAFAFA', borderRadius: 12 }}>
@@ -166,14 +166,14 @@ export default function DersDetay() {
             {'description' in cls && (cls as typeof mockClasses[0]).description && (
               <div style={{ backgroundColor: '#fff', borderRadius: 24, padding: '28px 32px', border: '1px solid #F0F0F0' }}>
                 <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111', marginBottom: 14 }}>{t('cls.about')}</h2>
-                <p style={{ fontSize: 15, color: '#555', lineHeight: 1.8 }}>{(cls as typeof mockClasses[0]).description}</p>
+                <p style={{ fontSize: 15, color: '#555', lineHeight: 1.8 }}>{lang === 'en' && (cls as any).descriptionEn ? (cls as any).descriptionEn : (cls as typeof mockClasses[0]).description}</p>
 
                 {'amenities' in cls && Array.isArray((cls as typeof mockClasses[0]).amenities) && (cls as typeof mockClasses[0]).amenities.length > 0 && (
                   <>
                     <h3 style={{ fontSize: 16, fontWeight: 700, color: '#111', marginTop: 24, marginBottom: 14 }}>{t('cls.included')}</h3>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       {(cls as typeof mockClasses[0]).amenities.map((a, i) => (
-                        <span key={i} style={{ padding: '7px 16px', backgroundColor: '#F0FDF4', color: '#16A34A', borderRadius: 100, fontSize: 13, fontWeight: 500 }}>✓ {a}</span>
+                        <span key={i} style={{ padding: '7px 16px', backgroundColor: '#F0FDF4', color: '#16A34A', borderRadius: 100, fontSize: 13, fontWeight: 500 }}>✓ {translateAmenity(a, lang)}</span>
                       ))}
                     </div>
                   </>
@@ -190,8 +190,8 @@ export default function DersDetay() {
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 17, fontWeight: 700, color: '#111', marginBottom: 4 }}>{instructor.fullName}</div>
                     <div style={{ fontSize: 13, color: '#F59E0B', fontWeight: 600, marginBottom: 6 }}>★ {instructor.avgRating} · {instructor.totalReviews} {t('cls.reviews')}</div>
-                    <div style={{ display: 'inline-block', fontSize: 12, fontWeight: 600, color: '#6366F1', background: '#EEF2FF', padding: '3px 10px', borderRadius: 20, marginBottom: 10 }}>{instructor.specialty}</div>
-                    <p style={{ fontSize: 14, color: '#666', lineHeight: 1.7 }}>{instructor.bio}</p>
+                    <div style={{ display: 'inline-block', fontSize: 12, fontWeight: 600, color: '#6366F1', background: '#EEF2FF', padding: '3px 10px', borderRadius: 20, marginBottom: 10 }}>{lang === 'en' && (instructor as any).specialtyEn ? (instructor as any).specialtyEn : instructor.specialty}</div>
+                    <p style={{ fontSize: 14, color: '#666', lineHeight: 1.7 }}>{lang === 'en' && (instructor as any).bioEn ? (instructor as any).bioEn : instructor.bio}</p>
                   </div>
                 </div>
               </div>
@@ -259,12 +259,12 @@ export default function DersDetay() {
               <div style={{ backgroundColor: '#FAFAFA', borderRadius: 16, overflow: 'hidden', marginBottom: 20, border: '1px solid #F0F0F0' }}>
                 <div style={{ padding: '14px 16px', display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: 13, color: '#666', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Calendar size={16} /> {t('cls.date')}</span>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{cls.date}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{localizeText(cls.date, lang)}</span>
                 </div>
                 <div style={{ height: 1, backgroundColor: '#F0F0F0' }} />
                 <div style={{ padding: '14px 16px', display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: 13, color: '#666', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Clock size={16} /> {t('cls.time')}</span>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{cls.time}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{localizeText(cls.time, lang)}</span>
                 </div>
               </div>
 
@@ -424,7 +424,7 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
                 <SportIconBox name={cls.icon} bgColor={cls.color + '20'} iconColor={cls.color} boxSize={56} borderRadius={14} size={26} />
                 <div>
                   <div style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>{lang === 'en' && (cls as any).titleEn ? String((cls as any).titleEn) : cls.title}</div>
-                  <div style={{ fontSize: 13, color: '#888', marginTop: 3 }}>{cls.date} · {cls.time}</div>
+                  <div style={{ fontSize: 13, color: '#888', marginTop: 3 }}>{localizeText(cls.date, lang)} · {localizeText(cls.time, lang)}</div>
                 </div>
               </div>
               <div style={{ height: 1, backgroundColor: '#EBEBEB', marginBottom: 14 }} />

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useT } from '@/lib/i18n'
+
+const dateLocale = () => (typeof window !== 'undefined' && localStorage.getItem('fitpass_lang') === 'en') ? 'en-US' : 'tr-TR'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
@@ -23,7 +25,7 @@ const SPORT_COLOR_MAP: Record<string, string> = {
 }
 
 export default function DropInListPage() {
-  const { t } = useT()
+  const { t, lang } = useT()
   const router = useRouter()
   const [slots, setSlots] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -130,21 +132,21 @@ export default function DropInListPage() {
                       <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
                         <SportIconBox name={icon} bgColor={color + '18'} iconColor={color} boxSize={52} borderRadius={14} size={26} />
                         <div>
-                          <div style={{ fontSize: 16, fontWeight: 800, color: '#1a1a1a', marginBottom: 3 }}>{slot.title}</div>
+                          <div style={{ fontSize: 16, fontWeight: 800, color: '#1a1a1a', marginBottom: 3 }}>{lang === 'en' && slot.titleEn ? slot.titleEn : slot.title}</div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#888' }}>
                             <MapPin size={13} /> {slot.venue?.name} · {slot.venue?.address}
                           </div>
                         </div>
                       </div>
                       <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <div style={{ fontSize: 20, fontWeight: 800, color: color }}>₺{slot.pricePerPerson}<span style={{ fontSize: 12, fontWeight: 400, color: '#999' }}>/kişi</span></div>
+                        <div style={{ fontSize: 20, fontWeight: 800, color: color }}>₺{slot.pricePerPerson}<span style={{ fontSize: 12, fontWeight: 400, color: '#999' }}>{t('card.perPerson')}</span></div>
                       </div>
                     </div>
 
                     <div style={{ display: 'flex', gap: 20, marginBottom: 14, fontSize: 13, color: '#555' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Calendar size={13} /> {startsAt.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' })}</span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Clock size={13} /> {startsAt.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Users size={13} /> {slot.currentPlayers}/{slot.totalPlayers} oyuncu</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Calendar size={13} /> {startsAt.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long' })}</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Clock size={13} /> {startsAt.toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Users size={13} /> {slot.currentPlayers}/{slot.totalPlayers} {t('dropin.players')}</span>
                     </div>
 
                     {/* Progress bar */}
@@ -152,7 +154,7 @@ export default function DropInListPage() {
                       <div style={{ height: 6, backgroundColor: '#f0f0f0', borderRadius: 3 }}>
                         <div style={{ height: '100%', backgroundColor: color, borderRadius: 3, width: `${percentage}%`, transition: 'width 0.3s' }} />
                       </div>
-                      <div style={{ fontSize: 11, color: '#999', marginTop: 4 }}>{slot.totalPlayers - slot.currentPlayers} yer kaldı</div>
+                      <div style={{ fontSize: 11, color: '#999', marginTop: 4 }}>{t('card.spotsLeft').replace('{n}', String(slot.totalPlayers - slot.currentPlayers))}</div>
                     </div>
 
                     {status?.success && (
@@ -164,14 +166,14 @@ export default function DropInListPage() {
 
                     <div style={{ display: 'flex', gap: 10 }}>
                       <Link href={`/dropin/${slot.id}`} style={{ flex: 1, padding: '11px', borderRadius: 12, border: '1.5px solid #e5e5e5', background: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: '#333', textAlign: 'center', textDecoration: 'none' }}>
-                        Detay
+                        {t('dropin.detail')}
                       </Link>
                       <button
                         onClick={() => handleJoin(slot.id, !!slot._mock)}
                         disabled={status?.loading || !!status?.success || slot.currentPlayers >= slot.totalPlayers}
                         style={{ flex: 2, padding: '11px', borderRadius: 12, border: 'none', background: (status?.success || slot.currentPlayers >= slot.totalPlayers) ? '#ddd' : color, color: '#fff', fontSize: 14, fontWeight: 700, cursor: (status?.success || slot.currentPlayers >= slot.totalPlayers) ? 'not-allowed' : 'pointer' }}
                       >
-                        {status?.loading ? 'Katılıyor...' : status?.success ? 'Katıldınız!' : slot.currentPlayers >= slot.totalPlayers ? 'Dolu' : 'Katıl'}
+                        {status?.loading ? t('dropin.joining') : status?.success ? t('dropin.joined') : slot.currentPlayers >= slot.totalPlayers ? t('dropin.joinFull') : t('dropin.join')}
                       </button>
                     </div>
                   </div>

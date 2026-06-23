@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useT } from '@/lib/i18n'
+import { useT, translateCategory, translateAmenity, localizeText } from '@/lib/i18n'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
@@ -13,7 +13,7 @@ import { api } from '@/lib/api'
 import { SkeletonVenuePage } from '@/components/Skeleton'
 
 export default function VenuePage() {
-  const { t } = useT()
+  const { t, lang } = useT()
   const params = useParams()
   const router = useRouter()
   const id = Number(params.id)
@@ -145,7 +145,7 @@ export default function VenuePage() {
   const totalReviews = venue.totalReviews ?? 0
   const neighborhoodName = isMock ? venue.neighborhood : (venue.neighborhood?.name ?? '')
   const isVerified = isMock ? venue.isVerified : (venue.isApproved ?? false)
-  const description = venue.description ?? ''
+  const description = isMock && lang === 'en' && (venue as any).descriptionEn ? (venue as any).descriptionEn : (venue.description ?? '')
   const amenities: string[] = isMock ? (venue.amenities ?? []) : []
 
   // Real data arrays
@@ -262,7 +262,7 @@ export default function VenuePage() {
                     <span style={{ fontSize: 12, backgroundColor: '#EFF6FF', color: '#2563EB', padding: '3px 10px', borderRadius: 100, fontWeight: 600 }}>✓ Onaylı</span>
                   )}
                 </div>
-                {isMock && <p style={{ fontSize: 14, color: '#888', marginBottom: 10, fontWeight: 500 }}>{venue.category}</p>}
+                {isMock && <p style={{ fontSize: 14, color: '#888', marginBottom: 10, fontWeight: 500 }}>{lang === 'en' && (venue as any).categoryEn ? (venue as any).categoryEn : venue.category}</p>}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <span style={{ fontSize: 14, color: '#F59E0B', fontWeight: 700 }}>★ {venue.avgRating ?? avgRating}</span>
                   <span style={{ fontSize: 13, color: '#999' }}>({venue.totalReviews ?? totalReviews} değerlendirme)</span>
@@ -317,7 +317,7 @@ export default function VenuePage() {
             {amenities.length > 0 && (
               <div style={{ marginTop: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {amenities.map((a, i) => (
-                  <span key={i} style={{ padding: '7px 16px', backgroundColor: '#F5F5F5', color: '#555', borderRadius: 100, fontSize: 13, fontWeight: 500 }}>✓ {a}</span>
+                  <span key={i} style={{ padding: '7px 16px', backgroundColor: '#F5F5F5', color: '#555', borderRadius: 100, fontSize: 13, fontWeight: 500 }}>✓ {translateAmenity(a, lang)}</span>
                 ))}
               </div>
             )}
@@ -380,8 +380,8 @@ export default function VenuePage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                       <SportIconBox name={cls.icon} bgColor={cls.color + '18'} iconColor={cls.color} boxSize={54} borderRadius={16} size={24} />
                       <div>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 4 }}>{cls.title}</div>
-                        <div style={{ fontSize: 13, color: '#888', display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={13} /> {cls.time} · <Timer size={13} /> {cls.duration}</div>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 4 }}>{lang === 'en' && cls.titleEn ? cls.titleEn : cls.title}</div>
+                        <div style={{ fontSize: 13, color: '#888', display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={13} /> {localizeText(cls.time, lang)} · <Timer size={13} /> {localizeText(cls.duration, lang)}</div>
                       </div>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -416,9 +416,9 @@ export default function VenuePage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                       <SportIconBox name={iconName} bgColor={color + '18'} iconColor={color} boxSize={54} borderRadius={16} size={24} />
                       <div>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 4 }}>{cls.title}</div>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 4 }}>{lang === 'en' && cls.titleEn ? cls.titleEn : cls.title}</div>
                         <div style={{ fontSize: 13, color: '#888', display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <Timer size={13} /> {cls.durationMinutes} dk
+                          <Timer size={13} /> {cls.durationMinutes} {lang === 'en' ? 'min' : 'dk'}
                           {cls.instructor && <><span style={{ color: '#ccc' }}>·</span><User size={13} /> {cls.instructor.fullName}</>}
                         </div>
                         {nextSessionStr && (
@@ -462,7 +462,7 @@ export default function VenuePage() {
                   >
                     <div style={{ margin: '0 auto 16px', display: 'flex', justifyContent: 'center' }}><SportIconBox name={instructor.icon} bgColor={instructor.color + '30'} iconColor={instructor.color} boxSize={72} borderRadius={36} size={32} /></div>
                     <div style={{ fontSize: 16, fontWeight: 700, color: '#111', marginBottom: 4 }}>{instructor.fullName}</div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: '#6366F1', background: '#EEF2FF', padding: '3px 12px', borderRadius: 100, display: 'inline-block', marginBottom: 10 }}>{instructor.specialty}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#6366F1', background: '#EEF2FF', padding: '3px 12px', borderRadius: 100, display: 'inline-block', marginBottom: 10 }}>{lang === 'en' && instructor.specialtyEn ? instructor.specialtyEn : instructor.specialty}</div>
                     <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
                       <span style={{ fontSize: 13, color: '#F59E0B', fontWeight: 700 }}>★ {instructor.avgRating}</span>
                       <span style={{ fontSize: 13, color: '#bbb' }}>·</span>
@@ -485,8 +485,8 @@ export default function VenuePage() {
                       <div style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}><User size={32} color="#4F46E5" /></div>
                     )}
                     <div style={{ fontSize: 16, fontWeight: 700, color: '#111', marginBottom: 4 }}>{instructor.fullName}</div>
-                    {instructor.specialty && <div style={{ fontSize: 12, fontWeight: 600, color: '#6366F1', background: '#EEF2FF', padding: '3px 12px', borderRadius: 100, display: 'inline-block', marginBottom: 10 }}>{instructor.specialty}</div>}
-                    {instructor.bio && <div style={{ fontSize: 13, color: '#888', marginBottom: 10, lineHeight: 1.5 }}>{instructor.bio}</div>}
+                    {instructor.specialty && <div style={{ fontSize: 12, fontWeight: 600, color: '#6366F1', background: '#EEF2FF', padding: '3px 12px', borderRadius: 100, display: 'inline-block', marginBottom: 10 }}>{lang === 'en' && instructor.specialtyEn ? instructor.specialtyEn : instructor.specialty}</div>}
+                    {instructor.bio && <div style={{ fontSize: 13, color: '#888', marginBottom: 10, lineHeight: 1.5 }}>{lang === 'en' && instructor.bioEn ? instructor.bioEn : instructor.bio}</div>}
                     <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
                       {instructor.avgRating != null && <span style={{ fontSize: 13, color: '#F59E0B', fontWeight: 700 }}>★ {instructor.avgRating}</span>}
                       {instructor.totalReviews != null && <><span style={{ fontSize: 13, color: '#bbb' }}>·</span><span style={{ fontSize: 13, color: '#999' }}>{instructor.totalReviews} yorum</span></>}

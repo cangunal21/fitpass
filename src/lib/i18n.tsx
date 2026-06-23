@@ -266,9 +266,16 @@ const dict: Record<Lang, Record<string, string>> = {
     'dropin.organizedBy1': ' Bu etkinlik ',
     'dropin.organizedBy2': ' tarafından düzenlenmektedir. Şipşakspor yalnızca booking altyapısını sağlar.',
     'dropin.joinedTitle': 'Katıldın!',
+    'dropin.joined': 'Katıldınız!',
+    'dropin.detail': 'Detay',
     'dropin.joinedSub': 'Maç dolunca seni haberdar edeceğiz.',
     'dropin.payWhenFull': ' Maç dolunca ödeme çekilir',
     'dropin.refundGuarantee': ' Dolmazsa tam iade garantisi',
+    'dropin.back': '← Geri Dön',
+    'dropin.players': 'oyuncu',
+    'dropin.spotsLeftMsg': '{n} yer kaldı — dolunca maç başlıyor!',
+    'dropin.participants': 'Katılımcılar',
+    'dropin.totalSplit': 'Toplam: ₺{total} · {n} kişiye bölünür',
     'venue.tabClasses': 'Dersler',
     'venue.tabInstructors': 'Hocalar',
     'venue.tabReviews': 'Yorumlar',
@@ -584,9 +591,16 @@ const dict: Record<Lang, Record<string, string>> = {
     'dropin.organizedBy1': ' This event is organized by ',
     'dropin.organizedBy2': '. Şipşakspor only provides the booking infrastructure.',
     'dropin.joinedTitle': 'You joined!',
+    'dropin.joined': 'Joined!',
+    'dropin.detail': 'Details',
     'dropin.joinedSub': "We'll let you know when the match fills up.",
     'dropin.payWhenFull': ' Payment is charged when the match fills',
     'dropin.refundGuarantee': ' Full refund guaranteed if it does not fill',
+    'dropin.back': '← Back',
+    'dropin.players': 'players',
+    'dropin.spotsLeftMsg': '{n} spots left — the match starts once it fills up!',
+    'dropin.participants': 'Participants',
+    'dropin.totalSplit': 'Total: ₺{total} · split among {n} people',
     'venue.tabClasses': 'Classes',
     'venue.tabInstructors': 'Instructors',
     'venue.tabReviews': 'Reviews',
@@ -653,6 +667,7 @@ const CATEGORY_EN: Record<string, string> = {
 }
 const TIER_EN: Record<string, string> = {
   'Aday': 'Rookie', 'Sporcu': 'Athlete', 'Profesyonel': 'Pro', 'Elit': 'Elite', 'Olimpik': 'Olympian',
+  'Atlet': 'Athlete', 'Şampiyon': 'Champion',
 }
 const BADGE_EN: Record<string, string> = {
   first_lesson: 'First Step', lessons_10: 'Regular',
@@ -668,6 +683,40 @@ export function translateCategory(name: string | null | undefined, lang: Lang): 
 export function translateTier(name: string | null | undefined, lang: Lang): string {
   if (!name) return ''
   return lang === 'en' ? (TIER_EN[name] || name) : name
+}
+const DATE_REPLACEMENTS: [string, string][] = [
+  ['Ocak', 'January'], ['Şubat', 'February'], ['Mart', 'March'], ['Nisan', 'April'],
+  ['Mayıs', 'May'], ['Haziran', 'June'], ['Temmuz', 'July'], ['Ağustos', 'August'],
+  ['Eylül', 'September'], ['Ekim', 'October'], ['Kasım', 'November'], ['Aralık', 'December'],
+  ['Pazartesi', 'Monday'], ['Cumartesi', 'Saturday'], ['Çarşamba', 'Wednesday'],
+  ['Perşembe', 'Thursday'], ['Salı', 'Tuesday'], ['Cuma', 'Friday'], ['Pazar', 'Sunday'],
+  ['Bugün', 'Today'], ['Yarın', 'Tomorrow'], [' dk', ' min'],
+]
+// Sık kullanılan olanak (amenity) terimleri — mock + gerçek salon verisindeki ortak ifadeleri kapsar
+const AMENITY_EN: Record<string, string> = {
+  'Duş': 'Showers', 'Duş imkânı': 'Showers', 'Soyunma odası': 'Locker room',
+  'Klima': 'Air conditioning', 'Mat dahil': 'Mat included', 'Yoga matı dahil': 'Yoga mat included',
+  'Yoga bloğu dahil': 'Yoga block included', 'Ücretsiz su': 'Free water', 'Wifi': 'Wifi',
+  'Otopark': 'Parking', 'Reformer': 'Reformer', 'Reformer dahil': 'Reformer included',
+  'Havlu dahil': 'Towel included', 'Ring': 'Ring', 'Kum torbası': 'Punching bag',
+  'Eldiven kiralama': 'Glove rental', 'Kask dahil': 'Headgear included', 'Ekipman dahil': 'Equipment included',
+  'Modern ekipman': 'Modern equipment', 'Protein bar': 'Protein bar', 'Protein içeceği': 'Protein drink',
+  '8 kapalı saha': '8 indoor courts', 'Raket kiralama': 'Racket rental', 'Top dahil': 'Ball included',
+  'Kafeterya': 'Cafeteria', '3 halı saha': '3 football pitches', '2 basketbol kortu': '2 basketball courts',
+  'Işıklı saha': 'Floodlit pitch',
+}
+export function translateAmenity(name: string, lang: Lang): string {
+  if (!name) return ''
+  return lang === 'en' ? (AMENITY_EN[name] || name) : name
+}
+
+// Türkçe tarih/saat/süre metinlerini İngilizce'ye çevirir (mock + serbest metin için)
+export function localizeText(str: string | null | undefined, lang: Lang): string {
+  if (!str) return ''
+  if (lang !== 'en') return str
+  let s = str
+  for (const [tr, en] of DATE_REPLACEMENTS) s = s.split(tr).join(en)
+  return s
 }
 export function translateBadge(ub: any, lang: Lang): string {
   const key = ub?.badge?.key ?? ub?.key
