@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useT } from '@/lib/i18n'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
@@ -22,6 +23,7 @@ const SPORT_COLOR_MAP: Record<string, string> = {
 }
 
 export default function DropInListPage() {
+  const { t } = useT()
   const router = useRouter()
   const [slots, setSlots] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -97,17 +99,17 @@ export default function DropInListPage() {
       <Navbar />
       <div style={{ maxWidth: 800, margin: '0 auto', padding: '32px 24px' }}>
         <div style={{ marginBottom: 28 }}>
-          <h1 style={{ fontSize: 26, fontWeight: 800, color: '#1a1a1a', marginBottom: 6 }}>Drop-In Maçlar</h1>
-          <p style={{ fontSize: 15, color: '#666' }}>Basketbol, Padel ve Halı Saha — takım bul, hemen katıl!</p>
+          <h1 style={{ fontSize: 26, fontWeight: 800, color: '#1a1a1a', marginBottom: 6 }}>{t('dropin.title')}</h1>
+          <p style={{ fontSize: 15, color: '#666' }}>{t('dropin.subtitle')}</p>
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '60px', color: '#aaa', fontSize: 15 }}>Yükleniyor...</div>
+          <div style={{ textAlign: 'center', padding: '60px', color: '#aaa', fontSize: 15 }}>{t('common.loading')}</div>
         ) : slots.length === 0 ? (
           <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '60px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>⚽</div>
-            <div style={{ fontSize: 17, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>Açık maç yok</div>
-            <div style={{ fontSize: 14, color: '#888' }}>Yakında yeni maçlar eklenecek!</div>
+            <div style={{ fontSize: 17, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>{t('dropin.empty')}</div>
+            <div style={{ fontSize: 14, color: '#888' }}>{t('dropin.emptySub')}</div>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

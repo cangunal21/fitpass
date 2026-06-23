@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useT } from '@/lib/i18n'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import Navbar from '@/components/Navbar'
@@ -11,6 +12,7 @@ import { getInitialsAvatar } from '@/lib/cloudinary'
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
 export default function InstructorPage() {
+  const { t } = useT()
   const params = useParams()
   const id = params.id as string
   const [instructor, setInstructor] = useState<any>(null)
@@ -44,8 +46,8 @@ export default function InstructorPage() {
       <Navbar />
       <div style={{ maxWidth: 800, margin: '0 auto', padding: '80px 24px', textAlign: 'center' }}>
         <div style={{ fontSize: 48, marginBottom: 16 }}>👤</div>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#111' }}>Eğitmen bulunamadı</h1>
-        <Link href="/" style={{ color: '#4F46E5', fontWeight: 600, textDecoration: 'none', marginTop: 12, display: 'inline-block' }}>Ana sayfaya dön</Link>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#111' }}>{t('inst.notFound')}</h1>
+        <Link href="/" style={{ color: '#4F46E5', fontWeight: 600, textDecoration: 'none', marginTop: 12, display: 'inline-block' }}>{t('inst.backHome')}</Link>
       </div>
     </div>
   )

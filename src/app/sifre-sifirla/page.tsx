@@ -1,12 +1,14 @@
 'use client'
 
 import { useState, Suspense } from 'react'
+import { useT } from '@/lib/i18n'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { api } from '@/lib/api'
 import { AlertCircle } from 'lucide-react'
 
 function SifreSifirlaForm() {
+  const { t } = useT()
   const searchParams = useSearchParams()
   const token = searchParams.get('token') || ''
 
@@ -21,11 +23,11 @@ function SifreSifirlaForm() {
     setError('')
 
     if (password.length < 6) {
-      setError('Şifre en az 6 karakter olmalı.')
+      setError(t('register.passwordShort'))
       return
     }
     if (password !== confirmPassword) {
-      setError('Şifreler eşleşmiyor.')
+      setError(t('register.passwordMismatch'))
       return
     }
 
@@ -38,7 +40,7 @@ function SifreSifirlaForm() {
         setSuccess(true)
       }
     } catch {
-      setError('Bağlantı hatası. Lütfen tekrar dene.')
+      setError(t('common.connectionError'))
     } finally {
       setLoading(false)
     }
@@ -47,8 +49,8 @@ function SifreSifirlaForm() {
   return (
     <div style={{ width: 480, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '60px 48px', backgroundColor: '#fff' }}>
       <div style={{ marginBottom: 36 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 800, color: '#111', marginBottom: 8 }}>Yeni Şifre Belirle</h1>
-        <p style={{ fontSize: 15, color: '#888' }}>Hesabın için yeni bir şifre oluştur</p>
+        <h1 style={{ fontSize: 28, fontWeight: 800, color: '#111', marginBottom: 8 }}>{t('rp.title')}</h1>
+        <p style={{ fontSize: 15, color: '#888' }}>{t('rp.sub')}</p>
       </div>
 
       {success ? (
@@ -66,7 +68,7 @@ function SifreSifirlaForm() {
             </div>
           )}
           <div>
-            <label style={labelStyle}>Yeni Şifre</label>
+            <label style={labelStyle}>{t('rp.newPassword')}</label>
             <input
               type="password"
               placeholder="••••••••"
@@ -77,7 +79,7 @@ function SifreSifirlaForm() {
             />
           </div>
           <div>
-            <label style={labelStyle}>Şifre Tekrar</label>
+            <label style={labelStyle}>{t('register.passwordConfirm')}</label>
             <input
               type="password"
               placeholder="••••••••"
@@ -95,7 +97,7 @@ function SifreSifirlaForm() {
           )}
 
           <button type="submit" disabled={loading || !token} style={{ marginTop: 4, padding: '14px', borderRadius: 12, border: 'none', background: loading || !token ? '#A5B4FC' : '#4F46E5', color: '#fff', fontSize: 15, fontWeight: 700, cursor: loading || !token ? 'not-allowed' : 'pointer', transition: 'background 0.15s' }}>
-            {loading ? 'Güncelleniyor...' : 'Şifremi Güncelle'}
+            {loading ? t('rp.updating') : t('rp.button')}
           </button>
 
           <div style={{ textAlign: 'center', marginTop: 8 }}>
@@ -108,6 +110,7 @@ function SifreSifirlaForm() {
 }
 
 export default function SifreSifirlaPage() {
+  const { t } = useT()
   return (
     <div style={{ minHeight: '100vh', display: 'flex', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
       {/* Sol panel */}
@@ -115,12 +118,12 @@ export default function SifreSifirlaPage() {
         <div style={{ position: 'absolute', top: -80, right: -80, width: 300, height: 300, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
         <div style={{ position: 'absolute', bottom: -60, left: -60, width: 240, height: 240, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
         <Link href="/" style={{ fontSize: 28, fontWeight: 800, color: '#fff', textDecoration: 'none', marginBottom: 48, display: 'block' }}>şipşakspor</Link>
-        <h2 style={{ fontSize: 36, fontWeight: 800, color: '#fff', marginBottom: 16, lineHeight: 1.2 }}>İstanbul'un<br />spor platformu</h2>
+        <h2 style={{ fontSize: 36, fontWeight: 800, color: '#fff', marginBottom: 16, lineHeight: 1.2 }}>{t('auth.heroTitle')}</h2>
         <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.8)', lineHeight: 1.7, maxWidth: 320 }}>
           Yoga'dan boksa, halı sahadan pilates'e — İstanbul'un en iyi spor derslerini tek platformda keşfet.
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 40 }}>
-          {['500+ aktif ders ve etkinlik', '50+ onaylı tesis ve salon', 'Kolay rezervasyon ve iptal'].map((t, i) => (
+          {['500+ aktif ders ve etkinlik', '50+ onaylı tesis ve salon', t('auth.feat3')].map((t, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, color: '#fff' }}>
               <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700 }}>✓</div>
               <span style={{ fontSize: 14, fontWeight: 500, opacity: 0.9 }}>{t}</span>
@@ -129,7 +132,7 @@ export default function SifreSifirlaPage() {
         </div>
       </div>
 
-      <Suspense fallback={<div style={{ width: 480, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' }}>Yükleniyor...</div>}>
+      <Suspense fallback={<div style={{ width: 480, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' }}>{t('common.loading')}</div>}>
         <SifreSifirlaForm />
       </Suspense>
     </div>

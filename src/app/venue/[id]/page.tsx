@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useT } from '@/lib/i18n'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
@@ -12,6 +13,7 @@ import { api } from '@/lib/api'
 import { SkeletonVenuePage } from '@/components/Skeleton'
 
 export default function VenuePage() {
+  const { t } = useT()
   const params = useParams()
   const router = useRouter()
   const id = Number(params.id)
@@ -96,7 +98,7 @@ export default function VenuePage() {
     setReviewSubmitting(true)
     setReviewError('')
     const token = localStorage.getItem('fitpass_token')
-    if (!token) { setReviewError('Giriş yapmanız gerekiyor.'); setReviewSubmitting(false); return }
+    if (!token) { setReviewError(t('common.loginRequired')); setReviewSubmitting(false); return }
 
     const res = await fetch(`${API_URL}/api/reviews`, {
       method: 'POST',
@@ -106,7 +108,7 @@ export default function VenuePage() {
     const data = await res.json()
     setReviewSubmitting(false)
     if (data.error) { setReviewError(data.error); return }
-    setReviewSuccess('Yorumunuz eklendi!')
+    setReviewSuccess(t('venue.reviewAdded'))
     setShowReviewForm(false)
     fetch(`${API_URL}/api/reviews/venue/${venue.id}`)
       .then(r => r.json())
@@ -162,9 +164,9 @@ export default function VenuePage() {
     : (sportCategories[0]?.sportCategory?.iconUrl ?? 'strength')
 
   const tabs: { key: 'dersler' | 'hocalar' | 'yorumlar'; label: ReactNode; count: number }[] = [
-    { key: 'dersler', label: <><Calendar size={15} style={{ marginRight: 6 }} />Dersler</>, count: classes.length },
-    { key: 'hocalar', label: <><User size={15} style={{ marginRight: 6 }} />Hocalar</>, count: instructors.length },
-    { key: 'yorumlar', label: <><Star size={15} style={{ marginRight: 6 }} />Yorumlar</>, count: totalReviews },
+    { key: 'dersler', label: <><Calendar size={15} style={{ marginRight: 6 }} />{t('venue.tabClasses')}</>, count: classes.length },
+    { key: 'hocalar', label: <><User size={15} style={{ marginRight: 6 }} />{t('venue.tabInstructors')}</>, count: instructors.length },
+    { key: 'yorumlar', label: <><Star size={15} style={{ marginRight: 6 }} />{t('venue.tabReviews')}</>, count: totalReviews },
   ]
 
   return (
@@ -286,7 +288,7 @@ export default function VenuePage() {
                   }}
                 >
                   <Bookmark size={15} color={isFavorite ? '#DC2626' : '#666'} fill={isFavorite ? '#DC2626' : 'none'} />
-                  {isFavorite ? 'Favoride' : 'Favoriye Ekle'}
+                  {isFavorite ? t('venue.fav') : t('venue.addFav')}
                 </button>
               )}
             </div>
@@ -329,9 +331,9 @@ export default function VenuePage() {
           {/* Stats satırı */}
           <div style={{ borderTop: '1px solid #F5F5F5', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)' }}>
             {[
-              { label: 'Aktif Ders', value: classes.length, icon: <Calendar size={20} /> },
-              { label: 'Eğitmen', value: instructors.length, icon: <User size={20} /> },
-              { label: 'Değerlendirme', value: totalReviews, icon: <Star size={20} /> },
+              { label: t('home.statClasses'), value: classes.length, icon: <Calendar size={20} /> },
+              { label: t('venue.statInstructor'), value: instructors.length, icon: <User size={20} /> },
+              { label: t('venue.statReviews'), value: totalReviews, icon: <Star size={20} /> },
             ].map((s, i) => (
               <div key={i} style={{ padding: '18px 12px', textAlign: 'center', borderRight: i < 2 ? '1px solid #F5F5F5' : 'none' }}>
                 <div style={{ marginBottom: 4, display: 'flex', justifyContent: 'center' }}>{s.icon}</div>
@@ -363,7 +365,7 @@ export default function VenuePage() {
             {classes.length === 0 && (
               <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '48px', textAlign: 'center', border: '1px solid #F0F0F0' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}><Calendar size={40} /></div>
-                <p style={{ color: '#999', fontSize: 15 }}>Bu salonda henüz ders yok.</p>
+                <p style={{ color: '#999', fontSize: 15 }}>{t('venue.noClasses')}</p>
               </div>
             )}
             {isMock ? (
@@ -447,7 +449,7 @@ export default function VenuePage() {
             {instructors.length === 0 && (
               <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '48px', textAlign: 'center', border: '1px solid #F0F0F0', gridColumn: '1/-1' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}><User size={40} /></div>
-                <p style={{ color: '#999', fontSize: 15 }}>Bu salonda kayıtlı hoca yok.</p>
+                <p style={{ color: '#999', fontSize: 15 }}>{t('venue.noInstructors')}</p>
               </div>
             )}
             {isMock ? (
@@ -523,13 +525,13 @@ export default function VenuePage() {
               <div style={{ backgroundColor: '#EEF2FF', borderRadius: 16, padding: '16px 20px' }}>
                 {!showReviewForm ? (
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 14, color: '#4F46E5', fontWeight: 600 }}>Bu salona katıldınız — yorum bırakın!</span>
-                    <button onClick={() => setShowReviewForm(true)} style={{ padding: '8px 16px', borderRadius: 10, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Yorum Yaz</button>
+                    <span style={{ fontSize: 14, color: '#4F46E5', fontWeight: 600 }}>{t('venue.canReview')}</span>
+                    <button onClick={() => setShowReviewForm(true)} style={{ padding: '8px 16px', borderRadius: 10, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>{t('venue.writeReview')}</button>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#444', marginBottom: 8 }}>Puanınız</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#444', marginBottom: 8 }}>{t('venue.yourRating')}</div>
                       <div style={{ display: 'flex', gap: 6 }}>
                         {[1,2,3,4,5].map(n => (
                           <button key={n} onClick={() => setReviewForm(f => ({...f, rating: n}))} style={{ width: 36, height: 36, borderRadius: 8, border: 'none', background: reviewForm.rating >= n ? '#F59E0B' : '#e5e5e5', fontSize: 18, cursor: 'pointer' }}>★</button>
@@ -537,8 +539,8 @@ export default function VenuePage() {
                       </div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#444', marginBottom: 6 }}>Yorumunuz (opsiyonel)</div>
-                      <textarea value={reviewForm.comment} onChange={e => setReviewForm(f => ({...f, comment: e.target.value}))} placeholder="Deneyiminizi paylaşın..." rows={3} style={{ width: '100%', padding: '10px 14px', borderRadius: 12, border: '1.5px solid #e5e5e5', fontSize: 14, outline: 'none', resize: 'vertical', boxSizing: 'border-box' as const }} />
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#444', marginBottom: 6 }}>{t('venue.yourReview')}</div>
+                      <textarea value={reviewForm.comment} onChange={e => setReviewForm(f => ({...f, comment: e.target.value}))} placeholder={t('venue.reviewPlaceholder')} rows={3} style={{ width: '100%', padding: '10px 14px', borderRadius: 12, border: '1.5px solid #e5e5e5', fontSize: 14, outline: 'none', resize: 'vertical', boxSizing: 'border-box' as const }} />
                     </div>
                     <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#666', cursor: 'pointer' }}>
                       <input type="checkbox" checked={reviewForm.isAnonymous} onChange={e => setReviewForm(f => ({...f, isAnonymous: e.target.checked}))} />
@@ -546,9 +548,9 @@ export default function VenuePage() {
                     </label>
                     {reviewError && <div style={{ color: '#DC2626', fontSize: 13 }}>{reviewError}</div>}
                     <div style={{ display: 'flex', gap: 8 }}>
-                      <button onClick={() => setShowReviewForm(false)} style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1.5px solid #eee', background: '#fff', fontSize: 13, cursor: 'pointer' }}>İptal</button>
+                      <button onClick={() => setShowReviewForm(false)} style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1.5px solid #eee', background: '#fff', fontSize: 13, cursor: 'pointer' }}>{t('common.cancelBtn')}</button>
                       <button onClick={() => handleSubmitReview(userBookings[0].id)} disabled={reviewSubmitting} style={{ flex: 2, padding: '10px', borderRadius: 10, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                        {reviewSubmitting ? 'Gönderiliyor...' : 'Yorumu Gönder'}
+                        {reviewSubmitting ? t('comp.sending') : t('venue.submitReview')}
                       </button>
                     </div>
                   </div>
@@ -563,7 +565,7 @@ export default function VenuePage() {
             {/* Real reviews */}
             {!venue._isMock && (
               reviewsLoading ? (
-                <div style={{ textAlign: 'center', color: '#888', padding: 24 }}>Yorumlar yükleniyor...</div>
+                <div style={{ textAlign: 'center', color: '#888', padding: 24 }}>{t('venue.reviewsLoading')}</div>
               ) : reviews.length === 0 ? (
                 <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '32px', textAlign: 'center', color: '#aaa', fontSize: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
                   Henüz yorum yok. İlk yorumu siz yazın!
@@ -577,7 +579,7 @@ export default function VenuePage() {
                       </div>
                       <div>
                         <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>
-                          {r.isAnonymous ? 'Anonim Kullanıcı' : (r.reviewer?.fullName || 'Kullanıcı')}
+                          {r.isAnonymous ? t('venue.anonymous') : (r.reviewer?.fullName || t('venue.anonUser'))}
                         </div>
                         <div style={{ fontSize: 11, color: '#aaa' }}>{new Date(r.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
                       </div>
@@ -591,7 +593,7 @@ export default function VenuePage() {
                   {r.comment && <p style={{ fontSize: 14, color: '#444', lineHeight: 1.6, margin: 0 }}>{r.comment}</p>}
                   {r.venueReply && (
                     <div style={{ marginTop: 14, backgroundColor: '#F5F3FF', borderRadius: 12, padding: '12px 16px', borderLeft: '3px solid #4F46E5' }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: '#4F46E5', marginBottom: 6 }}>Salon Yanıtı</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: '#4F46E5', marginBottom: 6 }}>{t('venue.venueReply')}</div>
                       <p style={{ fontSize: 13, color: '#444', lineHeight: 1.6, margin: 0 }}>{r.venueReply}</p>
                     </div>
                   )}
@@ -610,7 +612,7 @@ export default function VenuePage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, #4F46E530, #6366F120)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><User size={18} /></div>
                     <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: '#111' }}>Anonim Kullanıcı</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: '#111' }}>{t('venue.anonymous')}</div>
                       <div style={{ fontSize: 12, color: '#bbb', marginTop: 1 }}>{r.date}</div>
                     </div>
                   </div>

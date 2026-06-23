@@ -1,12 +1,14 @@
 'use client'
 
 import { useEffect, useState, Suspense } from 'react'
+import { useT } from '@/lib/i18n'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
 function EmailDogrulaContent() {
+  const { t } = useT()
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
@@ -61,8 +63,9 @@ function EmailDogrulaContent() {
 }
 
 export default function EmailDogrulaPage() {
+  const { t } = useT()
   return (
-    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Yükleniyor...</div>}>
+    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{t('common.loading')}</div>}>
       <EmailDogrulaContent />
     </Suspense>
   )

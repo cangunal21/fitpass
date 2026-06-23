@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useT } from '@/lib/i18n'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { mockDropInSlots, mockVenues } from '@/lib/mockData'
@@ -43,6 +44,7 @@ function mapApiSlot(slot: any) {
 }
 
 export default function DropInPage() {
+  const { t } = useT()
   const params = useParams()
   const router = useRouter()
   const [slot, setSlot] = useState<ReturnType<typeof mapApiSlot> | null>(null)
@@ -115,7 +117,7 @@ export default function DropInPage() {
         setSlot(s => s ? { ...s, currentPlayers: s.currentPlayers + 1, participantCount: s.participantCount + 1 } : s)
       }
     } catch {
-      setJoinError('Bir hata oluştu, tekrar dene.')
+      setJoinError(t('common.error'))
     } finally {
       setJoining(false)
     }
@@ -155,23 +157,23 @@ export default function DropInPage() {
               </div>
               <div style={{ marginTop: 20 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <span style={{ fontSize: 13, opacity: 0.85 }}>Doluluk</span>
+                  <span style={{ fontSize: 13, opacity: 0.85 }}>{t('dropin.occupancy')}</span>
                   <span style={{ fontSize: 13, fontWeight: 700 }}>{slot.currentPlayers}/{slot.totalPlayers} oyuncu</span>
                 </div>
                 <div style={{ height: 8, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 4 }}>
                   <div style={{ height: '100%', backgroundColor: '#fff', borderRadius: 4, width: `${percentage}%`, transition: 'width 0.3s' }} />
                 </div>
                 <div style={{ fontSize: 12, opacity: 0.75, marginTop: 6 }}>
-                  {isFull ? 'Slot dolu!' : `${slot.totalPlayers - slot.currentPlayers} yer kaldı — dolunca maç başlıyor!`}
+                  {isFull ? t('dropin.slotFull') : `${slot.totalPlayers - slot.currentPlayers} yer kaldı — dolunca maç başlıyor!`}
                 </div>
               </div>
             </div>
             <div style={{ padding: '20px 24px', display: 'flex', gap: 24, flexWrap: 'wrap' }}>
               {[
-                { label: 'Tarih', value: slot.date, icon: <Calendar size={14} /> },
+                { label: t('cls.date'), value: slot.date, icon: <Calendar size={14} /> },
                 { label: 'Saat', value: `${slot.time}${slot.endsAt ? ` - ${slot.endsAt}` : ''}`, icon: <Clock size={14} /> },
                 { label: 'Süre', value: slot.duration, icon: <Timer size={14} /> },
-                { label: 'Kişi Başı', value: `₺${slot.pricePerPerson}`, icon: null },
+                { label: t('dropin.perPerson'), value: `₺${slot.pricePerPerson}`, icon: null },
               ].map((item, i) => (
                 <div key={i}>
                   <div style={{ fontSize: 11, color: '#999', fontWeight: 600, marginBottom: 2, textTransform: 'uppercase' }}>{item.label}</div>
@@ -213,7 +215,7 @@ export default function DropInPage() {
                   <div style={{ width: 48, height: 48, borderRadius: '50%', backgroundColor: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed #ddd' }}>
                     <span style={{ fontSize: 18, color: '#ccc' }}>+</span>
                   </div>
-                  <span style={{ fontSize: 11, color: '#ddd' }}>Boş</span>
+                  <span style={{ fontSize: 11, color: '#ddd' }}>{t('dropin.free')}</span>
                 </div>
               ))}
             </div>
@@ -221,7 +223,7 @@ export default function DropInPage() {
 
           {/* Salon */}
           <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px', boxShadow: '0 2px 12px rgba(0,0,0,0.07)' }}>
-            <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a1a1a', marginBottom: 12 }}>Saha</h2>
+            <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a1a1a', marginBottom: 12 }}>{t('dropin.court')}</h2>
             {slot.venueId ? (
               <Link href={`/venue/${slot.venueId}`} style={{ textDecoration: 'none' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px', backgroundColor: '#f9f9f9', borderRadius: 14, cursor: 'pointer' }}>
@@ -254,7 +256,7 @@ export default function DropInPage() {
 
             <div style={{ marginBottom: 20 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ fontSize: 13, color: '#555' }}>Doluluk</span>
+                <span style={{ fontSize: 13, color: '#555' }}>{t('dropin.occupancy')}</span>
                 <span style={{ fontSize: 13, fontWeight: 700, color: isFull ? '#EF4444' : slot.color }}>{slot.currentPlayers}/{slot.totalPlayers}</span>
               </div>
               <div style={{ height: 8, backgroundColor: '#f0f0f0', borderRadius: 4 }}>
@@ -271,8 +273,8 @@ export default function DropInPage() {
             {joined ? (
               <div style={{ backgroundColor: '#F0FDF4', borderRadius: 14, padding: '16px', textAlign: 'center', marginBottom: 12 }}>
                 <div style={{ fontSize: 28, marginBottom: 6 }}>🎉</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#16A34A' }}>Katıldın!</div>
-                <div style={{ fontSize: 13, color: '#666', marginTop: 4 }}>Maç dolunca seni haberdar edeceğiz.</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#16A34A' }}>{t('dropin.joinedTitle')}</div>
+                <div style={{ fontSize: 13, color: '#666', marginTop: 4 }}>{t('dropin.joinedSub')}</div>
               </div>
             ) : (
               <button
@@ -280,12 +282,12 @@ export default function DropInPage() {
                 disabled={isFull || joining}
                 style={{ width: '100%', padding: '14px', borderRadius: 14, border: 'none', background: isFull ? '#D1D5DB' : joining ? slot.color + '99' : slot.color, color: isFull ? '#9CA3AF' : '#fff', fontSize: 15, fontWeight: 700, cursor: isFull || joining ? 'not-allowed' : 'pointer', marginBottom: 12 }}
               >
-                {joining ? 'Katılıyor...' : isFull ? 'Slot Dolu' : 'Katıl'}
+                {joining ? t('dropin.joining') : isFull ? t('dropin.joinFull') : t('dropin.join')}
               </button>
             )}
 
-            <p style={{ textAlign: 'center', fontSize: 12, color: '#999', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><CreditCard size={14} /> Maç dolunca ödeme çekilir</p>
-            <p style={{ textAlign: 'center', fontSize: 12, color: '#999', marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><ShieldCheck size={14} /> Dolmazsa tam iade garantisi</p>
+            <p style={{ textAlign: 'center', fontSize: 12, color: '#999', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><CreditCard size={14} />{t('dropin.payWhenFull')}</p>
+            <p style={{ textAlign: 'center', fontSize: 12, color: '#999', marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><ShieldCheck size={14} />{t('dropin.refundGuarantee')}</p>
           </div>
         </div>
       </div>
