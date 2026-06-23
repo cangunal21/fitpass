@@ -245,6 +245,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'prof.photoLabel': 'Profil Fotoğrafı',
     'prof.badges': 'Rozetler',
     'prof.classFallback': 'Ders',
+    'prof.lessonsToNext': '{n} ders daha → ',
     'prof.statStreak': 'Günlük Seri',
     'prof.statNoCancel': 'İptal Yok',
     'prof.statFavVenue': 'Favori Salon',
@@ -579,6 +580,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'prof.photoLabel': 'Profile Photo',
     'prof.badges': 'Badges',
     'prof.classFallback': 'Class',
+    'prof.lessonsToNext': '{n} more lessons → ',
     'prof.statStreak': 'Daily Streak',
     'prof.statNoCancel': 'No Cancellations',
     'prof.statFavVenue': 'Favorite Venue',
@@ -684,7 +686,7 @@ const CATEGORY_EN: Record<string, string> = {
   'Yoga': 'Yoga', 'Yüzme': 'Swimming',
 }
 const TIER_EN: Record<string, string> = {
-  'Aday': 'Rookie', 'Sporcu': 'Athlete', 'Profesyonel': 'Pro', 'Elit': 'Elite', 'Olimpik': 'Olympian',
+  'Aday': 'Rookie', 'Sporcu': 'Amateur', 'Profesyonel': 'Pro', 'Elit': 'Elite', 'Olimpik': 'Olympian',
   'Atlet': 'Athlete', 'Şampiyon': 'Champion',
 }
 const BADGE_EN: Record<string, string> = {

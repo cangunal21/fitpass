@@ -453,7 +453,7 @@ export default function ProfilPage() {
               <div style={{ backgroundColor: '#FAFAFA', borderRadius: 14, padding: '14px 18px', marginBottom: 16, border: '1px solid #F0F0F0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                   <span style={{ fontSize: 13, color: '#555', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}><SportIcon name={displayTierIcon} size={13} color={displayTierColor} /> {tierLabel}</span>
-                  <span style={{ fontSize: 12, color: '#999' }}>{nextTier.min - displayTotalLessons} ders daha → <strong style={{ color: '#111' }}>{nextTier.name}</strong></span>
+                  <span style={{ fontSize: 12, color: '#999' }}>{t('prof.lessonsToNext').replace('{n}', String(nextTier.min - displayTotalLessons))}<strong style={{ color: '#111' }}>{translateTier(nextTier.name, lang)}</strong></span>
                 </div>
                 <div style={{ height: 6, backgroundColor: '#EBEBEB', borderRadius: 100 }}>
                   <div style={{ height: '100%', backgroundColor: displayTierColor, borderRadius: 100, width: `${progressPercent}%`, transition: 'width 0.5s ease' }} />
@@ -1206,7 +1206,7 @@ export default function ProfilPage() {
                             <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 2 }}>{f.fullName}</div>
                             <div style={{ fontSize: 12, color: '#bbb', marginBottom: 6 }}>@{f.username}</div>
                             {f.tier && (
-                              <div style={{ fontSize: 11, fontWeight: 700, color: f.tier.colorHex || '#4F46E5', backgroundColor: `${f.tier.colorHex || '#4F46E5'}18`, padding: '3px 10px', borderRadius: 100, display: 'inline-block' }}>{f.tier.name}</div>
+                              <div style={{ fontSize: 11, fontWeight: 700, color: f.tier.colorHex || '#4F46E5', backgroundColor: `${f.tier.colorHex || '#4F46E5'}18`, padding: '3px 10px', borderRadius: 100, display: 'inline-block' }}>{translateTier(f.tier.name, lang)}</div>
                             )}
                           </div>
                         </Link>
@@ -1229,7 +1229,7 @@ export default function ProfilPage() {
                             <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 2 }}>{f.fullName}</div>
                             <div style={{ fontSize: 12, color: '#bbb', marginBottom: 6 }}>@{f.username}</div>
                             {f.tier && (
-                              <div style={{ fontSize: 11, fontWeight: 700, color: f.tier.colorHex || '#4F46E5', backgroundColor: `${f.tier.colorHex || '#4F46E5'}18`, padding: '3px 10px', borderRadius: 100, display: 'inline-block' }}>{f.tier.name}</div>
+                              <div style={{ fontSize: 11, fontWeight: 700, color: f.tier.colorHex || '#4F46E5', backgroundColor: `${f.tier.colorHex || '#4F46E5'}18`, padding: '3px 10px', borderRadius: 100, display: 'inline-block' }}>{translateTier(f.tier.name, lang)}</div>
                             )}
                           </div>
                         </Link>
