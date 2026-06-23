@@ -30,6 +30,10 @@ export default function ProfilPage() {
   const [loadingBookings, setLoadingBookings] = useState(isOwnProfile)
   const [cancelConfirm, setCancelConfirm] = useState<number | null>(null)
   const [cancelError, setCancelError] = useState<string | null>(null)
+  const [transferFor, setTransferFor] = useState<number | null>(null)
+  const [transferOptions, setTransferOptions] = useState<any[]>([])
+  const [transferLoading, setTransferLoading] = useState(false)
+  const [transferMsg, setTransferMsg] = useState<string | null>(null)
   const [reviewModal, setReviewModal] = useState<{ bookingId: number } | null>(null)
   const [reviewRating, setReviewRating] = useState(5)
   const [reviewComment, setReviewComment] = useState('')
@@ -156,6 +160,44 @@ export default function ProfilPage() {
       setCancelError('İptal edilirken bir hata oluştu.')
     }
     setCancelConfirm(null)
+  }
+
+  const openTransfer = async (bookingId: number) => {
+    if (transferFor === bookingId) { setTransferFor(null); return }
+    setTransferFor(bookingId)
+    setTransferOptions([])
+    setTransferMsg(null)
+    setTransferLoading(true)
+    const token = getToken()
+    try {
+      const res = await fetch(`${API_URL}/api/bookings/${bookingId}/transfer-options`, { headers: { Authorization: `Bearer ${token}` } })
+      const d = await res.json()
+      setTransferOptions(d.options || [])
+    } catch {
+      setTransferMsg('Seçenekler yüklenemedi.')
+    }
+    setTransferLoading(false)
+  }
+
+  const doTransfer = async (bookingId: number, targetSessionId: number) => {
+    const token = getToken()
+    setTransferMsg(null)
+    try {
+      const res = await fetch(`${API_URL}/api/bookings/${bookingId}/transfer`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ targetSessionId }),
+      })
+      const d = await res.json()
+      if (d.error) { setTransferMsg(d.error); return }
+      setTransferMsg(`✓ ${d.message}`)
+      // listeyi tazele
+      const my = await api.getMyBookings(token!)
+      if (my.bookings) setBookings(my.bookings)
+      setTimeout(() => { setTransferFor(null); setTransferMsg(null) }, 2500)
+    } catch {
+      setTransferMsg('Transfer sırasında hata oluştu.')
+    }
   }
 
   const openReviewModal = (bookingId: number) => {
@@ -687,13 +729,37 @@ export default function ProfilPage() {
                                         {awaitingConfirm ? (
                                           <button onClick={() => handleCancel(b.id)} style={{ fontSize: 12, color: '#fff', fontWeight: 600, background: '#EF4444', border: 'none', borderRadius: 100, padding: '4px 12px', cursor: 'pointer' }}>Evet, İptal Et</button>
                                         ) : (
-                                          <button onClick={() => handleCancel(b.id)} style={{ fontSize: 12, color: '#EF4444', fontWeight: 600, background: 'none', border: '1px solid #FECACA', borderRadius: 100, padding: '3px 10px', cursor: 'pointer' }}>İptal Et</button>
+                                          <>
+                                            <button onClick={() => openTransfer(b.id)} style={{ fontSize: 12, color: '#4F46E5', fontWeight: 600, background: 'none', border: '1px solid #C7D2FE', borderRadius: 100, padding: '3px 10px', cursor: 'pointer' }}>Dersi Değiştir</button>
+                                            <button onClick={() => handleCancel(b.id)} style={{ fontSize: 12, color: '#EF4444', fontWeight: 600, background: 'none', border: '1px solid #FECACA', borderRadius: 100, padding: '3px 10px', cursor: 'pointer' }}>İptal Et</button>
+                                          </>
                                         )}
                                         {awaitingConfirm && <button onClick={() => setCancelConfirm(null)} style={{ fontSize: 12, color: '#888', fontWeight: 600, background: 'none', border: '1px solid #E0E0E0', borderRadius: 100, padding: '3px 10px', cursor: 'pointer' }}>Vazgeç</button>}
                                       </div>
                                       <div style={{ fontSize: 11, color: '#888', textAlign: 'right' }}>
                                         24s+ tam iade · 12-24s yarım iade · 12s- iptal yok
                                       </div>
+                                      {transferFor === b.id && (
+                                        <div style={{ marginTop: 8, width: 280, backgroundColor: '#F8F9FF', border: '1px solid #E0E7FF', borderRadius: 12, padding: 12, textAlign: 'left' }}>
+                                          <div style={{ fontSize: 12, fontWeight: 700, color: '#4F46E5', marginBottom: 8 }}>Aynı salonda değiştirebileceğin dersler</div>
+                                          {transferMsg && <div style={{ fontSize: 12, color: transferMsg.startsWith('✓') ? '#16a34a' : '#DC2626', marginBottom: 8 }}>{transferMsg}</div>}
+                                          {transferLoading ? (
+                                            <div style={{ fontSize: 12, color: '#999' }}>Yükleniyor...</div>
+                                          ) : transferOptions.length === 0 ? (
+                                            <div style={{ fontSize: 12, color: '#999' }}>Uygun ders bulunamadı (en az %50 boş ve aynı/daha uygun fiyatlı ders yok).</div>
+                                          ) : (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                              {transferOptions.map((o: any) => (
+                                                <button key={o.sessionId} onClick={() => doTransfer(b.id, o.sessionId)} style={{ textAlign: 'left', background: '#fff', border: '1px solid #E0E7FF', borderRadius: 10, padding: '8px 10px', cursor: 'pointer' }}>
+                                                  <div style={{ fontSize: 12, fontWeight: 700, color: '#111' }}>{o.title} · ₺{o.basePrice}</div>
+                                                  <div style={{ fontSize: 11, color: '#888' }}>{new Date(o.startsAt).toLocaleString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · {o.available} yer boş{o.priceRefund > 0 ? ` · ₺${o.priceRefund} kredi iade` : ''}</div>
+                                                </button>
+                                              ))}
+                                            </div>
+                                          )}
+                                          <button onClick={() => setTransferFor(null)} style={{ marginTop: 8, fontSize: 11, color: '#888', background: 'none', border: 'none', cursor: 'pointer' }}>Kapat</button>
+                                        </div>
+                                      )}
                                     </div>
                                   )}
                                 </div>
