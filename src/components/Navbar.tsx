@@ -72,13 +72,33 @@ export default function Navbar() {
       </Link>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <button
-          onClick={() => setLang(lang === 'tr' ? 'en' : 'tr')}
+        <div
+          role="group"
           aria-label="Dil / Language"
-          style={{ width: 42, height: 34, borderRadius: 100, border: '1.5px solid #EBEBEB', background: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 800, color: '#4F46E5', letterSpacing: 0.5 }}
+          style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #EBEBEB', borderRadius: 100, overflow: 'hidden', background: '#fff' }}
         >
-          {lang === 'tr' ? 'EN' : 'TR'}
-        </button>
+          {(['tr', 'en'] as const).map((l) => (
+            <button
+              key={l}
+              onClick={() => setLang(l)}
+              aria-pressed={lang === l}
+              style={{
+                padding: '6px 11px',
+                height: 34,
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: 12,
+                fontWeight: 800,
+                letterSpacing: 0.5,
+                background: lang === l ? '#4F46E5' : 'transparent',
+                color: lang === l ? '#fff' : '#9CA3AF',
+                transition: 'background 0.15s, color 0.15s',
+              }}
+            >
+              {l.toUpperCase()}
+            </button>
+          ))}
+        </div>
         {user && (
           <div style={{ position: 'relative' }}>
             <button onClick={openNotifications} style={{ position: 'relative', width: 38, height: 38, borderRadius: '50%', border: '1.5px solid #EBEBEB', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

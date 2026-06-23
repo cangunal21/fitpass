@@ -755,6 +755,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
+      // Önce kullanıcının daha önce seçtiği dil; yoksa cihaz/tarayıcı diline göre otomatik (EN cihaz → EN, aksi → TR).
       const stored = localStorage.getItem('fitpass_lang') as Lang | null
       if (stored === 'tr' || stored === 'en') { setLangState(stored); return }
       const browser = navigator.language?.toLowerCase().startsWith('en') ? 'en' : 'tr'
