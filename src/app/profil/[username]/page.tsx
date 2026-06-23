@@ -443,7 +443,7 @@ export default function ProfilPage() {
               </button>
             )}
 
-            {nextTier && (
+            {nextTier ? (
               <div style={{ backgroundColor: '#FAFAFA', borderRadius: 14, padding: '14px 18px', marginBottom: 16, border: '1px solid #F0F0F0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                   <span style={{ fontSize: 13, color: '#555', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}><SportIcon name={displayTierIcon} size={13} color={displayTierColor} /> {displayTierName}</span>
@@ -452,6 +452,11 @@ export default function ProfilPage() {
                 <div style={{ height: 6, backgroundColor: '#EBEBEB', borderRadius: 100 }}>
                   <div style={{ height: '100%', backgroundColor: displayTierColor, borderRadius: 100, width: `${progressPercent}%`, transition: 'width 0.5s ease' }} />
                 </div>
+              </div>
+            ) : (
+              <div style={{ backgroundColor: displayTierColor + '12', borderRadius: 14, padding: '14px 18px', marginBottom: 16, border: `1px solid ${displayTierColor}33`, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <SportIcon name={displayTierIcon} size={16} color={displayTierColor} />
+                <span style={{ fontSize: 13, fontWeight: 700, color: displayTierColor }}>En üst seviyedesin — {displayTierName}!</span>
               </div>
             )}
 
