@@ -10,7 +10,10 @@ interface AvatarUploadProps {
   editable?: boolean
 }
 
+import { useT } from '@/lib/i18n'
+
 export default function AvatarUpload({ currentUrl, name, size = 80, onUpload, editable = true }: AvatarUploadProps) {
+  const { t } = useT()
   const [uploading, setUploading] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentUrl || null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -29,7 +32,7 @@ export default function AvatarUpload({ currentUrl, name, size = 80, onUpload, ed
       setPreviewUrl(url)
       onUpload(url)
     } catch {
-      alert('Resim yüklenemedi. Lütfen tekrar deneyin.')
+      alert(t('avatar.uploadError'))
       setPreviewUrl(currentUrl || null)
     } finally {
       setUploading(false)

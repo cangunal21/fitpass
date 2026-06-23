@@ -7,17 +7,9 @@ import { CheckCircle, AlertCircle } from 'lucide-react'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
-const SUBJECTS = [
-  'Rezervasyon sorunu',
-  'Ödeme sorunu',
-  'Salon hakkında şikayet',
-  'Uygulama hatası',
-  'Hesap sorunu',
-  'Diğer',
-]
-
 export default function SikayetPage() {
   const { t } = useT()
+  const SUBJECTS = [t('cmp.reasonBooking'), t('cmp.reason1'), t('cmp.reason2'), t('cmp.reason3'), t('cmp.reason4'), t('cmp.reason5')]
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)

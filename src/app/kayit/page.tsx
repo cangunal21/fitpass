@@ -100,7 +100,7 @@ function KayitForm() {
           <div className="form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <label style={labelStyle}>{t('auth.fullName')}</label>
-              <input name="fullName" type="text" placeholder="Adın Soyadın" value={form.fullName} onChange={handleChange} required style={inputStyle} />
+              <input name="fullName" type="text" placeholder={t('register.fullNamePlaceholder')} value={form.fullName} onChange={handleChange} required style={inputStyle} />
             </div>
             <div>
               <label style={labelStyle}>{t('register.usernameLabel')}</label>
@@ -134,7 +134,7 @@ function KayitForm() {
             <label style={labelStyle}>{t('register.referral')} <span style={{ fontWeight: 400, color: '#bbb' }}>{t('register.optional')}</span></label>
             <div style={{ position: 'relative' }}>
               <Gift size={15} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#A5B4FC' }} />
-              <input name="referralCode" type="text" placeholder="örn. A1B2C3D4" value={form.referralCode} onChange={e => setForm(f => ({ ...f, referralCode: e.target.value.toUpperCase() }))} style={{ ...inputStyle, paddingLeft: 38 }} />
+              <input name="referralCode" type="text" placeholder={t('register.referralPlaceholder')} value={form.referralCode} onChange={e => setForm(f => ({ ...f, referralCode: e.target.value.toUpperCase() }))} style={{ ...inputStyle, paddingLeft: 38 }} />
             </div>
             {form.referralCode && <p style={{ fontSize: 12, color: '#10B981', marginTop: 5, fontWeight: 600 }}>{t('register.referralBonus')}</p>}
           </div>
@@ -187,7 +187,7 @@ function KayitForm() {
 
         <div style={{ marginTop: 20, textAlign: 'center' }}>
           <Link href="/salon-giris" style={{ fontSize: 13, color: '#aaa', textDecoration: 'none', fontWeight: 500 }}>
-            Salon sahibi misiniz? →
+            {t('login.venueOwner')}
           </Link>
         </div>
       </div>

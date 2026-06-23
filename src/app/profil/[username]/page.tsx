@@ -8,19 +8,7 @@ import Navbar from '@/components/Navbar'
 import { api, getUser, getToken } from '@/lib/api'
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
-const REPORT_REASONS = [
-  'Uygunsuz veya müstehcen profil fotoğrafı',
-  'Sahte veya yanıltıcı profil',
-  'Taciz, hakaret veya zorbalık',
-  'Spam veya dolandırıcılık',
-]
-
 const BADGE_ICON_MAP: Record<string, any> = { Flag, Target, Flame, Compass, Heart, Users, Trophy }
-
-function badgeDisplayName(ub: any): string {
-  if (ub.badge?.key === 'sport_master_40' && ub.sportCategory?.name) return `${ub.sportCategory.name} ustası`
-  return ub.badge?.name || 'Rozet'
-}
 
 function BadgeIcon({ ub, size = 20, color }: { ub: any; size?: number; color?: string }) {
   if (ub.badge?.iconUrl === 'sport' && ub.sportCategory?.name) {
@@ -205,7 +193,7 @@ export default function ProfilPage() {
       if (res.error) {
         setCancelError(res.error)
       } else {
-        const message = res.message || 'Rezervasyon iptal edildi.'
+        const message = res.message || t('prof.bookingCancelled')
         setCancelError(null)
         setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'cancelled', notes: res.booking?.notes || b.notes } : b))
         // Show success message via error state with green styling (re-used as info)
@@ -298,12 +286,12 @@ export default function ProfilPage() {
   function timeAgo(date: Date) {
     const diff = Date.now() - date.getTime()
     const mins = Math.floor(diff / 60000)
-    if (mins < 60) return `${mins} dakika önce`
+    if (mins < 60) return t('time.minsAgo').replace('{n}', String(mins))
     const hours = Math.floor(mins / 60)
-    if (hours < 24) return `${hours} saat önce`
+    if (hours < 24) return t('time.hoursAgo').replace('{n}', String(hours))
     const days = Math.floor(hours / 24)
-    if (days === 1) return 'Dün'
-    if (days < 7) return `${days} gün önce`
+    if (days === 1) return t('common.yesterday')
+    if (days < 7) return t('time.daysAgo').replace('{n}', String(days))
     return date.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long' })
   }
 
@@ -445,7 +433,7 @@ export default function ProfilPage() {
                 onClick={() => { setReportReason(''); setReportCustom(''); setReportSent(null); setReportOpen(true) }}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#999', background: 'transparent', border: '1px solid #E5E7EB', borderRadius: 10, padding: '6px 12px', cursor: 'pointer', marginBottom: 12 }}
               >
-                <Flag size={13} /> Şikayet et
+                <Flag size={13} /> {t('report.button')}
               </button>
             )}
 
@@ -651,7 +639,7 @@ export default function ProfilPage() {
                           <div key={`pdp-${dp.id}`} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '18px 22px', border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 14 }}>
                             <SportIconBox name={cat?.iconUrl || 'football'} bgColor={iconColor + '18'} iconColor={iconColor} boxSize={50} borderRadius={14} size={22} />
                             <div style={{ flex: 1 }}>
-                              <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 3 }}>{slot?.title || 'Maç'}</div>
+                              <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 3 }}>{slot?.title || t('common.match')}</div>
                               <div style={{ fontSize: 13, color: '#aaa', marginBottom: 2 }}>{slot?.venue?.name || ''}</div>
                               <div style={{ fontSize: 12, color: '#bbb' }}>{dpDateStr}{dpTimeStr ? ` · ${dpTimeStr}` : ''}</div>
                             </div>
@@ -779,7 +767,7 @@ export default function ProfilPage() {
                                         {awaitingConfirm && <button onClick={() => setCancelConfirm(null)} style={{ fontSize: 12, color: '#888', fontWeight: 600, background: 'none', border: '1px solid #E0E0E0', borderRadius: 100, padding: '3px 10px', cursor: 'pointer' }}>{t('prof.giveUp')}</button>}
                                       </div>
                                       <div style={{ fontSize: 11, color: '#888', textAlign: 'right' }}>
-                                        24s+ tam iade · 12-24s yarım iade · 12s- iptal yok
+                                        {t('prof.refundPolicy')}
                                       </div>
                                       {transferFor === b.id && (
                                         <div style={{ marginTop: 8, width: 280, backgroundColor: '#F8F9FF', border: '1px solid #E0E7FF', borderRadius: 12, padding: 12, textAlign: 'left' }}>
@@ -823,7 +811,7 @@ export default function ProfilPage() {
                           <div key={`dp-${dp.id}`} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '18px 22px', border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 14 }}>
                             <SportIconBox name={cat?.iconUrl || 'football'} bgColor={dpCancelled ? '#F5F5F5' : iconColor + '18'} iconColor={dpCancelled ? '#ccc' : iconColor} boxSize={50} borderRadius={14} size={22} />
                             <div style={{ flex: 1 }}>
-                              <div style={{ fontSize: 15, fontWeight: 700, color: dpCancelled ? '#bbb' : '#111', textDecoration: dpCancelled ? 'line-through' : 'none', marginBottom: 3 }}>{slot?.title || 'Maç'}</div>
+                              <div style={{ fontSize: 15, fontWeight: 700, color: dpCancelled ? '#bbb' : '#111', textDecoration: dpCancelled ? 'line-through' : 'none', marginBottom: 3 }}>{slot?.title || t('common.match')}</div>
                               <div style={{ fontSize: 13, color: '#aaa', marginBottom: 2 }}>{slot?.venue?.name || ''}</div>
                               <div style={{ fontSize: 12, color: '#bbb' }}>{dpDateStr}{dpTimeStr ? ` · ${dpTimeStr}` : ''}</div>
                             </div>
@@ -919,7 +907,7 @@ export default function ProfilPage() {
                           <div key={`dp-${dp.id}`} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '18px 22px', border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 14 }}>
                             <SportIconBox name={cat?.iconUrl || 'football'} bgColor={dpCancelled ? '#F5F5F5' : iconColor + '18'} iconColor={dpCancelled ? '#ccc' : iconColor} boxSize={50} borderRadius={14} size={22} />
                             <div style={{ flex: 1 }}>
-                              <div style={{ fontSize: 15, fontWeight: 700, color: dpCancelled ? '#bbb' : '#111', textDecoration: dpCancelled ? 'line-through' : 'none', marginBottom: 3 }}>{slot?.title || 'Maç'}</div>
+                              <div style={{ fontSize: 15, fontWeight: 700, color: dpCancelled ? '#bbb' : '#111', textDecoration: dpCancelled ? 'line-through' : 'none', marginBottom: 3 }}>{slot?.title || t('common.match')}</div>
                               <div style={{ fontSize: 13, color: '#aaa', marginBottom: 2 }}>{slot?.venue?.name || ''}</div>
                               <div style={{ fontSize: 12, color: '#bbb' }}>{dpDateStr}{dpTimeStr ? ` · ${dpTimeStr}` : ''}</div>
                             </div>
@@ -959,13 +947,13 @@ export default function ProfilPage() {
               />
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#666', cursor: 'pointer', marginTop: 12 }}>
                 <input type="checkbox" checked={reviewAnonymous} onChange={e => setReviewAnonymous(e.target.checked)} />
-                Anonim olarak paylaş
+                {t('common.anonShare')}
               </label>
               <button onClick={submitReview} disabled={submittingReview} style={{ width: '100%', padding: 14, borderRadius: 12, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', marginTop: 16 }}>
-                {submittingReview ? 'Gönderiliyor...' : 'Gönder'}
+                {submittingReview ? t('prof.submitting') : t('common.send')}
               </button>
               <button onClick={() => setReviewModal(null)} style={{ width: '100%', padding: 10, borderRadius: 12, border: 'none', background: 'none', color: '#999', fontSize: 13, fontWeight: 600, cursor: 'pointer', marginTop: 4 }}>
-                Daha sonra
+                {t('common.later')}
               </button>
             </div>
           </div>
@@ -977,13 +965,13 @@ export default function ProfilPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
               <h3 style={{ fontSize: 17, fontWeight: 700, color: '#111', display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}><User size={18} /> {t('acc.title')}</h3>
               {!editMode && (
-                <button onClick={() => { setEditMode(true); setEditError(''); setEditSaved(false) }} style={{ padding: '8px 18px', borderRadius: 100, border: '1.5px solid #E5E5E5', background: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#4F46E5' }}>+ Profili Düzenle</button>
+                <button onClick={() => { setEditMode(true); setEditError(''); setEditSaved(false) }} style={{ padding: '8px 18px', borderRadius: 100, border: '1.5px solid #E5E5E5', background: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#4F46E5' }}>{t('prof.editProfile')}</button>
               )}
             </div>
             {[
               { label: t('auth.fullName'), value: meData?.fullName },
               { label: t('auth.email'), value: meData?.email },
-              { label: t('auth.phone'), value: meData?.phone || 'Eklenmemiş' },
+              { label: t('auth.phone'), value: meData?.phone || t('common.notSet') },
               { label: t('acc.memberSince'), value: meData?.createdAt ? new Date(meData.createdAt).toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long', year: 'numeric' }) : '-' },
               { label: t('acc.tier'), value: meData?.tier?.name || '-' },
               { label: t('acc.points'), value: meData?.rewardPoints ?? '-' },
@@ -1052,7 +1040,7 @@ export default function ProfilPage() {
                       }}
                       style={{ flex: 2, padding: '11px', borderRadius: 12, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
                     >
-                      Kaydet
+                      {t('common.save')}
                     </button>
                   </div>
                 </div>
@@ -1096,18 +1084,18 @@ export default function ProfilPage() {
                 </button>
               </div>
               <div style={{ fontSize: 13, color: '#888' }}>
-                {privacy === 'public' ? 'Aktiviteleriniz diğer kullanıcılar tarafından görülebilir.' : 'Aktiviteleriniz yalnızca size görünür.'}
+                {privacy === 'public' ? t('prof.activityPublicNote') : t('prof.activityPrivateNote')}
               </div>
               {privacySaved && <div style={{ fontSize: 13, color: '#10B981', fontWeight: 600, marginTop: 8 }}>{t('acc.saved')}</div>}
             </div>
 
             {/* Bildirim Tercihleri */}
             <div style={{ marginTop: 28, paddingTop: 24, borderTop: '1px solid #F0F0F0' }}>
-              <h4 style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 16 }}>🔔 Bildirim Tercihleri</h4>
+              <h4 style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 16 }}>{t('prof.notifPrefs')}</h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {[
-                  { label: 'E-posta hatırlatmaları', desc: 'Ders öncesi hatırlatma maili al', value: emailReminders, set: setEmailReminders },
-                  { label: 'SMS hatırlatmaları', desc: 'Ders öncesi hatırlatma SMS\'i al (yakında)', value: smsReminders, set: setSmsReminders },
+                  { label: t('prof.emailReminders'), desc: t('prof.emailRemindersSub'), value: emailReminders, set: setEmailReminders },
+                  { label: t('prof.smsReminders'), desc: t('prof.smsRemindersSub'), value: smsReminders, set: setSmsReminders },
                 ].map(item => (
                   <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', backgroundColor: '#F8F8F8', borderRadius: 12 }}>
                     <div>
@@ -1168,7 +1156,7 @@ export default function ProfilPage() {
                     <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 3 }}>{v.name}</div>
                     <div style={{ fontSize: 12, color: '#888' }}>{v.address}</div>
                     <div style={{ fontSize: 12, color: '#F59E0B', fontWeight: 600, marginTop: 2 }}>
-                      ★ {v.avgRating?.toFixed(1) || '—'} · {v.totalReviews || 0} yorum
+                      ★ {v.avgRating?.toFixed(1) || '—'} · {v.totalReviews || 0} {t('cls.reviews')}
                     </div>
                   </div>
                   <span style={{ fontSize: 18, color: '#DC2626' }}>❤️</span>
@@ -1294,7 +1282,7 @@ export default function ProfilPage() {
                         body: JSON.stringify({ username: displayUsername, reason: finalReason }),
                       })
                       const d = await res.json().catch(() => ({}))
-                      setReportSent(d.message || d.error || 'Şikayetiniz alındı.')
+                      setReportSent(d.message || d.error || t('prof.complaintReceived'))
                       setTimeout(() => setReportOpen(false), 2200)
                     }}
                     style={{ flex: 1, padding: '12px', borderRadius: 12, border: 'none', background: (!reportReason || (reportReason === '__other__' && !reportCustom.trim())) ? '#C7D2FE' : '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}

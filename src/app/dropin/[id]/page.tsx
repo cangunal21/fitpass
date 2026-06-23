@@ -17,7 +17,7 @@ function mapApiSlot(slot: any) {
     title: slot.title || slot.sportCategory?.name || 'Drop-in',
     color: slot.sportCategory?.colorHex || '#4F46E5',
     icon: slot.sportCategory?.iconUrl || 'hiit',
-    format: slot.format || 'Maç',
+    format: slot.format || '',
     neighborhood: slot.venue?.neighborhood?.name || '',
     date: new Date(slot.startsAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' }),
     time: new Date(slot.startsAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
@@ -149,7 +149,7 @@ export default function DropInPage() {
             <div style={{ background: `linear-gradient(135deg, ${slot.color} 0%, ${slot.color}cc 100%)`, padding: '28px', color: '#fff' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
-                  <span style={{ fontSize: 11, fontWeight: 700, backgroundColor: 'rgba(255,255,255,0.2)', padding: '4px 12px', borderRadius: 20, marginBottom: 12, display: 'inline-block' }}>DROP-IN · {slot.format}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, backgroundColor: 'rgba(255,255,255,0.2)', padding: '4px 12px', borderRadius: 20, marginBottom: 12, display: 'inline-block' }}>DROP-IN · {slot.format || t('common.match')}</span>
                   <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 6 }}>{lang === 'en' && (slot as any).titleEn ? (slot as any).titleEn : slot.title}</h1>
                   <span style={{ fontSize: 14, opacity: 0.9, color: '#fff' }}>{slot.venueName}{slot.neighborhood ? ` · ${slot.neighborhood}` : ''}</span>
                 </div>

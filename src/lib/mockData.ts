@@ -39,3 +39,28 @@ export const mockDropInSlots = [
   { id: 1002, title: '2v2 Padel', titleEn: '2v2 Padel', venueId: 1004, category: 'Padel', icon: 'padel', color: '#EAB308', format: '2v2', totalPlayers: 4, currentPlayers: 2, date: '10 Haziran 2026, Salı', time: 'Bugün 20:00', endsAt: '21:00', duration: '60 dk', totalPrice: 800, pricePerPerson: 200, visibility: 'open', neighborhood: 'Maslak', teams: { A: [{ id: 1, username: 'burak_k', tier: 'Atlet', tierColor: '#3B82F6' }], B: [{ id: 2, username: 'emre_t', tier: 'Sporcu', tierColor: '#10B981' }] }, openSpots: { A: 1, B: 1 } },
   { id: 1003, title: '5v5 Basketbol', titleEn: '5v5 Basketball', venueId: 1006, category: 'Basketbol', icon: 'basketball', color: '#C2501F', format: '5v5', totalPlayers: 10, currentPlayers: 6, date: '11 Haziran 2026, Çarşamba', time: 'Yarın 18:00', endsAt: '19:30', duration: '90 dk', totalPrice: 1500, pricePerPerson: 150, visibility: 'open', neighborhood: 'Ataşehir', teams: { A: [{ id: 1, username: 'mehmet_k', tier: 'Atlet', tierColor: '#3B82F6' }, { id: 2, username: 'ali_demir', tier: 'Sporcu', tierColor: '#10B981' }, { id: 3, username: 'emre_t', tier: 'Sporcu', tierColor: '#10B981' }], B: [{ id: 4, username: 'burak_k', tier: 'Atlet', tierColor: '#3B82F6' }, { id: 5, username: 'kerem_a', tier: 'Sporcu', tierColor: '#10B981' }, { id: 6, username: 'berk_o', tier: 'Aday', tierColor: '#8B5CF6' }] }, openSpots: { A: 2, B: 2 } },
 ]
+
+// Sosyal sayfası demo verisi (API boşsa fallback) — özel isimler/mahalleler çevrilmez
+export const mockSocialUsers = [
+  { id: 'm1', username: 'zeynep_aktif', avatarUrl: null, lessonCount: 42, neighborhood: { name: 'Kadıköy' } },
+  { id: 'm2', username: 'baris_sporcu', avatarUrl: null, lessonCount: 38, neighborhood: { name: 'Beşiktaş' } },
+  { id: 'm3', username: 'elif_yoga', avatarUrl: null, lessonCount: 31, neighborhood: { name: 'Şişli' } },
+  { id: 'm4', username: 'mert_boks', avatarUrl: null, lessonCount: 27, neighborhood: { name: 'Üsküdar' } },
+  { id: 'm5', username: 'selin_pilates', avatarUrl: null, lessonCount: 24, neighborhood: { name: 'Bakırköy' } },
+  { id: 'm6', username: 'ahmet_crossfit', avatarUrl: null, lessonCount: 19, neighborhood: { name: 'Sarıyer' } },
+  { id: 'm7', username: 'dila_dans', avatarUrl: null, lessonCount: 15, neighborhood: { name: 'Maltepe' } },
+]
+
+export const mockSocialFeed = [
+  { id: 'f1', type: 'class', user: { username: 'selin_y', fullName: 'Selin Yıldız', avatarUrl: null }, category: 'Yoga', categoryColor: '#C4A882', title: 'Vinyasa Flow Yoga', venueName: 'Zen Studio Beşiktaş', date: new Date(Date.now() - 2 * 3600 * 1000).toISOString(), likeCount: 4, commentCount: 1, likedByMe: false },
+  { id: 'f2', type: 'dropin', user: { username: 'ali_demir', fullName: 'Ali Demir', avatarUrl: null }, category: 'Halı Saha', categoryColor: '#16A34A', title: '7v7 Halı Saha Maçı', venueName: 'Spor Arena Ataşehir', date: new Date(Date.now() - 5 * 3600 * 1000).toISOString(), likeCount: 9, commentCount: 3, likedByMe: false },
+  { id: 'f3', type: 'class', user: { username: 'mert_boks', fullName: 'Mert Boks', avatarUrl: null }, category: 'Boks', categoryColor: '#DC2626', title: 'Kickboks Başlangıç', venueName: 'Fight Club Şişli', date: new Date(Date.now() - 26 * 3600 * 1000).toISOString(), likeCount: 2, commentCount: 0, likedByMe: false },
+]
+
+export const mockSocialVenues = [
+  { id: 'v1', name: 'Kadıköy Spor Merkezi', avgRating: 4.9, totalReviews: 128, coverImageUrl: null, mainIcon: 'yoga', iconBg: '#F0FDF4', iconColor: '#16A34A', neighborhood: { name: 'Kadıköy' }, sportCategories: [{ sportCategory: { name: 'Yoga' } }, { sportCategory: { name: 'Pilates' } }, { sportCategory: { name: 'HIIT' } }] },
+  { id: 'v2', name: 'Beşiktaş Boks Kulübü', avgRating: 4.8, totalReviews: 94, coverImageUrl: null, mainIcon: 'boxing', iconBg: '#FFF1F2', iconColor: '#E11D48', neighborhood: { name: 'Beşiktaş' }, sportCategories: [{ sportCategory: { name: 'Boks' } }, { sportCategory: { name: 'Crossfit' } }] },
+  { id: 'v3', name: 'Flow Yoga Studio', avgRating: 4.7, totalReviews: 73, coverImageUrl: null, mainIcon: 'yoga', iconBg: '#F0FDF4', iconColor: '#16A34A', neighborhood: { name: 'Şişli' }, sportCategories: [{ sportCategory: { name: 'Yoga' } }, { sportCategory: { name: 'Dans' } }] },
+  { id: 'v4', name: 'Padel İstanbul', avgRating: 4.6, totalReviews: 61, coverImageUrl: null, mainIcon: 'padel', iconBg: '#EFF6FF', iconColor: '#2563EB', neighborhood: { name: 'Sarıyer' }, sportCategories: [{ sportCategory: { name: 'Padel' } }] },
+  { id: 'v5', name: 'Üsküdar Fitness Club', avgRating: 4.5, totalReviews: 55, coverImageUrl: null, mainIcon: 'hiit', iconBg: '#FFF7ED', iconColor: '#EA580C', neighborhood: { name: 'Üsküdar' }, sportCategories: [{ sportCategory: { name: 'HIIT' } }, { sportCategory: { name: 'Pilates' } }] },
+]

@@ -10,6 +10,7 @@ import { MapPin, Heart, MessageCircle, X, Send, Award, Flag, Target, Flame, Comp
 import Link from 'next/link'
 import { SportIconBox, SportIcon, getIconKeyForCategory } from '@/lib/sportIcons'
 import { useT, translateCategory, translateBadge } from '@/lib/i18n'
+import { mockSocialUsers as MOCK_USERS, mockSocialFeed as MOCK_FEED, mockSocialVenues as MOCK_VENUES } from '@/lib/mockData'
 
 const FEED_BADGE_ICONS: Record<string, any> = { Flag, Target, Flame, Compass, Heart, Users, Trophy }
 function FeedBadgeIcon({ icon, sportName, size = 16, color = '#4F46E5' }: { icon: string; sportName?: string | null; size?: number; color?: string }) {
@@ -22,29 +23,6 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
 // Kategoriler API'dan yüklenir
 
-const MOCK_USERS = [
-  { id: 'm1', username: 'zeynep_aktif', avatarUrl: null, lessonCount: 42, neighborhood: { name: 'Kadıköy' } },
-  { id: 'm2', username: 'baris_sporcu', avatarUrl: null, lessonCount: 38, neighborhood: { name: 'Beşiktaş' } },
-  { id: 'm3', username: 'elif_yoga', avatarUrl: null, lessonCount: 31, neighborhood: { name: 'Şişli' } },
-  { id: 'm4', username: 'mert_boks', avatarUrl: null, lessonCount: 27, neighborhood: { name: 'Üsküdar' } },
-  { id: 'm5', username: 'selin_pilates', avatarUrl: null, lessonCount: 24, neighborhood: { name: 'Bakırköy' } },
-  { id: 'm6', username: 'ahmet_crossfit', avatarUrl: null, lessonCount: 19, neighborhood: { name: 'Sarıyer' } },
-  { id: 'm7', username: 'dila_dans', avatarUrl: null, lessonCount: 15, neighborhood: { name: 'Maltepe' } },
-]
-
-const MOCK_FEED = [
-  { id: 'f1', type: 'class', user: { username: 'selin_y', fullName: 'Selin Yıldız', avatarUrl: null }, category: 'Yoga', categoryColor: '#C4A882', title: 'Vinyasa Flow Yoga', venueName: 'Zen Studio Beşiktaş', date: new Date(Date.now() - 2 * 3600 * 1000).toISOString(), likeCount: 4, commentCount: 1, likedByMe: false },
-  { id: 'f2', type: 'dropin', user: { username: 'ali_demir', fullName: 'Ali Demir', avatarUrl: null }, category: 'Halı Saha', categoryColor: '#16A34A', title: '7v7 Halı Saha Maçı', venueName: 'Spor Arena Ataşehir', date: new Date(Date.now() - 5 * 3600 * 1000).toISOString(), likeCount: 9, commentCount: 3, likedByMe: false },
-  { id: 'f3', type: 'class', user: { username: 'mert_boks', fullName: 'Mert Boks', avatarUrl: null }, category: 'Boks', categoryColor: '#DC2626', title: 'Kickboks Başlangıç', venueName: 'Fight Club Şişli', date: new Date(Date.now() - 26 * 3600 * 1000).toISOString(), likeCount: 2, commentCount: 0, likedByMe: false },
-]
-
-const MOCK_VENUES = [
-  { id: 'v1', name: 'Kadıköy Spor Merkezi', avgRating: 4.9, totalReviews: 128, coverImageUrl: null, mainIcon: 'yoga', iconBg: '#F0FDF4', iconColor: '#16A34A', neighborhood: { name: 'Kadıköy' }, sportCategories: [{ sportCategory: { name: 'Yoga' } }, { sportCategory: { name: 'Pilates' } }, { sportCategory: { name: 'HIIT' } }] },
-  { id: 'v2', name: 'Beşiktaş Boks Kulübü', avgRating: 4.8, totalReviews: 94, coverImageUrl: null, mainIcon: 'boxing', iconBg: '#FFF1F2', iconColor: '#E11D48', neighborhood: { name: 'Beşiktaş' }, sportCategories: [{ sportCategory: { name: 'Boks' } }, { sportCategory: { name: 'Crossfit' } }] },
-  { id: 'v3', name: 'Flow Yoga Studio', avgRating: 4.7, totalReviews: 73, coverImageUrl: null, mainIcon: 'yoga', iconBg: '#F0FDF4', iconColor: '#16A34A', neighborhood: { name: 'Şişli' }, sportCategories: [{ sportCategory: { name: 'Yoga' } }, { sportCategory: { name: 'Dans' } }] },
-  { id: 'v4', name: 'Padel İstanbul', avgRating: 4.6, totalReviews: 61, coverImageUrl: null, mainIcon: 'padel', iconBg: '#EFF6FF', iconColor: '#2563EB', neighborhood: { name: 'Sarıyer' }, sportCategories: [{ sportCategory: { name: 'Padel' } }] },
-  { id: 'v5', name: 'Üsküdar Fitness Club', avgRating: 4.5, totalReviews: 55, coverImageUrl: null, mainIcon: 'hiit', iconBg: '#FFF7ED', iconColor: '#EA580C', neighborhood: { name: 'Üsküdar' }, sportCategories: [{ sportCategory: { name: 'HIIT' } }, { sportCategory: { name: 'Pilates' } }] },
-]
 
 export default function SosyalPage() {
   const { t, lang } = useT()
@@ -54,7 +32,7 @@ export default function SosyalPage() {
   const [isMockFeed, setIsMockFeed] = useState(false)
   const [feedLoading, setFeedLoading] = useState(false)
   const [siralamaType, setSiralamaType] = useState<'kullanici' | 'streak' | 'salon'>('kullanici')
-  const [selectedBranch, setSelectedBranch] = useState('Tümü')
+  const [selectedBranch, setSelectedBranch] = useState('all')
   const [neighborhoods, setNeighborhoods] = useState<{ id: number; name: string }[]>([])
   const [selectedNeighborhood, setSelectedNeighborhood] = useState('')
   const [userLeaderboard, setUserLeaderboard] = useState<any[]>([])
@@ -64,7 +42,7 @@ export default function SosyalPage() {
   const [followers, setFollowers] = useState<any[]>([])
   const [suggestions, setSuggestions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [branches, setBranches] = useState<string[]>(['Tümü'])
+  const [branches, setBranches] = useState<string[]>(['all'])
   const [commentModal, setCommentModal] = useState<string | null>(null)
   const [comments, setComments] = useState<any[]>([])
   const [commentsLoading, setCommentsLoading] = useState(false)
@@ -76,7 +54,7 @@ export default function SosyalPage() {
   useEffect(() => {
     fetch(`${API_URL}/api/public/neighborhoods`).then(r => r.json()).then(d => setNeighborhoods(d.neighborhoods || []))
     fetch(`${API_URL}/api/public/categories`).then(r => r.json()).then(d => {
-      if (d.categories) setBranches(['Tümü', ...d.categories.map((c: any) => c.name)])
+      if (d.categories) setBranches(['all', ...d.categories.map((c: any) => c.name)])
     })
   }, [])
 
@@ -92,7 +70,7 @@ export default function SosyalPage() {
   const fetchLeaderboard = async () => {
     setLoading(true)
     const params = new URLSearchParams()
-    if (selectedBranch !== 'Tümü') params.set('branch', selectedBranch)
+    if (selectedBranch !== 'all') params.set('branch', selectedBranch)
     if (selectedNeighborhood) params.set('neighborhoodId', selectedNeighborhood)
 
     try {
@@ -199,12 +177,12 @@ export default function SosyalPage() {
   const timeAgo = (date: string) => {
     const diff = Date.now() - new Date(date).getTime()
     const mins = Math.floor(diff / 60000)
-    if (mins < 60) return `${mins} dakika önce`
+    if (mins < 60) return t('time.minsAgo').replace('{n}', String(mins))
     const hours = Math.floor(mins / 60)
-    if (hours < 24) return `${hours} saat önce`
+    if (hours < 24) return t('time.hoursAgo').replace('{n}', String(hours))
     const days = Math.floor(hours / 24)
-    if (days === 1) return 'Dün'
-    return `${days} gün önce`
+    if (days === 1) return t('common.yesterday')
+    return t('time.daysAgo').replace('{n}', String(days))
   }
 
   const handleFollow = async (username: string) => {
@@ -269,7 +247,7 @@ export default function SosyalPage() {
             <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
               <select value={selectedBranch} onChange={e => setSelectedBranch(e.target.value)}
                 style={{ padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', background: '#fff', cursor: 'pointer' }}>
-                {branches.map(b => <option key={b} value={b}>{b === 'Tümü' ? t('time.all') : translateCategory(b, lang)}</option>)}
+                {branches.map(b => <option key={b} value={b}>{b === 'all' ? t('time.all') : translateCategory(b, lang)}</option>)}
               </select>
               <select value={selectedNeighborhood} onChange={e => setSelectedNeighborhood(e.target.value)}
                 style={{ padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', background: '#fff', cursor: 'pointer' }}>
@@ -325,7 +303,7 @@ export default function SosyalPage() {
                   <SkeletonList count={5} />
                 ) : streakLeaderboard.length === 0 ? (
                   <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: 40, textAlign: 'center', color: '#999', fontSize: 14 }}>
-                    Henüz seri yapan sporcu yok. Üst üste günlerde derse giderek seriye gir! 🔥
+                    {t('social.noStreaks')}
                   </div>
                 ) : streakLeaderboard.map((user, i) => {
                   const { initials, color } = getInitialsAvatar(user.username || '?')
@@ -400,7 +378,7 @@ export default function SosyalPage() {
               <div style={{ textAlign: 'center', padding: '48px 0', color: '#888' }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>📰</div>
                 <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>{t('feed.loginPrompt')}</div>
-                <Link href="/giris?redirect=/sosyal" style={{ color: '#4F46E5', fontWeight: 700, textDecoration: 'none' }}>Giriş Yap →</Link>
+                <Link href="/giris?redirect=/sosyal" style={{ color: '#4F46E5', fontWeight: 700, textDecoration: 'none' }}>{t('social.loginCta')}</Link>
               </div>
             ) : feedLoading ? (
               <SkeletonList count={5} />
@@ -443,18 +421,21 @@ export default function SosyalPage() {
                         <>
                           <div style={{ fontSize: 14, color: '#333', lineHeight: 1.5 }}>
                             <Link href={`/profil/${item.user.username}`} style={{ fontWeight: 700, color: '#111', textDecoration: 'none' }}>{item.user.fullName}</Link>
-                            {item.taggedFriends && item.taggedFriends.length > 0 && (
-                              <>
-                                {item.taggedFriends.map((t: any, i: number) => (
-                                  <span key={t.username}>
-                                    {i === 0 ? ' ' : ', '}
-                                    <Link href={`/profil/${t.username}`} style={{ fontWeight: 700, color: '#4F46E5', textDecoration: 'none' }}>@{t.username}</Link>
-                                  </span>
-                                ))}
-                                {' ile birlikte'}
-                              </>
-                            )}
-                            {' '}{item.type === 'dropin' ? 'drop-in etkinliğine katıldı' : 'dersine katıldı'}
+                            {(() => {
+                              const names = (item.taggedFriends && item.taggedFriends.length > 0)
+                                ? item.taggedFriends.map((tf: any, i: number) => (
+                                    <span key={tf.username}>
+                                      {i === 0 ? ' ' : ', '}
+                                      <Link href={`/profil/${tf.username}`} style={{ fontWeight: 700, color: '#4F46E5', textDecoration: 'none' }}>@{tf.username}</Link>
+                                    </span>
+                                  ))
+                                : null
+                              const verb = <>{' '}{item.type === 'dropin' ? t('feed.joinedDropin') : t('feed.joinedClass')}</>
+                              // EN: "joined the class with @x"  —  TR: "@x ile birlikte derse katıldı"
+                              return lang === 'en'
+                                ? <>{verb}{names && <>{' '}{t('feed.withFriends')}{names}</>}</>
+                                : <>{names && <>{names}{' '}{t('feed.withFriends')}</>}{verb}</>
+                            })()}
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
                             <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 20, backgroundColor: (item.categoryColor || '#4F46E5') + '18', color: item.categoryColor || '#4F46E5' }}>{translateCategory(item.category, lang)}</span>
@@ -515,7 +496,7 @@ export default function SosyalPage() {
                             </div>
                             <button onClick={() => handleFollow(u.username)}
                               style={{ padding: '7px 16px', borderRadius: 10, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                              Takip Et
+                              {t('social.follow')}
                             </button>
                           </div>
                         )
@@ -544,7 +525,7 @@ export default function SosyalPage() {
                             </div>
                             <button onClick={() => handleUnfollow(u.username)}
                               style={{ padding: '7px 16px', borderRadius: 10, border: '1.5px solid #e5e5e5', background: '#fff', color: '#666', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                              Takibi Bırak
+                              {t('social.unfollow')}
                             </button>
                           </div>
                         )

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useT } from '@/lib/i18n'
+
+const dateLocale = () => (typeof window !== 'undefined' && localStorage.getItem('fitpass_lang') === 'en') ? 'en-US' : 'tr-TR'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import Navbar from '@/components/Navbar'
@@ -62,7 +64,7 @@ export default function InstructorPage() {
 
       <div style={{ maxWidth: 800, margin: '0 auto', padding: '32px 24px' }}>
         <Link href={instructor.venue ? `/venue/${instructor.venue.id}` : '/'} style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#888', fontSize: 14, textDecoration: 'none', fontWeight: 500, marginBottom: 20 }}>
-          <ChevronLeft size={16} /> Geri Dön
+          <ChevronLeft size={16} /> {t('common.back')}
         </Link>
 
         {/* Profil kartı */}
@@ -115,7 +117,7 @@ export default function InstructorPage() {
         {classes.length > 0 && (
           <div style={{ marginBottom: 20 }}>
             <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a1a1a', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Calendar size={17} /> Verdiği Dersler
+              <Calendar size={17} /> {t('inst.classesGiven')}
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {classes.map((cls: any) => {
@@ -136,7 +138,7 @@ export default function InstructorPage() {
                         <div style={{ fontSize: 16, fontWeight: 800, color: '#111' }}>₺{cls.basePrice}</div>
                         {nextSession && (
                           <div style={{ fontSize: 11, color: '#10B981', fontWeight: 600 }}>
-                            {nextSession.availableSpots} yer var
+                            {t('card.spotsLeft').replace('{n}', String(nextSession.availableSpots))}
                           </div>
                         )}
                       </div>
@@ -152,7 +154,7 @@ export default function InstructorPage() {
         {reviews.length > 0 && (
           <>
             <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a1a1a', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Star size={17} /> Değerlendirmeler
+              <Star size={17} /> {t('inst.reviewsHeader')}
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {reviews.map((r: any) => (
@@ -163,8 +165,8 @@ export default function InstructorPage() {
                         <User size={16} />
                       </div>
                       <div>
-                        <div style={{ fontSize: 13, fontWeight: 600 }}>{r.user?.fullName || 'Kullanıcı'}</div>
-                        <div style={{ fontSize: 11, color: '#999' }}>{new Date(r.createdAt).toLocaleDateString('tr-TR')}</div>
+                        <div style={{ fontSize: 13, fontWeight: 600 }}>{r.user?.fullName || t('common.user')}</div>
+                        <div style={{ fontSize: 11, color: '#999' }}>{new Date(r.createdAt).toLocaleDateString(dateLocale())}</div>
                       </div>
                     </div>
                     <div style={{ color: '#F59E0B' }}>{'★'.repeat(r.rating)}</div>

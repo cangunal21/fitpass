@@ -175,7 +175,7 @@ export default function VenuePage() {
 
       <div className="page-container" style={{ maxWidth: 1000, margin: '0 auto', padding: '32px 24px' }}>
         <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#666', fontSize: 14, textDecoration: 'none', fontWeight: 500, marginBottom: 28 }}>
-          ← Tüm dersler
+          {t('common.allClasses')}
         </Link>
 
         {/* Hero kartı */}
@@ -259,7 +259,7 @@ export default function VenuePage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
                   <h1 style={{ fontSize: 26, fontWeight: 800, color: '#111', letterSpacing: -0.5 }}>{name}</h1>
                   {isVerified && (
-                    <span style={{ fontSize: 12, backgroundColor: '#EFF6FF', color: '#2563EB', padding: '3px 10px', borderRadius: 100, fontWeight: 600 }}>✓ Onaylı</span>
+                    <span style={{ fontSize: 12, backgroundColor: '#EFF6FF', color: '#2563EB', padding: '3px 10px', borderRadius: 100, fontWeight: 600 }}>{t('venue.verified')}</span>
                   )}
                 </div>
                 {isMock && <p style={{ fontSize: 14, color: '#888', marginBottom: 10, fontWeight: 500 }}>{lang === 'en' && (venue as any).categoryEn ? (venue as any).categoryEn : venue.category}</p>}
@@ -544,7 +544,7 @@ export default function VenuePage() {
                     </div>
                     <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#666', cursor: 'pointer' }}>
                       <input type="checkbox" checked={reviewForm.isAnonymous} onChange={e => setReviewForm(f => ({...f, isAnonymous: e.target.checked}))} />
-                      Anonim olarak paylaş
+                      {t('common.anonShare')}
                     </label>
                     {reviewError && <div style={{ color: '#DC2626', fontSize: 13 }}>{reviewError}</div>}
                     <div style={{ display: 'flex', gap: 8 }}>
@@ -568,7 +568,7 @@ export default function VenuePage() {
                 <div style={{ textAlign: 'center', color: '#888', padding: 24 }}>{t('venue.reviewsLoading')}</div>
               ) : reviews.length === 0 ? (
                 <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '32px', textAlign: 'center', color: '#aaa', fontSize: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-                  Henüz yorum yok. İlk yorumu siz yazın!
+                  {t('venue.noReviews')}
                 </div>
               ) : reviews.map((r: any) => (
                 <div key={r.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
@@ -603,9 +603,9 @@ export default function VenuePage() {
 
             {/* Mock reviews fallback */}
             {venue._isMock && [
-              { id: 1, rating: 5, comment: 'Muhteşem bir mekan, hocaları çok profesyonel.', date: '3 gün önce' },
-              { id: 2, rating: 5, comment: 'Temizlik ve konfor açısından İstanbul\'un en iyisi.', date: '1 hafta önce' },
-              { id: 3, rating: 4, comment: 'Dersler çok kaliteli, fiyatlar biraz yüksek ama değer.', date: '2 hafta önce' },
+              { id: 1, rating: 5, comment: t('venue.review1'), date: t('venue.ago1') },
+              { id: 2, rating: 5, comment: t('venue.review2'), date: t('venue.ago2') },
+              { id: 3, rating: 4, comment: t('venue.review3'), date: t('venue.ago3') },
             ].map(r => (
               <div key={r.id} style={{ backgroundColor: '#fff', borderRadius: 20, padding: '22px 28px', border: '1px solid #F0F0F0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>

@@ -275,7 +275,7 @@ export default function Home() {
               className="category-tab-item"
               style={{ padding: '16px 20px', border: 'none', background: 'transparent', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: activeCategory === null ? '#4F46E5' : '#666', borderBottom: activeCategory === null ? '2px solid #4F46E5' : '2px solid transparent', transition: 'all 0.15s', whiteSpace: 'nowrap' }}
             >
-              Tümü
+              {t('time.all')}
             </button>
             {categories.map(cat => (
               <button

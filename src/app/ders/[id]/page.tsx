@@ -113,7 +113,7 @@ export default function DersDetay() {
 
       <div style={{ maxWidth: 1080, margin: '0 auto', padding: '32px 24px' }}>
         <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#666', fontSize: 14, textDecoration: 'none', fontWeight: 500, marginBottom: 28 }}>
-          ← Tüm dersler
+          {t('common.allClasses')}
         </Link>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 28, alignItems: 'start' }}>

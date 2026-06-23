@@ -36,10 +36,10 @@ export default function SifremiUnuttumPage() {
         <Link href="/" style={{ fontSize: 28, fontWeight: 800, color: '#fff', textDecoration: 'none', marginBottom: 48, display: 'block' }}>şipşakspor</Link>
         <h2 style={{ fontSize: 36, fontWeight: 800, color: '#fff', marginBottom: 16, lineHeight: 1.2 }}>{t('auth.heroTitle')}</h2>
         <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.8)', lineHeight: 1.7, maxWidth: 320 }}>
-          Yoga'dan boksa, halı sahadan pilates'e — İstanbul'un en iyi spor derslerini tek platformda keşfet.
+          {t('auth.heroDesc')}
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 40 }}>
-          {['500+ aktif ders ve etkinlik', '50+ onaylı tesis ve salon', t('auth.feat3')].map((t, i) => (
+          {[t('auth.feat1'), t('auth.feat2'), t('auth.feat3')].map((t, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, color: '#fff' }}>
               <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700 }}>✓</div>
               <span style={{ fontSize: 14, fontWeight: 500, opacity: 0.9 }}>{t}</span>
@@ -57,7 +57,7 @@ export default function SifremiUnuttumPage() {
 
         {success ? (
           <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: '20px 24px', fontSize: 15, color: '#166534', lineHeight: 1.6 }}>
-            Email gönderildi, kutunu kontrol et
+            {t('common.emailSent')}
             <div style={{ marginTop: 20 }}>
               <Link href="/giris" style={{ fontSize: 14, color: '#4F46E5', fontWeight: 700, textDecoration: 'none' }}>{t('fp.backToLogin')}</Link>
             </div>

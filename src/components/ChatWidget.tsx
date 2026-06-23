@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { X, Send, MessageCircle } from 'lucide-react'
 import { getToken } from '@/lib/api'
+import { useT } from '@/lib/i18n'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
@@ -11,17 +12,12 @@ interface Message {
   content: string
 }
 
-const SUGGESTIONS = [
-  'Nasıl rezervasyon yapabilirim?',
-  'İptal politikası nedir?',
-  'Drop-in nedir?',
-  'Hangi sporlar var?',
-]
-
 export default function ChatWidget() {
+  const { t } = useT()
+  const SUGGESTIONS = [t('chat.q1'), t('chat.q2'), t('chat.q4'), t('chat.q3')]
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Merhaba! Ben Şipşakspor asistanıyım 👋 Spor rezervasyonları, salonlar veya platform hakkında sana yardımcı olabilirim.' }
+    { role: 'assistant', content: t('chat.greeting') }
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -76,7 +72,7 @@ export default function ChatWidget() {
         setMessages(prev => [...prev, { role: 'assistant', content: data.reply }])
       }
     } catch {
-      setError('Bağlantı hatası, tekrar deneyin.')
+      setError(t('chat.error'))
     }
     setLoading(false)
   }
@@ -116,8 +112,8 @@ export default function ChatWidget() {
           <div style={{ background: 'linear-gradient(135deg, #4F46E5, #6366F1)', padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 34, height: 34, borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>⚡</div>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>Şipşak Asistan</div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)' }}>Genellikle anında yanıt verir</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{t('chat.title')}</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)' }}>{t('chat.subtitle')}</div>
             </div>
           </div>
 
@@ -172,7 +168,7 @@ export default function ChatWidget() {
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && sendMessage()}
-              placeholder="Bir şey sor..."
+              placeholder={t('chat.placeholder')}
               style={{ flex: 1, padding: '9px 12px', borderRadius: 12, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', fontFamily: 'inherit' }}
             />
             <button onClick={() => sendMessage()} disabled={!input.trim() || loading}

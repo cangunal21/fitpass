@@ -17,7 +17,7 @@ function EmailDogrulaContent() {
   useEffect(() => {
     if (!token) {
       setStatus('error')
-      setMessage('Geçersiz doğrulama linki.')
+      setMessage(t('verify.invalidLink'))
       return
     }
 
@@ -30,15 +30,15 @@ function EmailDogrulaContent() {
       .then(data => {
         if (data.message) {
           setStatus('success')
-          setMessage(data.message)
+          setMessage(t('verify.successBody'))
         } else {
           setStatus('error')
-          setMessage(data.error || 'Doğrulama başarısız.')
+          setMessage(t('verify.failedMsg'))
         }
       })
       .catch(() => {
         setStatus('error')
-        setMessage('Sunucu hatası. Lütfen tekrar deneyin.')
+        setMessage(t('verify.serverError'))
       })
   }, [token])
 
@@ -49,12 +49,12 @@ function EmailDogrulaContent() {
           {status === 'loading' ? '⏳' : status === 'success' ? '✅' : '❌'}
         </div>
         <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1a1a1a', marginBottom: 12 }}>
-          {status === 'loading' ? 'Doğrulanıyor...' : status === 'success' ? 'Email Doğrulandı!' : 'Doğrulama Başarısız'}
+          {status === 'loading' ? t('verify.verifying') : status === 'success' ? t('verify.success') : t('verify.failed')}
         </h1>
         <p style={{ fontSize: 15, color: '#666', marginBottom: 28, lineHeight: 1.6 }}>{message}</p>
         {status !== 'loading' && (
           <Link href="/giris" style={{ display: 'inline-block', padding: '13px 28px', background: '#4F46E5', color: '#fff', borderRadius: 12, textDecoration: 'none', fontSize: 14, fontWeight: 700 }}>
-            Giriş Yap
+            {t('login.button')}
           </Link>
         )}
       </div>

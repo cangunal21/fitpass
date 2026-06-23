@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "i18n:check": "node scripts/i18n-scan.cjs"
   },
   "dependencies": {
     "@tabler/icons-react": "^3.44.0",

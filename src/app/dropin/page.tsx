@@ -51,7 +51,7 @@ export default function DropInListPage() {
           totalPlayers: s.totalPlayers,
           pricePerPerson: s.pricePerPerson,
           status: 'open',
-          venue: { id: s.venueId, name: 'Demo Salon', address: s.neighborhood },
+          venue: { id: s.venueId, name: t('common.demoVenue'), address: s.neighborhood },
           sportCategory: { name: s.category, colorHex: s.color },
           _mock: true,
         })))
@@ -66,7 +66,7 @@ export default function DropInListPage() {
         totalPlayers: s.totalPlayers,
         pricePerPerson: s.pricePerPerson,
         status: 'open',
-        venue: { id: s.venueId, name: 'Demo Salon', address: s.neighborhood },
+        venue: { id: s.venueId, name: t('common.demoVenue'), address: s.neighborhood },
         sportCategory: { name: s.category, colorHex: s.color },
         _mock: true,
       })))
@@ -88,11 +88,11 @@ export default function DropInListPage() {
       if (data.error) {
         setJoinStatus(prev => ({ ...prev, [slotId]: { loading: false, error: data.error } }))
       } else {
-        setJoinStatus(prev => ({ ...prev, [slotId]: { loading: false, success: "Drop-in'e katıldınız!" } }))
+        setJoinStatus(prev => ({ ...prev, [slotId]: { loading: false, success: t('dropin.joinedToast') } }))
         fetchSlots()
       }
     } catch {
-      setJoinStatus(prev => ({ ...prev, [slotId]: { loading: false, error: 'Bir hata oluştu.' } }))
+      setJoinStatus(prev => ({ ...prev, [slotId]: { loading: false, error: t('common.errorOccurred') } }))
     }
   }
 
