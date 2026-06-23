@@ -9,7 +9,7 @@ import { getInitialsAvatar } from '@/lib/cloudinary'
 import { MapPin, Heart, MessageCircle, X, Send, Award, Flag, Target, Flame, Compass, Users, Trophy } from 'lucide-react'
 import Link from 'next/link'
 import { SportIconBox, SportIcon, getIconKeyForCategory } from '@/lib/sportIcons'
-import { useT } from '@/lib/i18n'
+import { useT, translateCategory, translateBadge } from '@/lib/i18n'
 
 const FEED_BADGE_ICONS: Record<string, any> = { Flag, Target, Flame, Compass, Heart, Users, Trophy }
 function FeedBadgeIcon({ icon, sportName, size = 16, color = '#4F46E5' }: { icon: string; sportName?: string | null; size?: number; color?: string }) {
@@ -47,7 +47,7 @@ const MOCK_VENUES = [
 ]
 
 export default function SosyalPage() {
-  const { t } = useT()
+  const { t, lang } = useT()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<'siralama' | 'arkadaslar' | 'feed'>('siralama')
   const [feed, setFeed] = useState<any[]>([])
@@ -269,7 +269,7 @@ export default function SosyalPage() {
             <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
               <select value={selectedBranch} onChange={e => setSelectedBranch(e.target.value)}
                 style={{ padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', background: '#fff', cursor: 'pointer' }}>
-                {branches.map(b => <option key={b} value={b}>{b === 'Tümü' ? t('time.all') : b}</option>)}
+                {branches.map(b => <option key={b} value={b}>{b === 'Tümü' ? t('time.all') : translateCategory(b, lang)}</option>)}
               </select>
               <select value={selectedNeighborhood} onChange={e => setSelectedNeighborhood(e.target.value)}
                 style={{ padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', background: '#fff', cursor: 'pointer' }}>
@@ -429,13 +429,13 @@ export default function SosyalPage() {
                         <>
                           <div style={{ fontSize: 14, color: '#333', lineHeight: 1.5 }}>
                             <Link href={`/profil/${item.user.username}`} style={{ fontWeight: 700, color: '#111', textDecoration: 'none' }}>{item.user.fullName}</Link>
-                            {' '}<strong style={{ color: '#4F46E5' }}>"{item.badgeName}"</strong> rozetini kazandı 🎉
+                            {' '}<strong style={{ color: '#4F46E5' }}>"{translateBadge({ key: item.badgeKey, badgeName: item.badgeName, sportName: item.sportName }, lang)}"</strong> {lang === 'en' ? 'earned the badge 🎉' : 'rozetini kazandı 🎉'}
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
                             <span style={{ width: 30, height: 30, borderRadius: '50%', backgroundColor: '#EEF2FF', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                               <FeedBadgeIcon icon={item.badgeIcon} sportName={item.sportName} size={16} />
                             </span>
-                            <span style={{ fontSize: 13, fontWeight: 600, color: '#444' }}>{item.badgeName}</span>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: '#444' }}>{translateBadge({ key: item.badgeKey, badgeName: item.badgeName, sportName: item.sportName }, lang)}</span>
                           </div>
                           <div style={{ fontSize: 12, color: '#aaa', marginTop: 4 }}>{timeAgo(item.date)}</div>
                         </>
@@ -457,7 +457,7 @@ export default function SosyalPage() {
                             {' '}{item.type === 'dropin' ? 'drop-in etkinliğine katıldı' : 'dersine katıldı'}
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
-                            <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 20, backgroundColor: (item.categoryColor || '#4F46E5') + '18', color: item.categoryColor || '#4F46E5' }}>{item.category}</span>
+                            <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 20, backgroundColor: (item.categoryColor || '#4F46E5') + '18', color: item.categoryColor || '#4F46E5' }}>{translateCategory(item.category, lang)}</span>
                             <span style={{ fontSize: 13, fontWeight: 600, color: '#444' }}>{item.title}</span>
                           </div>
                           <div style={{ fontSize: 12, color: '#aaa', marginTop: 4 }}>
