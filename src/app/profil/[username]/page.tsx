@@ -356,7 +356,7 @@ export default function ProfilPage() {
 
             {displayTierDiscount > 0 && (
               <div style={{ backgroundColor: '#F0FDF4', borderRadius: 12, padding: '10px 16px', display: 'inline-flex', alignItems: 'center', gap: 8, border: '1px solid #BBF7D0' }}>
-                <span style={{ fontSize: 13, color: '#15803D', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Gift size={16} /> {displayTierName} avantajı: %{displayTierDiscount} indirim</span>
+                <span style={{ fontSize: 13, color: '#15803D', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Gift size={16} /> {displayTierName} avantajı: rezervasyonlarında %{displayTierDiscount} cashback</span>
               </div>
             )}
           </div>
