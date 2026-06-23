@@ -158,9 +158,11 @@ export default function Home() {
         const mapped = sessions.map(mapSessionToItem)
         setAllItems(mapped)
       } else {
+        console.warn('[fitpass] API boş seans döndü — DEMO verisi gösteriliyor. Filtreler:', activeFilters)
         setAllItems([...mockClassItems, ...mockDropInItems])
       }
-    } catch {
+    } catch (err) {
+      console.error('[fitpass] Seanslar yüklenemedi — DEMO verisine düşülüyor:', err)
       setAllItems([...mockClassItems, ...mockDropInItems])
     } finally {
       setLoading(false)
