@@ -14,8 +14,48 @@ const REPORT_REASONS = [
   'Taciz, hakaret veya zorbalık',
   'Spam veya dolandırıcılık',
 ]
+
+const BADGE_ICON_MAP: Record<string, any> = { Flag, Target, Flame, Compass, Heart, Users, Trophy }
+
+function badgeDisplayName(ub: any): string {
+  if (ub.badge?.key === 'sport_master_40' && ub.sportCategory?.name) return `${ub.sportCategory.name} ustası`
+  return ub.badge?.name || 'Rozet'
+}
+
+function BadgeIcon({ ub, size = 20, color }: { ub: any; size?: number; color?: string }) {
+  if (ub.badge?.iconUrl === 'sport' && ub.sportCategory?.name) {
+    return <SportIcon name={getIconKeyForCategory(ub.sportCategory.name)} size={size} color={color} />
+  }
+  const Ic = BADGE_ICON_MAP[ub.badge?.iconUrl] || Award
+  return <Ic size={size} color={color} />
+}
+
+function BadgesCard({ badges }: { badges: any[] }) {
+  return (
+    <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '22px 24px', border: '1px solid #F0F0F0' }}>
+      <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}><Award size={16} /> Rozetler {badges.length > 0 && <span style={{ color: '#aaa', fontWeight: 600 }}>· {badges.length}</span>}</h3>
+      {badges.length === 0 ? (
+        <div style={{ color: '#bbb', fontSize: 13 }}>Henüz rozet kazanılmadı. Ders aldıkça, seri yaptıkça rozetler birikir!</div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
+          {badges.map((ub: any, i: number) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', backgroundColor: '#FAFAFA', borderRadius: 12, border: '1px solid #F0F0F0' }}>
+              <div style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <BadgeIcon ub={ub} size={18} color="#4F46E5" />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{badgeDisplayName(ub)}</div>
+                {ub.badge?.description && <div style={{ fontSize: 11, color: '#999', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ub.badge.description}</div>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 import type { ReactNode } from 'react'
-import { User, Users, Ticket, Award, ClipboardList, BarChart2, BookOpen, Calendar, Flame, Dumbbell, Heart, Building, MapPin, Gift, Medal, Check, X, Lock, CreditCard, Copy, CheckCheck, Flag } from 'lucide-react'
+import { User, Users, Ticket, Award, ClipboardList, BarChart2, BookOpen, Calendar, Flame, Dumbbell, Heart, Building, MapPin, Gift, Medal, Check, X, Lock, CreditCard, Copy, CheckCheck, Flag, Target, Compass, Trophy } from 'lucide-react'
 import { SportIcon, SportIconBox, getIconKeyForCategory, getColorForCategory } from '@/lib/sportIcons'
 import AvatarUpload from '@/components/AvatarUpload'
 import { getInitialsAvatar } from '@/lib/cloudinary'
@@ -422,7 +462,7 @@ export default function ProfilPage() {
             )}
 
             {isOwnProfile && meData && (
-              <div style={{ backgroundColor: '#4F46E5', borderRadius: 16, padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#fff' }}>
+              <div style={{ backgroundColor: '#4F46E5', borderRadius: 16, padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#fff', marginBottom: 16 }}>
                 <div>
                   <div style={{ fontSize: 12, opacity: 0.8 }}>Kredi Bakiyen</div>
                   <div style={{ fontSize: 26, fontWeight: 800, marginTop: 2 }}>₺{meData.creditBalance ?? 0}</div>
@@ -430,6 +470,8 @@ export default function ProfilPage() {
                 <Gift size={28} style={{ opacity: 0.5 }} />
               </div>
             )}
+
+            {isOwnProfile && meData && <BadgesCard badges={meData.badges || []} />}
           </div>
 
           {/* İstatistik satırı */}
@@ -484,19 +526,7 @@ export default function ProfilPage() {
               })()}
             </div>
 
-            <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '22px 24px', border: '1px solid #F0F0F0' }}>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}><Award size={16} /> Rozetler</h3>
-              {(() => {
-                const badges = publicData?.user?.badges || []
-                if (badges.length === 0) return <div style={{ color: '#bbb', fontSize: 13 }}>Henüz rozet kazanılmadı.</div>
-                return badges.slice(0, 5).map((ub: any, i: number) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', backgroundColor: '#F0FDF4', borderRadius: 12, marginBottom: 8 }}>
-                    <Award size={18} color="#16A34A" />
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{ub.badge?.name || 'Rozet'}</div>
-                  </div>
-                ))
-              })()}
-            </div>
+            <BadgesCard badges={publicData?.user?.badges || []} />
           </div>
         )}
 
