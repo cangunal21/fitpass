@@ -83,6 +83,20 @@ export default function Home() {
   const [searchInput, setSearchInput] = useState('')
   const [venueResults, setVenueResults] = useState<any[]>([])
   const [allVenues, setAllVenues] = useState<any[]>([])
+  const [forYouItems, setForYouItems] = useState<DisplayItem[]>([])
+
+  // Kişiselleştirilmiş "Senin için" seansları (giriş yapılmışsa)
+  useEffect(() => {
+    const token = getToken()
+    if (!token) return
+    const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+    fetch(`${API}/api/public/for-you`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => {
+        if (Array.isArray(d?.sessions) && d.sessions.length > 0) setForYouItems(d.sessions.map(mapSessionToItem))
+      })
+      .catch(() => {})
+  }, [])
 
   // Fetch neighborhoods + categories on mount
   useEffect(() => {
@@ -414,6 +428,30 @@ export default function Home() {
             ))}
           </div>
         </div>
+
+        {forYouItems.length > 0 && (
+          <div style={{ marginBottom: 28 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 800, color: '#111', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>✨ Senin için</h2>
+            <p style={{ fontSize: 13, color: '#888', marginBottom: 14 }}>İlgilendiğin sporlar ve ilçelerine göre seçtik</p>
+            <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 6 }}>
+              {forYouItems.map(item => (
+                <Link key={'fy-' + item.id} href={`/ders/${item.id}`} style={{ textDecoration: 'none', flex: '0 0 240px' }}>
+                  <div style={{ backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden', border: '1px solid #F0F0F0' }}>
+                    <div style={{ background: item.color, padding: '16px 16px 14px' }}>
+                      <SportIconBox name={item.icon} bgColor='rgba(255,255,255,0.2)' iconColor='#fff' boxSize={40} borderRadius={12} size={18} />
+                      <h3 style={{ fontSize: 15, fontWeight: 700, color: '#fff', margin: '10px 0 2px', lineHeight: 1.3 }}>{item.title}</h3>
+                      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)' }}>{'venue' in item && typeof item.venue === 'string' ? item.venue : ''} · {item.neighborhood}</p>
+                    </div>
+                    <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 12, color: '#666', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Clock size={14} /> {'time' in item ? item.time : ''}</span>
+                      <span style={{ fontSize: 15, fontWeight: 800, color: '#4F46E5' }}>₺{item.basePrice}</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {loading ? (
           <SkeletonCardGrid count={6} />
