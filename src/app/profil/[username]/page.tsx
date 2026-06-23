@@ -8,7 +8,7 @@ import Navbar from '@/components/Navbar'
 import { api, getUser, getToken } from '@/lib/api'
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 import type { ReactNode } from 'react'
-import { User, Users, Ticket, Award, ClipboardList, BarChart2, BookOpen, Calendar, Flame, Dumbbell, Heart, Building, MapPin, Gift, Medal, Check, X, Lock, CreditCard, Copy, CheckCheck } from 'lucide-react'
+import { User, Users, Ticket, Award, ClipboardList, BarChart2, BookOpen, Calendar, Flame, Dumbbell, Heart, Building, MapPin, Gift, Medal, Check, X, Lock, CreditCard, Copy, CheckCheck, Flag } from 'lucide-react'
 import { SportIcon, SportIconBox, getIconKeyForCategory, getColorForCategory } from '@/lib/sportIcons'
 import AvatarUpload from '@/components/AvatarUpload'
 import { getInitialsAvatar } from '@/lib/cloudinary'
@@ -340,6 +340,24 @@ export default function ProfilPage() {
             <div style={{ fontSize: 14, color: '#aaa', marginBottom: 4 }}>@{displayUsername}</div>
             {displayNeighborhood && (
               <div style={{ fontSize: 13, color: '#bbb', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={14} /> {displayNeighborhood}, İstanbul</div>
+            )}
+            {!isOwnProfile && loggedInUser && (
+              <button
+                onClick={async () => {
+                  const reason = prompt('Şikayet sebebi (opsiyonel):') ?? ''
+                  const token = localStorage.getItem('fitpass_token')
+                  const res = await fetch(`${API_URL}/api/social/report`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                    body: JSON.stringify({ username: displayUsername, reason }),
+                  })
+                  const d = await res.json().catch(() => ({}))
+                  alert(d.message || d.error || 'Şikayetiniz alındı.')
+                }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#999', background: 'transparent', border: '1px solid #E5E7EB', borderRadius: 10, padding: '6px 12px', cursor: 'pointer', marginBottom: 12 }}
+              >
+                <Flag size={13} /> Şikayet et
+              </button>
             )}
 
             {nextTier && (

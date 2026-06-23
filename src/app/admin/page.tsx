@@ -9,8 +9,9 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false)
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState('')
-  const [activeTab, setActiveTab] = useState<'stats' | 'venues' | 'venue-images' | 'users' | 'bookings' | 'coupons' | 'categories'>('venues')
+  const [activeTab, setActiveTab] = useState<'stats' | 'venues' | 'venue-images' | 'reports' | 'users' | 'bookings' | 'coupons' | 'categories'>('venues')
   const [pendingImages, setPendingImages] = useState<any[]>([])
+  const [reports, setReports] = useState<any[]>([])
   const [stats, setStats] = useState<any>(null)
   const [venues, setVenues] = useState<any[]>([])
   const [users, setUsers] = useState<any[]>([])
@@ -86,6 +87,25 @@ export default function AdminPage() {
     }
   }
 
+  const fetchReports = async () => {
+    const res = await fetch(`${API_URL}/api/admin/reports`, { headers: getHeaders() })
+    const data = await res.json()
+    setReports(data.reports || [])
+  }
+
+  const handleResolveReport = async (reportId: number, action: 'remove_avatar' | 'ban' | 'dismiss') => {
+    const res = await fetch(`${API_URL}/api/admin/reports/${reportId}/resolve`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify({ action }),
+    })
+    if (res.ok) {
+      fetchReports()
+    } else {
+      alert('İşlem başarısız.')
+    }
+  }
+
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newCat.name.trim()) return
@@ -137,6 +157,7 @@ export default function AdminPage() {
     if (tab === 'coupons') fetchCoupons()
     if (tab === 'categories') fetchCategories()
     if (tab === 'venue-images') fetchPendingImages()
+    if (tab === 'reports') fetchReports()
   }
 
   const handleApprove = async (id: number, approve: boolean) => {
@@ -229,6 +250,7 @@ export default function AdminPage() {
             { key: 'stats', label: 'İstatistikler' },
             { key: 'venues', label: 'Salonlar' },
             { key: 'venue-images', label: 'Resim Onayı' },
+            { key: 'reports', label: 'Şikayetler' },
             { key: 'users', label: 'Kullanıcılar' },
             { key: 'bookings', label: 'Rezervasyonlar' },
             { key: 'coupons', label: 'Kuponlar' },
@@ -331,6 +353,41 @@ export default function AdminPage() {
                 </div>
               )
             })}
+          </div>
+        )}
+
+        {/* ŞİKAYETLER */}
+        {activeTab === 'reports' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {reports.length === 0 && (
+              <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: 40, textAlign: 'center', color: '#999', fontSize: 14 }}>
+                Açık şikayet yok.
+              </div>
+            )}
+            {reports.map(r => (
+              <div key={r.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  {r.reportedUser?.avatarUrl ? (
+                    <img src={r.reportedUser.avatarUrl} alt="avatar" style={{ width: 56, height: 56, borderRadius: 28, objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ width: 56, height: 56, borderRadius: 28, background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 800, color: '#4F46E5' }}>{r.reportedUser?.fullName?.[0] || '?'}</div>
+                  )}
+                  <div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a' }}>
+                      {r.reportedUser?.fullName} <span style={{ color: '#888', fontWeight: 400 }}>@{r.reportedUser?.username}</span>
+                      {r.reportedUser?.banned && <span style={{ marginLeft: 8, fontSize: 11, color: '#DC2626', fontWeight: 600 }}>(banlı)</span>}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#888' }}>Şikayet eden: @{r.reporter?.username} · {new Date(r.createdAt).toLocaleDateString('tr-TR')}</div>
+                    {r.reason && <div style={{ fontSize: 12, color: '#555', marginTop: 4, fontStyle: 'italic' }}>"{r.reason}"</div>}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  <button onClick={() => handleResolveReport(r.id, 'remove_avatar')} style={{ padding: '7px 14px', borderRadius: 10, border: 'none', background: '#F59E0B', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Fotoğrafı Kaldır</button>
+                  <button onClick={() => handleResolveReport(r.id, 'ban')} style={{ padding: '7px 14px', borderRadius: 10, border: 'none', background: '#EF4444', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Kullanıcıyı Banla</button>
+                  <button onClick={() => handleResolveReport(r.id, 'dismiss')} style={{ padding: '7px 14px', borderRadius: 10, border: 'none', background: '#E5E7EB', color: '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Yoksay</button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
