@@ -44,12 +44,13 @@ export default function SosyalPage() {
   const [feed, setFeed] = useState<any[]>([])
   const [isMockFeed, setIsMockFeed] = useState(false)
   const [feedLoading, setFeedLoading] = useState(false)
-  const [siralamaType, setSiralamaType] = useState<'kullanici' | 'salon'>('kullanici')
+  const [siralamaType, setSiralamaType] = useState<'kullanici' | 'streak' | 'salon'>('kullanici')
   const [selectedBranch, setSelectedBranch] = useState('Tümü')
   const [neighborhoods, setNeighborhoods] = useState<{ id: number; name: string }[]>([])
   const [selectedNeighborhood, setSelectedNeighborhood] = useState('')
   const [userLeaderboard, setUserLeaderboard] = useState<any[]>([])
   const [venueLeaderboard, setVenueLeaderboard] = useState<any[]>([])
+  const [streakLeaderboard, setStreakLeaderboard] = useState<any[]>([])
   const [following, setFollowing] = useState<any[]>([])
   const [followers, setFollowers] = useState<any[]>([])
   const [suggestions, setSuggestions] = useState<any[]>([])
@@ -90,6 +91,10 @@ export default function SosyalPage() {
         const res = await fetch(`${API_URL}/api/social/leaderboard/users?${params}`)
         const data = await res.json()
         setUserLeaderboard(data.leaderboard || [])
+      } else if (siralamaType === 'streak') {
+        const res = await fetch(`${API_URL}/api/social/leaderboard/streaks?${params}`)
+        const data = await res.json()
+        setStreakLeaderboard(data.leaderboard || [])
       } else {
         const res = await fetch(`${API_URL}/api/social/leaderboard/venues?${params}`)
         const data = await res.json()
@@ -243,7 +248,7 @@ export default function SosyalPage() {
           <div>
             {/* Type toggle */}
             <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-              {[{ key: 'kullanici', label: 'Sporcular' }, { key: 'salon', label: 'Salonlar' }].map(t => (
+              {[{ key: 'kullanici', label: 'Sporcular' }, { key: 'streak', label: '🔥 Seri' }, { key: 'salon', label: 'Salonlar' }].map(t => (
                 <button key={t.key} onClick={() => setSiralamaType(t.key as any)}
                   style={{ padding: '8px 20px', borderRadius: 100, border: siralamaType === t.key ? 'none' : '1.5px solid #e5e5e5', background: siralamaType === t.key ? '#4F46E5' : '#fff', color: siralamaType === t.key ? '#fff' : '#666', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
                   {t.label}
@@ -303,6 +308,39 @@ export default function SosyalPage() {
               </div>
             )}
 
+
+            {/* Streak Leaderboard */}
+            {siralamaType === 'streak' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {loading ? (
+                  <SkeletonList count={5} />
+                ) : streakLeaderboard.length === 0 ? (
+                  <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: 40, textAlign: 'center', color: '#999', fontSize: 14 }}>
+                    Henüz seri yapan sporcu yok. Üst üste günlerde derse giderek seriye gir! 🔥
+                  </div>
+                ) : streakLeaderboard.map((user, i) => {
+                  const { initials, color } = getInitialsAvatar(user.username || '?')
+                  return (
+                    <Link key={user.id} href={user.username ? `/profil/${user.username}` : '#'} style={{ textDecoration: 'none' }}>
+                      <div style={{ backgroundColor: i < 3 ? '#FFF7ED' : '#fff', borderRadius: 16, padding: '14px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 14, border: i === 0 ? '2px solid #F97316' : '1px solid transparent' }}>
+                        <div style={{ width: 36, textAlign: 'center', fontSize: i < 3 ? 22 : 14, fontWeight: 800, color: medalColor(i) }}>{medalEmoji(i)}</div>
+                        <div style={{ width: 44, height: 44, borderRadius: '50%', backgroundColor: user.avatarUrl ? 'transparent' : color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 800, color: '#fff', flexShrink: 0, overflow: 'hidden' }}>
+                          {user.avatarUrl ? <img src={user.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : initials}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a' }}>@{user.username}</div>
+                          {user.neighborhood && <div style={{ fontSize: 12, color: '#888', display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={11} /> {user.neighborhood.name}</div>}
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: 18, fontWeight: 800, color: '#F97316' }}>🔥 {user.streak}</div>
+                          <div style={{ fontSize: 11, color: '#888' }}>gün seri</div>
+                        </div>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            )}
 
             {/* Venue Leaderboard */}
             {siralamaType === 'salon' && (
