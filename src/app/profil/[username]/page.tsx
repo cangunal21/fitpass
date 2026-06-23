@@ -31,11 +31,12 @@ function BadgeIcon({ ub, size = 20, color }: { ub: any; size?: number; color?: s
 }
 
 function BadgesCard({ badges }: { badges: any[] }) {
+  const { t } = useT()
   return (
     <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '22px 24px', border: '1px solid #F0F0F0' }}>
       <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}><Award size={16} /> Rozetler {badges.length > 0 && <span style={{ color: '#aaa', fontWeight: 600 }}>· {badges.length}</span>}</h3>
       {badges.length === 0 ? (
-        <div style={{ color: '#bbb', fontSize: 13 }}>Henüz rozet kazanılmadı. Ders aldıkça, seri yaptıkça rozetler birikir!</div>
+        <div style={{ color: '#bbb', fontSize: 13 }}>{t('prof.noBadges')}</div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
           {badges.map((ub: any, i: number) => (
@@ -57,6 +58,7 @@ function BadgesCard({ badges }: { badges: any[] }) {
 import type { ReactNode } from 'react'
 import { User, Users, Ticket, Award, ClipboardList, BarChart2, BookOpen, Calendar, Flame, Dumbbell, Heart, Building, MapPin, Gift, Medal, Check, X, Lock, CreditCard, Copy, CheckCheck, Flag, Target, Compass, Trophy } from 'lucide-react'
 import { SportIcon, SportIconBox, getIconKeyForCategory, getColorForCategory } from '@/lib/sportIcons'
+import { useT } from '@/lib/i18n'
 import AvatarUpload from '@/components/AvatarUpload'
 import { getInitialsAvatar } from '@/lib/cloudinary'
 
@@ -64,6 +66,7 @@ type OwnTab = 'rezervasyonlar' | 'hesap' | 'ödeme' | 'favoriler' | 'referans'
 type PublicTab = 'aktivite' | 'arkadaşlar' | 'istatistik'
 
 export default function ProfilPage() {
+  const { t } = useT()
   const params = useParams()
   const username = params.username as string
   const loggedInUser = getUser()
@@ -313,17 +316,17 @@ export default function ProfilPage() {
   ].sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 20)
 
   const ownTabs: { key: OwnTab; label: ReactNode }[] = [
-    { key: 'rezervasyonlar', label: <><Ticket size={15} style={{ marginRight: 5 }} />Rezervasyonlarım</> },
-    { key: 'hesap', label: <><User size={15} style={{ marginRight: 5 }} />Hesap Bilgilerim</> },
-    { key: 'ödeme', label: <><CreditCard size={15} style={{ marginRight: 5 }} />Ödeme Bilgilerim</> },
-    { key: 'favoriler', label: <><Heart size={15} style={{ marginRight: 5 }} />Favori Salonlar</> },
-    { key: 'referans', label: <><Gift size={15} style={{ marginRight: 5 }} />Davet Et</> },
+    { key: 'rezervasyonlar', label: <><Ticket size={15} style={{ marginRight: 5 }} />{t('prof.tabReservations')}</> },
+    { key: 'hesap', label: <><User size={15} style={{ marginRight: 5 }} />{t('prof.tabAccount')}</> },
+    { key: 'ödeme', label: <><CreditCard size={15} style={{ marginRight: 5 }} />{t('prof.tabPayment')}</> },
+    { key: 'favoriler', label: <><Heart size={15} style={{ marginRight: 5 }} />{t('prof.tabFavorites')}</> },
+    { key: 'referans', label: <><Gift size={15} style={{ marginRight: 5 }} />{t('prof.tabInvite')}</> },
   ]
 
   const publicTabs: { key: PublicTab; label: ReactNode }[] = [
-    { key: 'aktivite', label: <><ClipboardList size={15} style={{ marginRight: 5 }} />Aktivite</> },
-    { key: 'arkadaşlar', label: <><Users size={15} style={{ marginRight: 5 }} />Arkadaşlar</> },
-    { key: 'istatistik', label: <><BarChart2 size={15} style={{ marginRight: 5 }} />İstatistik</> },
+    { key: 'aktivite', label: <><ClipboardList size={15} style={{ marginRight: 5 }} />{t('prof.tabActivity')}</> },
+    { key: 'arkadaşlar', label: <><Users size={15} style={{ marginRight: 5 }} />{t('prof.tabFriends')}</> },
+    { key: 'istatistik', label: <><BarChart2 size={15} style={{ marginRight: 5 }} />{t('prof.tabStats')}</> },
   ]
 
   const tabs = isOwnProfile ? ownTabs : publicTabs
@@ -342,7 +345,7 @@ export default function ProfilPage() {
               <div style={{ marginTop: 8, width: 120, height: 16, backgroundColor: '#EBEBEB', borderRadius: 6 }} />
             </div>
           </div>
-          <div style={{ color: '#999', fontSize: 14, textAlign: 'center', padding: 40 }}>Profil yükleniyor...</div>
+          <div style={{ color: '#999', fontSize: 14, textAlign: 'center', padding: 40 }}>{t('prof.loading')}</div>
         </div>
       </div>
     )
@@ -419,7 +422,7 @@ export default function ProfilPage() {
                   }}
                   style={{ padding: '10px 24px', borderRadius: 100, border: isFollowing ? '1.5px solid #EBEBEB' : 'none', background: isFollowing ? '#fff' : '#4F46E5', color: isFollowing ? '#555' : '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginTop: 16 }}
                 >
-                  {isFollowing ? '✓ Takip Ediliyor' : '+ Takip Et'}
+                  {isFollowing ? `✓ ${t('prof.following')}` : `+ ${t('prof.follow')}`}
                 </button>
               )}
             </div>
@@ -469,7 +472,7 @@ export default function ProfilPage() {
             {isOwnProfile && meData && (
               <div style={{ backgroundColor: '#4F46E5', borderRadius: 16, padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#fff', marginBottom: 16 }}>
                 <div>
-                  <div style={{ fontSize: 12, opacity: 0.8 }}>Kredi Bakiyen</div>
+                  <div style={{ fontSize: 12, opacity: 0.8 }}>{t('prof.credit')}</div>
                   <div style={{ fontSize: 26, fontWeight: 800, marginTop: 2 }}>₺{meData.creditBalance ?? 0}</div>
                 </div>
                 <Gift size={28} style={{ opacity: 0.5 }} />
@@ -482,10 +485,10 @@ export default function ProfilPage() {
           {/* İstatistik satırı */}
           <div className="stats-grid" style={{ borderTop: '1px solid #F5F5F5', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
             {[
-              { label: 'Toplam Ders', value: displayTotalLessons, icon: <BookOpen size={20} /> },
-              { label: 'Bu Ay', value: isOwnProfile && meData ? (() => { const now = new Date(); return bookings.filter(b => b.status === 'confirmed' && new Date(b.session?.startsAt || b.createdAt).getMonth() === now.getMonth() && new Date(b.session?.startsAt || b.createdAt).getFullYear() === now.getFullYear()).length + dropIns.filter(dp => dp.status === 'confirmed' && new Date(dp.slot?.startsAt || dp.joinedAt).getMonth() === now.getMonth() && new Date(dp.slot?.startsAt || dp.joinedAt).getFullYear() === now.getFullYear()).length })() : (pubUser?.totalLessonsCompleted ?? '-'), icon: <Calendar size={20} /> },
-              { label: 'İstanbul Sırası', value: '-', icon: <Building size={20} /> },
-              { label: 'Puan', value: isOwnProfile && meData ? meData.rewardPoints : '-', icon: <MapPin size={20} /> },
+              { label: t('prof.statTotalLessons'), value: displayTotalLessons, icon: <BookOpen size={20} /> },
+              { label: t('prof.statThisMonth'), value: isOwnProfile && meData ? (() => { const now = new Date(); return bookings.filter(b => b.status === 'confirmed' && new Date(b.session?.startsAt || b.createdAt).getMonth() === now.getMonth() && new Date(b.session?.startsAt || b.createdAt).getFullYear() === now.getFullYear()).length + dropIns.filter(dp => dp.status === 'confirmed' && new Date(dp.slot?.startsAt || dp.joinedAt).getMonth() === now.getMonth() && new Date(dp.slot?.startsAt || dp.joinedAt).getFullYear() === now.getFullYear()).length })() : (pubUser?.totalLessonsCompleted ?? '-'), icon: <Calendar size={20} /> },
+              { label: t('prof.statRank'), value: '-', icon: <Building size={20} /> },
+              { label: t('prof.statPoints'), value: isOwnProfile && meData ? meData.rewardPoints : '-', icon: <MapPin size={20} /> },
             ].map((stat, i) => (
               <div key={i} style={{ padding: '18px 12px', textAlign: 'center', borderRight: i < 3 ? '1px solid #F5F5F5' : 'none' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}>{stat.icon}</div>
@@ -500,7 +503,7 @@ export default function ProfilPage() {
         {!isOwnProfile && !loadingPublic && !publicData?.isPrivate && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
             <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '22px 24px', border: '1px solid #F0F0F0' }}>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}><Medal size={16} /> Ana Sporlar</h3>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}><Medal size={16} /> {t('prof.topSports')}</h3>
               {(() => {
                 const counts: Record<string, number> = {}
                 ;(publicData?.bookings || []).forEach((b: any) => {
@@ -512,7 +515,7 @@ export default function ProfilPage() {
                   if (cat) counts[cat] = (counts[cat] || 0) + 1
                 })
                 const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 4)
-                if (sorted.length === 0) return <div style={{ color: '#bbb', fontSize: 13 }}>Henüz aktivite yok.</div>
+                if (sorted.length === 0) return <div style={{ color: '#bbb', fontSize: 13 }}>{t('prof.noActivity')}</div>
                 const max = sorted[0][1]
                 return sorted.map(([cat, count], i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
@@ -593,7 +596,7 @@ export default function ProfilPage() {
             ) : publicData?.isPrivate ? (
               <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '48px', textAlign: 'center', border: '1px solid #F0F0F0' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}><Lock size={48} color="#ccc" /></div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#111', marginBottom: 8 }}>Bu kullanıcının aktiviteleri gizli.</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#111', marginBottom: 8 }}>{t('prof.activityPrivate')}</div>
               </div>
             ) : publicData?.bookings || publicData?.dropInParticipations ? (
               (() => {
@@ -605,7 +608,7 @@ export default function ProfilPage() {
                 ].sort((a, b) => b.date.getTime() - a.date.getTime())
 
                 if (allActivities.length === 0) {
-                  return <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '40px', textAlign: 'center', border: '1px solid #F0F0F0', color: '#999', fontSize: 14 }}>Henüz aktivite yok</div>
+                  return <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '40px', textAlign: 'center', border: '1px solid #F0F0F0', color: '#999', fontSize: 14 }}>{t('prof.noActivity2')}</div>
                 }
 
                 return (
@@ -630,7 +633,7 @@ export default function ProfilPage() {
                               <div style={{ fontSize: 13, color: '#aaa', marginBottom: 2 }}>{venue?.name || ''}</div>
                               <div style={{ fontSize: 12, color: '#bbb' }}>{dateStr}{timeStr ? ` · ${timeStr}` : ''}</div>
                             </div>
-                            <span style={{ fontSize: 12, color: '#10B981', fontWeight: 600, backgroundColor: '#F0FDF4', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Check size={12} /> Onaylı</span>
+                            <span style={{ fontSize: 12, color: '#10B981', fontWeight: 600, backgroundColor: '#F0FDF4', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Check size={12} /> {t('prof.confirmed')}</span>
                           </div>
                         )
                       } else {
@@ -649,7 +652,7 @@ export default function ProfilPage() {
                               <div style={{ fontSize: 13, color: '#aaa', marginBottom: 2 }}>{slot?.venue?.name || ''}</div>
                               <div style={{ fontSize: 12, color: '#bbb' }}>{dpDateStr}{dpTimeStr ? ` · ${dpTimeStr}` : ''}</div>
                             </div>
-                            <span style={{ fontSize: 12, color: '#10B981', fontWeight: 600, backgroundColor: '#F0FDF4', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Check size={12} /> Katıldı</span>
+                            <span style={{ fontSize: 12, color: '#10B981', fontWeight: 600, backgroundColor: '#F0FDF4', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Check size={12} /> {t('prof.joined')}</span>
                           </div>
                         )
                       }
@@ -660,8 +663,8 @@ export default function ProfilPage() {
             ) : (
               <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '48px', textAlign: 'center', border: '1px solid #F0F0F0' }}>
                 <div style={{ fontSize: 36, marginBottom: 12 }}>🏃</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 6 }}>Henüz aktivite yok</div>
-                <div style={{ fontSize: 13, color: '#aaa' }}>Bu kullanıcının henüz tamamlanmış aktivitesi bulunmuyor.</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 6 }}>{t('prof.noActivity2')}</div>
+                <div style={{ fontSize: 13, color: '#aaa' }}>{t('prof.noCompletedActivity')}</div>
               </div>
             )}
           </div>
@@ -674,13 +677,13 @@ export default function ProfilPage() {
               onClick={() => setReservationSubTab('upcoming')}
               style={{ padding: '8px 18px', borderRadius: 9, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700, background: reservationSubTab === 'upcoming' ? '#fff' : 'transparent', color: reservationSubTab === 'upcoming' ? '#4F46E5' : '#888', boxShadow: reservationSubTab === 'upcoming' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none' }}
             >
-              Aktivitelerim
+              {t('prof.subUpcoming')}
             </button>
             <button
               onClick={() => setReservationSubTab('past')}
               style={{ padding: '8px 18px', borderRadius: 9, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700, background: reservationSubTab === 'past' ? '#fff' : 'transparent', color: reservationSubTab === 'past' ? '#4F46E5' : '#888', boxShadow: reservationSubTab === 'past' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none' }}
             >
-              Geçmiş Aktivitelerim
+              {t('prof.subPast')}
             </button>
           </div>
         )}
@@ -691,13 +694,13 @@ export default function ProfilPage() {
               <div style={{ backgroundColor: cancelError.startsWith('✓') ? '#F0FDF4' : '#FEF2F2', border: `1px solid ${cancelError.startsWith('✓') ? '#BBF7D0' : '#FECACA'}`, borderRadius: 12, padding: '12px 16px', fontSize: 13, color: cancelError.startsWith('✓') ? '#16a34a' : '#DC2626', fontWeight: 500 }}>{cancelError}</div>
             )}
             {loadingBookings ? (
-              <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '48px', textAlign: 'center', border: '1px solid #F0F0F0', color: '#999', fontSize: 14 }}>Rezervasyonlar yükleniyor...</div>
+              <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '48px', textAlign: 'center', border: '1px solid #F0F0F0', color: '#999', fontSize: 14 }}>{t('prof.reservationsLoading')}</div>
             ) : bookings.length === 0 && dropIns.length === 0 ? (
               <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '48px', textAlign: 'center', border: '1px solid #F0F0F0' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}><Ticket size={52} color="#ccc" /></div>
-                <div style={{ fontSize: 17, fontWeight: 700, color: '#111', marginBottom: 8 }}>Henüz rezervasyonun yok</div>
-                <div style={{ fontSize: 14, color: '#888', marginBottom: 24 }}>Dersler sayfasından ders bul ve rezervasyon yap</div>
-                <Link href="/" style={{ padding: '12px 28px', borderRadius: 14, background: '#4F46E5', color: '#fff', textDecoration: 'none', fontSize: 14, fontWeight: 700 }}>Ders Bul</Link>
+                <div style={{ fontSize: 17, fontWeight: 700, color: '#111', marginBottom: 8 }}>{t('prof.noReservations')}</div>
+                <div style={{ fontSize: 14, color: '#888', marginBottom: 24 }}>{t('prof.findClassHint')}</div>
+                <Link href="/" style={{ padding: '12px 28px', borderRadius: 14, background: '#4F46E5', color: '#fff', textDecoration: 'none', fontSize: 14, fontWeight: 700 }}>{t('prof.findClass')}</Link>
               </div>
             ) : (
               (() => {
@@ -711,8 +714,8 @@ export default function ProfilPage() {
                   return (
                     <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '48px', textAlign: 'center', border: '1px solid #F0F0F0' }}>
                       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}><Ticket size={52} color="#ccc" /></div>
-                      <div style={{ fontSize: 17, fontWeight: 700, color: '#111', marginBottom: 8 }}>Yaklaşan aktivite yok</div>
-                      <div style={{ fontSize: 14, color: '#888' }}>Yeni bir derse veya drop-in maça kaydol</div>
+                      <div style={{ fontSize: 17, fontWeight: 700, color: '#111', marginBottom: 8 }}>{t('prof.noUpcoming')}</div>
+                      <div style={{ fontSize: 14, color: '#888' }}>{t('prof.noUpcomingSub')}</div>
                     </div>
                   )
                 }
@@ -748,14 +751,14 @@ export default function ProfilPage() {
                               <div style={{ fontSize: 15, fontWeight: 800, color: isCancelled ? '#bbb' : '#4F46E5' }}>₺{b.finalAmount}</div>
                               {isCancelled ? (
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-                                  <span style={{ fontSize: 12, color: '#EF4444', fontWeight: 600, backgroundColor: '#FEF2F2', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><X size={12} /> İptal edildi</span>
+                                  <span style={{ fontSize: 12, color: '#EF4444', fontWeight: 600, backgroundColor: '#FEF2F2', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><X size={12} /> {t('prof.cancelled')}</span>
                                   {b.notes?.includes('iade') && (
                                     <div style={{ fontSize: 11, color: '#F59E0B', fontWeight: 600 }}>{b.notes.split('İptal: ')[1] || ''}</div>
                                   )}
                                 </div>
                               ) : (
                                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                                  <span style={{ fontSize: 12, color: '#10B981', fontWeight: 600, backgroundColor: '#F0FDF4', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Check size={12} /> Onaylı</span>
+                                  <span style={{ fontSize: 12, color: '#10B981', fontWeight: 600, backgroundColor: '#F0FDF4', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Check size={12} /> {t('prof.confirmed')}</span>
                                   {isConfirmed && isFuture && (
                                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
                                       {b.checkInCode && (
@@ -763,26 +766,26 @@ export default function ProfilPage() {
                                       )}
                                       <div style={{ display: 'flex', gap: 6 }}>
                                         {awaitingConfirm ? (
-                                          <button onClick={() => handleCancel(b.id)} style={{ fontSize: 12, color: '#fff', fontWeight: 600, background: '#EF4444', border: 'none', borderRadius: 100, padding: '4px 12px', cursor: 'pointer' }}>Evet, İptal Et</button>
+                                          <button onClick={() => handleCancel(b.id)} style={{ fontSize: 12, color: '#fff', fontWeight: 600, background: '#EF4444', border: 'none', borderRadius: 100, padding: '4px 12px', cursor: 'pointer' }}>{t('prof.confirmCancel')}</button>
                                         ) : (
                                           <>
-                                            <button onClick={() => openTransfer(b.id)} style={{ fontSize: 12, color: '#4F46E5', fontWeight: 600, background: 'none', border: '1px solid #C7D2FE', borderRadius: 100, padding: '3px 10px', cursor: 'pointer' }}>Dersi Değiştir</button>
-                                            <button onClick={() => handleCancel(b.id)} style={{ fontSize: 12, color: '#EF4444', fontWeight: 600, background: 'none', border: '1px solid #FECACA', borderRadius: 100, padding: '3px 10px', cursor: 'pointer' }}>İptal Et</button>
+                                            <button onClick={() => openTransfer(b.id)} style={{ fontSize: 12, color: '#4F46E5', fontWeight: 600, background: 'none', border: '1px solid #C7D2FE', borderRadius: 100, padding: '3px 10px', cursor: 'pointer' }}>{t('prof.changeClass')}</button>
+                                            <button onClick={() => handleCancel(b.id)} style={{ fontSize: 12, color: '#EF4444', fontWeight: 600, background: 'none', border: '1px solid #FECACA', borderRadius: 100, padding: '3px 10px', cursor: 'pointer' }}>{t('prof.cancel')}</button>
                                           </>
                                         )}
-                                        {awaitingConfirm && <button onClick={() => setCancelConfirm(null)} style={{ fontSize: 12, color: '#888', fontWeight: 600, background: 'none', border: '1px solid #E0E0E0', borderRadius: 100, padding: '3px 10px', cursor: 'pointer' }}>Vazgeç</button>}
+                                        {awaitingConfirm && <button onClick={() => setCancelConfirm(null)} style={{ fontSize: 12, color: '#888', fontWeight: 600, background: 'none', border: '1px solid #E0E0E0', borderRadius: 100, padding: '3px 10px', cursor: 'pointer' }}>{t('prof.giveUp')}</button>}
                                       </div>
                                       <div style={{ fontSize: 11, color: '#888', textAlign: 'right' }}>
                                         24s+ tam iade · 12-24s yarım iade · 12s- iptal yok
                                       </div>
                                       {transferFor === b.id && (
                                         <div style={{ marginTop: 8, width: 280, backgroundColor: '#F8F9FF', border: '1px solid #E0E7FF', borderRadius: 12, padding: 12, textAlign: 'left' }}>
-                                          <div style={{ fontSize: 12, fontWeight: 700, color: '#4F46E5', marginBottom: 8 }}>Aynı salonda değiştirebileceğin dersler</div>
+                                          <div style={{ fontSize: 12, fontWeight: 700, color: '#4F46E5', marginBottom: 8 }}>{t('prof.transferTitle')}</div>
                                           {transferMsg && <div style={{ fontSize: 12, color: transferMsg.startsWith('✓') ? '#16a34a' : '#DC2626', marginBottom: 8 }}>{transferMsg}</div>}
                                           {transferLoading ? (
-                                            <div style={{ fontSize: 12, color: '#999' }}>Yükleniyor...</div>
+                                            <div style={{ fontSize: 12, color: '#999' }}>{t('common.loading')}</div>
                                           ) : transferOptions.length === 0 ? (
-                                            <div style={{ fontSize: 12, color: '#999' }}>Uygun ders bulunamadı (en az %50 boş ve aynı/daha uygun fiyatlı ders yok).</div>
+                                            <div style={{ fontSize: 12, color: '#999' }}>{t('prof.transferNoOptions')}</div>
                                           ) : (
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                               {transferOptions.map((o: any) => (
@@ -793,7 +796,7 @@ export default function ProfilPage() {
                                               ))}
                                             </div>
                                           )}
-                                          <button onClick={() => setTransferFor(null)} style={{ marginTop: 8, fontSize: 11, color: '#888', background: 'none', border: 'none', cursor: 'pointer' }}>Kapat</button>
+                                          <button onClick={() => setTransferFor(null)} style={{ marginTop: 8, fontSize: 11, color: '#888', background: 'none', border: 'none', cursor: 'pointer' }}>{t('prof.close')}</button>
                                         </div>
                                       )}
                                     </div>
@@ -823,8 +826,8 @@ export default function ProfilPage() {
                             </div>
                             <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
                               {dpCancelled
-                                ? <span style={{ fontSize: 12, color: '#EF4444', fontWeight: 600, backgroundColor: '#FEF2F2', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><X size={12} /> İptal</span>
-                                : <span style={{ fontSize: 12, color: '#10B981', fontWeight: 600, backgroundColor: '#F0FDF4', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Check size={12} /> Katıldı</span>
+                                ? <span style={{ fontSize: 12, color: '#EF4444', fontWeight: 600, backgroundColor: '#FEF2F2', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><X size={12} /> {t('prof.cancelledShort')}</span>
+                                : <span style={{ fontSize: 12, color: '#10B981', fontWeight: 600, backgroundColor: '#F0FDF4', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Check size={12} /> {t('prof.joined')}</span>
                               }
                               {!dpCancelled && slotStartsAt && slotStartsAt > new Date() && dp.checkInCode && (
                                 <CheckInQR code={dp.checkInCode} />
@@ -841,11 +844,11 @@ export default function ProfilPage() {
           </div>
         )}
 
-        {/* Geçmiş Aktivitelerim — own profile only */}
+        {/* {t('prof.subPast')} — own profile only */}
         {activeTab === 'rezervasyonlar' && isOwnProfile && reservationSubTab === 'past' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {loadingBookings ? (
-              <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '48px', textAlign: 'center', border: '1px solid #F0F0F0', color: '#999', fontSize: 14 }}>Yükleniyor...</div>
+              <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '48px', textAlign: 'center', border: '1px solid #F0F0F0', color: '#999', fontSize: 14 }}>{t('common.loading')}</div>
             ) : (
               (() => {
                 const pastActivities = [
@@ -857,7 +860,7 @@ export default function ProfilPage() {
                   return (
                     <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '48px', textAlign: 'center', border: '1px solid #F0F0F0' }}>
                       <div style={{ fontSize: 36, marginBottom: 12 }}>🏃</div>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 6 }}>Henüz geçmiş aktivite yok</div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 6 }}>{t('prof.noPastActivity')}</div>
                     </div>
                   )
                 }
@@ -890,11 +893,11 @@ export default function ProfilPage() {
                             <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
                               <div style={{ fontSize: 15, fontWeight: 800, color: isCancelled ? '#bbb' : '#4F46E5' }}>₺{b.finalAmount}</div>
                               {isCancelled ? (
-                                <span style={{ fontSize: 12, color: '#EF4444', fontWeight: 600, backgroundColor: '#FEF2F2', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><X size={12} /> İptal edildi</span>
+                                <span style={{ fontSize: 12, color: '#EF4444', fontWeight: 600, backgroundColor: '#FEF2F2', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><X size={12} /> {t('prof.cancelled')}</span>
                               ) : canReview ? (
-                                <button onClick={() => openReviewModal(b.id)} style={{ fontSize: 12, color: '#4F46E5', fontWeight: 600, background: '#EEF2FF', border: 'none', borderRadius: 100, padding: '5px 12px', cursor: 'pointer' }}>Yorum Yap</button>
+                                <button onClick={() => openReviewModal(b.id)} style={{ fontSize: 12, color: '#4F46E5', fontWeight: 600, background: '#EEF2FF', border: 'none', borderRadius: 100, padding: '5px 12px', cursor: 'pointer' }}>{t('prof.reviewBtn')}</button>
                               ) : (
-                                <span style={{ fontSize: 12, color: '#10B981', fontWeight: 600, backgroundColor: '#F0FDF4', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Check size={12} /> Tamamlandı</span>
+                                <span style={{ fontSize: 12, color: '#10B981', fontWeight: 600, backgroundColor: '#F0FDF4', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Check size={12} /> {t('prof.completed')}</span>
                               )}
                             </div>
                           </div>
@@ -919,8 +922,8 @@ export default function ProfilPage() {
                             </div>
                             <div style={{ textAlign: 'right' }}>
                               {dpCancelled
-                                ? <span style={{ fontSize: 12, color: '#EF4444', fontWeight: 600, backgroundColor: '#FEF2F2', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><X size={12} /> İptal</span>
-                                : <span style={{ fontSize: 12, color: '#10B981', fontWeight: 600, backgroundColor: '#F0FDF4', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Check size={12} /> Katıldı</span>
+                                ? <span style={{ fontSize: 12, color: '#EF4444', fontWeight: 600, backgroundColor: '#FEF2F2', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><X size={12} /> {t('prof.cancelledShort')}</span>
+                                : <span style={{ fontSize: 12, color: '#10B981', fontWeight: 600, backgroundColor: '#F0FDF4', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Check size={12} /> {t('prof.joined')}</span>
                               }
                             </div>
                           </div>
@@ -937,8 +940,8 @@ export default function ProfilPage() {
         {reviewModal && (
           <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={() => setReviewModal(null)}>
             <div style={{ backgroundColor: '#fff', borderRadius: 20, width: '100%', maxWidth: 420, padding: 28 }} onClick={e => e.stopPropagation()}>
-              <div style={{ fontSize: 17, fontWeight: 800, color: '#111', marginBottom: 4, textAlign: 'center' }}>Dersini nasıl değerlendirirsin?</div>
-              <div style={{ fontSize: 12, color: '#999', textAlign: 'center', marginBottom: 18 }}>Puanın diğer kullanıcılara yardımcı olur</div>
+              <div style={{ fontSize: 17, fontWeight: 800, color: '#111', marginBottom: 4, textAlign: 'center' }}>{t('review.title')}</div>
+              <div style={{ fontSize: 12, color: '#999', textAlign: 'center', marginBottom: 18 }}>{t('review.sub')}</div>
               <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 18 }}>
                 {[1, 2, 3, 4, 5].map(n => (
                   <button key={n} onClick={() => setReviewRating(n)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 28, color: n <= reviewRating ? '#F59E0B' : '#e5e5e5' }}>★</button>
@@ -947,7 +950,7 @@ export default function ProfilPage() {
               <textarea
                 value={reviewComment}
                 onChange={e => setReviewComment(e.target.value)}
-                placeholder="Deneyimini paylaş (opsiyonel)"
+                placeholder={t('review.placeholder')}
                 rows={4}
                 style={{ width: '100%', padding: '10px 14px', borderRadius: 12, border: '1.5px solid #E5E7EB', fontSize: 14, outline: 'none', resize: 'vertical', boxSizing: 'border-box' as const, fontFamily: 'inherit' }}
               />
@@ -969,18 +972,18 @@ export default function ProfilPage() {
         {activeTab === 'hesap' && isOwnProfile && (
           <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '28px 32px', border: '1px solid #F0F0F0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-              <h3 style={{ fontSize: 17, fontWeight: 700, color: '#111', display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}><User size={18} /> Hesap Bilgileri</h3>
+              <h3 style={{ fontSize: 17, fontWeight: 700, color: '#111', display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}><User size={18} /> {t('acc.title')}</h3>
               {!editMode && (
                 <button onClick={() => { setEditMode(true); setEditError(''); setEditSaved(false) }} style={{ padding: '8px 18px', borderRadius: 100, border: '1.5px solid #E5E5E5', background: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#4F46E5' }}>+ Profili Düzenle</button>
               )}
             </div>
             {[
-              { label: 'Ad Soyad', value: meData?.fullName },
-              { label: 'E-posta', value: meData?.email },
-              { label: 'Telefon', value: meData?.phone || 'Eklenmemiş' },
-              { label: 'Üyelik Tarihi', value: meData?.createdAt ? new Date(meData.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : '-' },
-              { label: 'Tier', value: meData?.tier?.name || '-' },
-              { label: 'Ödül Puanı', value: meData?.rewardPoints ?? '-' },
+              { label: t('auth.fullName'), value: meData?.fullName },
+              { label: t('auth.email'), value: meData?.email },
+              { label: t('auth.phone'), value: meData?.phone || 'Eklenmemiş' },
+              { label: t('acc.memberSince'), value: meData?.createdAt ? new Date(meData.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : '-' },
+              { label: t('acc.tier'), value: meData?.tier?.name || '-' },
+              { label: t('acc.points'), value: meData?.rewardPoints ?? '-' },
             ].map((row, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: i < 5 ? '1px solid #F5F5F5' : 'none' }}>
                 <span style={{ fontSize: 14, color: '#888', fontWeight: 500 }}>{row.label}</span>
@@ -991,26 +994,26 @@ export default function ProfilPage() {
             {/* Edit form */}
             {editMode && (
               <div style={{ marginTop: 24, paddingTop: 24, borderTop: '1px solid #F0F0F0' }}>
-                <h4 style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 16 }}>Profili Düzenle</h4>
+                <h4 style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 16 }}>{t('acc.editProfile')}</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   <div>
-                    <label style={{ fontSize: 13, fontWeight: 600, color: '#444', display: 'block', marginBottom: 6 }}>Ad Soyad</label>
+                    <label style={{ fontSize: 13, fontWeight: 600, color: '#444', display: 'block', marginBottom: 6 }}>{t('auth.fullName')}</label>
                     <input type="text" value={editForm.fullName} onChange={e => setEditForm(f => ({ ...f, fullName: e.target.value }))} style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid #E5E5E5', fontSize: 14, outline: 'none', boxSizing: 'border-box' as const }} />
                   </div>
                   <div>
-                    <label style={{ fontSize: 13, fontWeight: 600, color: '#444', display: 'block', marginBottom: 6 }}>Bio <span style={{ color: '#bbb', fontWeight: 400 }}>(max 160 karakter)</span></label>
+                    <label style={{ fontSize: 13, fontWeight: 600, color: '#444', display: 'block', marginBottom: 6 }}>{t('prof.bio')} <span style={{ color: '#bbb', fontWeight: 400 }}>{t('acc.bioHint')}</span></label>
                     <textarea value={editForm.bio} onChange={e => setEditForm(f => ({ ...f, bio: e.target.value.slice(0, 160) }))} rows={3} style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid #E5E5E5', fontSize: 14, outline: 'none', resize: 'vertical' as const, boxSizing: 'border-box' as const }} />
                     <div style={{ fontSize: 11, color: '#bbb', textAlign: 'right', marginTop: 3 }}>{editForm.bio.length}/160</div>
                   </div>
                   <div>
-                    <label style={{ fontSize: 13, fontWeight: 600, color: '#444', display: 'block', marginBottom: 6 }}>İlçe</label>
+                    <label style={{ fontSize: 13, fontWeight: 600, color: '#444', display: 'block', marginBottom: 6 }}>{t('common.district')}</label>
                     <select value={editForm.neighborhoodId} onChange={e => setEditForm(f => ({ ...f, neighborhoodId: e.target.value }))} style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid #E5E5E5', fontSize: 14, outline: 'none', background: '#fff', boxSizing: 'border-box' as const }}>
-                      <option value="">Seçin</option>
+                      <option value="">{t('acc.select')}</option>
                       {neighborhoods.map(n => <option key={n.id} value={String(n.id)}>{n.name}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label style={{ fontSize: 13, fontWeight: 600, color: '#444', display: 'block', marginBottom: 6 }}>Profil Fotoğrafı <span style={{ color: '#bbb', fontWeight: 400 }}>(opsiyonel)</span></label>
+                    <label style={{ fontSize: 13, fontWeight: 600, color: '#444', display: 'block', marginBottom: 6 }}>{t('prof.photoLabel')} <span style={{ color: '#bbb', fontWeight: 400 }}>{t('register.optional')}</span></label>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <AvatarUpload
                         currentUrl={editForm.avatarUrl || null}
@@ -1019,13 +1022,13 @@ export default function ProfilPage() {
                         editable={true}
                         onUpload={(url) => setEditForm(f => ({ ...f, avatarUrl: url }))}
                       />
-                      <span style={{ fontSize: 12, color: '#888' }}>Fotoğraf yüklemek için tıkla</span>
+                      <span style={{ fontSize: 12, color: '#888' }}>{t('acc.photoHint')}</span>
                     </div>
                   </div>
                   {editError && <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#DC2626' }}>{editError}</div>}
-                  {editSaved && <div style={{ fontSize: 13, color: '#10B981', fontWeight: 600 }}>Kaydedildi ✓</div>}
+                  {editSaved && <div style={{ fontSize: 13, color: '#10B981', fontWeight: 600 }}>{t('acc.saved')}</div>}
                   <div style={{ display: 'flex', gap: 10 }}>
-                    <button type="button" onClick={() => { setEditMode(false); setEditSaved(false); setEditError('') }} style={{ flex: 1, padding: '11px', borderRadius: 12, border: '1.5px solid #eee', background: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: '#555' }}>İptal</button>
+                    <button type="button" onClick={() => { setEditMode(false); setEditSaved(false); setEditError('') }} style={{ flex: 1, padding: '11px', borderRadius: 12, border: '1.5px solid #eee', background: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: '#555' }}>{t('common.cancelBtn')}</button>
                     <button
                       type="button"
                       onClick={async () => {
@@ -1052,11 +1055,11 @@ export default function ProfilPage() {
                 </div>
               </div>
             )}
-            {editSaved && !editMode && <div style={{ fontSize: 13, color: '#10B981', fontWeight: 600, marginTop: 8 }}>Kaydedildi ✓</div>}
+            {editSaved && !editMode && <div style={{ fontSize: 13, color: '#10B981', fontWeight: 600, marginTop: 8 }}>{t('acc.saved')}</div>}
 
             {/* Privacy toggle */}
             <div style={{ marginTop: 28, paddingTop: 24, borderTop: '1px solid #F0F0F0' }}>
-              <h4 style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}><Lock size={16} /> Aktivite Gizliliği</h4>
+              <h4 style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}><Lock size={16} /> {t('acc.activityPrivacy')}</h4>
               <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
                 <button
                   onClick={async () => {
@@ -1092,7 +1095,7 @@ export default function ProfilPage() {
               <div style={{ fontSize: 13, color: '#888' }}>
                 {privacy === 'public' ? 'Aktiviteleriniz diğer kullanıcılar tarafından görülebilir.' : 'Aktiviteleriniz yalnızca size görünür.'}
               </div>
-              {privacySaved && <div style={{ fontSize: 13, color: '#10B981', fontWeight: 600, marginTop: 8 }}>Kaydedildi ✓</div>}
+              {privacySaved && <div style={{ fontSize: 13, color: '#10B981', fontWeight: 600, marginTop: 8 }}>{t('acc.saved')}</div>}
             </div>
 
             {/* Bildirim Tercihleri */}
@@ -1125,7 +1128,7 @@ export default function ProfilPage() {
                   </div>
                 ))}
               </div>
-              {notifSaved && <div style={{ fontSize: 13, color: '#10B981', fontWeight: 600, marginTop: 10 }}>Kaydedildi ✓</div>}
+              {notifSaved && <div style={{ fontSize: 13, color: '#10B981', fontWeight: 600, marginTop: 10 }}>{t('acc.saved')}</div>}
             </div>
           </div>
         )}
@@ -1138,8 +1141,8 @@ export default function ProfilPage() {
                 <Lock size={32} color="#4F46E5" />
               </div>
             </div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#111', marginBottom: 10 }}>Ödeme Yöntemi</div>
-            <div style={{ fontSize: 14, color: '#888', maxWidth: 320, margin: '0 auto' }}>Ödeme yöntemi ekleme özelliği çok yakında geliyor.</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#111', marginBottom: 10 }}>{t('pay.method')}</div>
+            <div style={{ fontSize: 14, color: '#888', maxWidth: 320, margin: '0 auto' }}>{t('pay.soon')}</div>
           </div>
         )}
 
@@ -1181,14 +1184,14 @@ export default function ProfilPage() {
         {activeTab === 'arkadaşlar' && !isOwnProfile && (
           <div>
             {!socialLoaded && (
-              <div style={{ display: 'flex', justifyContent: 'center', padding: 32, color: '#999', fontSize: 14 }}>Yükleniyor...</div>
+              <div style={{ display: 'flex', justifyContent: 'center', padding: 32, color: '#999', fontSize: 14 }}>{t('common.loading')}</div>
             )}
             {socialLoaded && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                 <div>
-                  <h3 style={{ fontSize: 15, fontWeight: 700, color: '#555', marginBottom: 12 }}>Takipçiler ({followers.length})</h3>
+                  <h3 style={{ fontSize: 15, fontWeight: 700, color: '#555', marginBottom: 12 }}>{t('friends.followers')} ({followers.length})</h3>
                   {followers.length === 0 ? (
-                    <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '24px', textAlign: 'center', border: '1px solid #F0F0F0', color: '#bbb', fontSize: 14 }}>Henüz takipçi yok.</div>
+                    <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '24px', textAlign: 'center', border: '1px solid #F0F0F0', color: '#bbb', fontSize: 14 }}>{t('friends.noFollowers2')}</div>
                   ) : (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
                       {followers.map((f: any) => (
@@ -1209,9 +1212,9 @@ export default function ProfilPage() {
                   )}
                 </div>
                 <div>
-                  <h3 style={{ fontSize: 15, fontWeight: 700, color: '#555', marginBottom: 12 }}>Takip Edilenler ({following.length})</h3>
+                  <h3 style={{ fontSize: 15, fontWeight: 700, color: '#555', marginBottom: 12 }}>{t('friends.following')} ({following.length})</h3>
                   {following.length === 0 ? (
-                    <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '24px', textAlign: 'center', border: '1px solid #F0F0F0', color: '#bbb', fontSize: 14 }}>Henüz takip edilmiyor.</div>
+                    <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '24px', textAlign: 'center', border: '1px solid #F0F0F0', color: '#bbb', fontSize: 14 }}>{t('friends.notFollowed')}</div>
                   ) : (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
                       {following.map((f: any) => (
@@ -1240,8 +1243,8 @@ export default function ProfilPage() {
         {activeTab === 'istatistik' && !isOwnProfile && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 14 }}>
             {[
-              { label: 'Toplam Ders', value: mockUser.stats.totalLessons, icon: <BookOpen size={32} />, color: '#8B5CF6' },
-              { label: 'Bu Ay', value: mockUser.stats.thisMonth, icon: <Calendar size={32} />, color: '#3B82F6' },
+              { label: t('prof.statTotalLessons'), value: mockUser.stats.totalLessons, icon: <BookOpen size={32} />, color: '#8B5CF6' },
+              { label: t('prof.statThisMonth'), value: mockUser.stats.thisMonth, icon: <Calendar size={32} />, color: '#3B82F6' },
               { label: 'Günlük Seri', value: mockUser.stats.streak, icon: <Flame size={32} />, color: '#EF4444' },
               { label: 'İptal Yok', value: mockUser.stats.noCancel, icon: <Dumbbell size={32} />, color: '#10B981' },
               { label: 'Favori Salon', value: mockUser.stats.sameVenue, icon: <Heart size={32} />, color: '#EC4899' },
@@ -1260,23 +1263,23 @@ export default function ProfilPage() {
       {reportOpen && (
         <div onClick={() => setReportOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 20, padding: 24, width: '100%', maxWidth: 420 }}>
-            <div style={{ fontSize: 18, fontWeight: 800, color: '#111', marginBottom: 4 }}>Kullanıcıyı şikayet et</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#111', marginBottom: 4 }}>{t('report.title')}</div>
             <div style={{ fontSize: 13, color: '#888', marginBottom: 18 }}>@{displayUsername} için bir sebep seç</div>
             {reportSent ? (
               <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: 16, fontSize: 14, color: '#16a34a', textAlign: 'center' }}>{reportSent}</div>
             ) : (
               <>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
-                  {REPORT_REASONS.map(r => (
+                  {[t('report.reason1'),t('report.reason2'),t('report.reason3'),t('report.reason4')].map(r => (
                     <button key={r} onClick={() => setReportReason(r)} style={{ textAlign: 'left', padding: '12px 14px', borderRadius: 12, border: `1.5px solid ${reportReason === r ? '#4F46E5' : '#E5E7EB'}`, background: reportReason === r ? '#EEF2FF' : '#fff', color: '#111', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>{r}</button>
                   ))}
-                  <button onClick={() => setReportReason('__other__')} style={{ textAlign: 'left', padding: '12px 14px', borderRadius: 12, border: `1.5px solid ${reportReason === '__other__' ? '#4F46E5' : '#E5E7EB'}`, background: reportReason === '__other__' ? '#EEF2FF' : '#fff', color: '#111', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Diğer</button>
+                  <button onClick={() => setReportReason('__other__')} style={{ textAlign: 'left', padding: '12px 14px', borderRadius: 12, border: `1.5px solid ${reportReason === '__other__' ? '#4F46E5' : '#E5E7EB'}`, background: reportReason === '__other__' ? '#EEF2FF' : '#fff', color: '#111', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>{t('report.other')}</button>
                 </div>
                 {reportReason === '__other__' && (
-                  <textarea value={reportCustom} onChange={e => setReportCustom(e.target.value)} placeholder="Sorununu kısaca yaz..." rows={3} style={{ width: '100%', borderRadius: 12, border: '1.5px solid #E5E7EB', padding: 12, fontSize: 14, marginBottom: 14, resize: 'vertical', fontFamily: 'inherit' }} />
+                  <textarea value={reportCustom} onChange={e => setReportCustom(e.target.value)} placeholder={t('report.placeholder')} rows={3} style={{ width: '100%', borderRadius: 12, border: '1.5px solid #E5E7EB', padding: 12, fontSize: 14, marginBottom: 14, resize: 'vertical', fontFamily: 'inherit' }} />
                 )}
                 <div style={{ display: 'flex', gap: 10 }}>
-                  <button onClick={() => setReportOpen(false)} style={{ flex: 1, padding: '12px', borderRadius: 12, border: '1.5px solid #eee', background: '#fff', fontSize: 14, fontWeight: 600, color: '#555', cursor: 'pointer' }}>Vazgeç</button>
+                  <button onClick={() => setReportOpen(false)} style={{ flex: 1, padding: '12px', borderRadius: 12, border: '1.5px solid #eee', background: '#fff', fontSize: 14, fontWeight: 600, color: '#555', cursor: 'pointer' }}>{t('prof.giveUp')}</button>
                   <button
                     disabled={!reportReason || (reportReason === '__other__' && !reportCustom.trim())}
                     onClick={async () => {
@@ -1292,7 +1295,7 @@ export default function ProfilPage() {
                       setTimeout(() => setReportOpen(false), 2200)
                     }}
                     style={{ flex: 1, padding: '12px', borderRadius: 12, border: 'none', background: (!reportReason || (reportReason === '__other__' && !reportCustom.trim())) ? '#C7D2FE' : '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
-                  >Gönder</button>
+                  >{t('report.send')}</button>
                 </div>
               </>
             )}
@@ -1304,6 +1307,7 @@ export default function ProfilPage() {
 }
 
 function CheckInQR({ code }: { code: string }) {
+  const { t } = useT()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [open, setOpen] = useState(false)
 
@@ -1324,7 +1328,7 @@ function CheckInQR({ code }: { code: string }) {
         <div style={{ marginTop: 10, backgroundColor: '#fff', borderRadius: 16, padding: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.12)', textAlign: 'center', border: '1px solid #F0F0F0' }}>
           <canvas ref={canvasRef} style={{ borderRadius: 8, display: 'block', margin: '0 auto 10px' }} />
           <div style={{ fontSize: 20, fontWeight: 900, color: '#1a1a1a', letterSpacing: 4, fontFamily: 'monospace' }}>{code}</div>
-          <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>Salona QR veya kodu göster</div>
+          <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>{t('prof.showQR')}</div>
         </div>
       )}
     </div>
@@ -1334,6 +1338,7 @@ function CheckInQR({ code }: { code: string }) {
 const API_URL_REF = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
 function ReferralTab({ referralInfo, setReferralInfo, copied, setCopied }: any) {
+  const { t } = useT()
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -1358,7 +1363,7 @@ function ReferralTab({ referralInfo, setReferralInfo, copied, setCopied }: any) 
     setTimeout(() => setCopied(false), 2000)
   }
 
-  if (loading) return <div style={{ textAlign: 'center', padding: 40, color: '#aaa', fontSize: 14 }}>Yükleniyor...</div>
+  if (loading) return <div style={{ textAlign: 'center', padding: 40, color: '#aaa', fontSize: 14 }}>{t('common.loading')}</div>
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -1382,7 +1387,7 @@ function ReferralTab({ referralInfo, setReferralInfo, copied, setCopied }: any) 
 
       {/* Referral linki */}
       <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: '#555', marginBottom: 10 }}>Davet Linkin</div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: '#555', marginBottom: 10 }}>{t('ref.yourLink')}</div>
         <div style={{ display: 'flex', gap: 8 }}>
           <div style={{ flex: 1, padding: '12px 14px', backgroundColor: '#F5F5F5', borderRadius: 10, fontSize: 13, color: '#333', fontFamily: 'monospace', wordBreak: 'break-all' }}>
             {referralLink || 'Yükleniyor...'}
@@ -1397,7 +1402,7 @@ function ReferralTab({ referralInfo, setReferralInfo, copied, setCopied }: any) 
       {/* Davet edilenler listesi */}
       {referralInfo?.referrals?.length > 0 && (
         <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 12 }}>Davet Ettiklerin</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 12 }}>{t('ref.invited')}</div>
           {referralInfo.referrals.map((r: any) => (
             <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #F5F5F5' }}>
               <div>
