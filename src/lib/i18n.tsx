@@ -80,6 +80,9 @@ const dict: Record<Lang, Record<string, string>> = {
     'home.venues': 'Salonlar',
     'home.forYou': 'Senin için',
     'home.forYouSub': 'İlgilendiğin sporlar ve ilçelerine göre seçtik',
+    'home.events': 'etkinlik',
+    'privacy.public': 'Herkese Açık',
+    'privacy.private': 'Gizli',
     'sort.date': 'Tarihe Göre',
     'sort.rating': 'Puana Göre',
     'sort.nearby': 'Bana Yakın',
@@ -240,7 +243,19 @@ const dict: Record<Lang, Record<string, string>> = {
     'prof.follow': 'Takip Et',
     'prof.bio': 'Bio',
     'prof.photoLabel': 'Profil Fotoğrafı',
+    'prof.badges': 'Rozetler',
+    'prof.classFallback': 'Ders',
     'prof.noBadges': 'Henüz rozet kazanılmadı. Ders aldıkça, seri yaptıkça rozetler birikir!',
+    'ref.inviteTitle': '🎁 Arkadaşını Davet Et',
+    'ref.step1': 'Linki arkadaşınla paylaş',
+    'ref.step2': "Arkadaşın kayıt olup email'ini doğrulayınca 150 TL kredi kazanır",
+    'ref.step3': 'Arkadaşın ilk dersini alınca sen de 150 TL kazanırsın',
+    'ref.limit': '⚠️ En fazla 3 arkadaş davet edebilirsin. ({n}/3 kullanıldı)',
+    'ref.copied': '✓ Link kopyalandı!',
+    'ref.completed': '✓ +150 ₺ kazandın',
+    'ref.pending': '⏳ Bekliyor',
+    'prof.cashbackAdvantage': '{tier} avantajı: rezervasyonlarında %{pct} cashback',
+
     'dropin.title': 'Drop-In Maçlar',
     'dropin.subtitle': 'Basketbol, Padel ve Halı Saha — takım bul, hemen katıl!',
     'dropin.empty': 'Açık maç yok',
@@ -383,6 +398,9 @@ const dict: Record<Lang, Record<string, string>> = {
     'home.venues': 'Venues',
     'home.forYou': 'For You',
     'home.forYouSub': 'Picked by your sports and districts',
+    'home.events': 'events',
+    'privacy.public': 'Public',
+    'privacy.private': 'Private',
     'sort.date': 'By Date',
     'sort.rating': 'By Rating',
     'sort.nearby': 'Near Me',
@@ -543,7 +561,19 @@ const dict: Record<Lang, Record<string, string>> = {
     'prof.follow': 'Follow',
     'prof.bio': 'Bio',
     'prof.photoLabel': 'Profile Photo',
+    'prof.badges': 'Badges',
+    'prof.classFallback': 'Class',
     'prof.noBadges': 'No badges yet. Earn them as you take classes and build streaks!',
+    'ref.inviteTitle': '🎁 Invite a Friend',
+    'ref.step1': 'Share the link with your friend',
+    'ref.step2': 'Your friend earns 150 TL credit after signing up and verifying their email',
+    'ref.step3': 'When your friend takes their first class, you earn 150 TL too',
+    'ref.limit': '⚠️ You can invite up to 3 friends. ({n}/3 used)',
+    'ref.copied': '✓ Link copied!',
+    'ref.completed': '✓ +150 ₺ earned',
+    'ref.pending': '⏳ Pending',
+    'prof.cashbackAdvantage': '{tier} perk: {pct}% cashback on your bookings',
+
     'dropin.title': 'Drop-In Matches',
     'dropin.subtitle': 'Basketball, Padel & Football — find a team, join now!',
     'dropin.empty': 'No open matches',
@@ -612,6 +642,41 @@ const dict: Record<Lang, Record<string, string>> = {
     'rp.button': 'Update Password',
     'comp.namePlaceholder': 'John Doe',
   },
+}
+
+// Veri çevirileri (DB'den gelen sabit değerler)
+const CATEGORY_EN: Record<string, string> = {
+  'Basketbol': 'Basketball', 'Binicilik': 'Horse Riding', 'Crossfit': 'CrossFit',
+  'Dans': 'Dance', 'Dövüş Sporları': 'Combat Sports', 'Halı Saha': 'Football',
+  'HIIT': 'HIIT', 'Padel': 'Padel', 'Pilates': 'Pilates', 'Yatçılık': 'Sailing',
+  'Yoga': 'Yoga', 'Yüzme': 'Swimming',
+}
+const TIER_EN: Record<string, string> = {
+  'Aday': 'Rookie', 'Sporcu': 'Athlete', 'Profesyonel': 'Pro', 'Elit': 'Elite', 'Olimpik': 'Olympian',
+}
+const BADGE_EN: Record<string, string> = {
+  first_lesson: 'First Step', lessons_10: 'Regular',
+  streak_3: '3-Day Streak', streak_7: '7-Day Streak', streak_30: '30-Day Streak',
+  variety_5: 'All-Around', loyalty_10: 'Loyal Athlete', team_5: 'Team Player',
+  tier_olimpik: 'Olympian',
+}
+
+export function translateCategory(name: string | null | undefined, lang: Lang): string {
+  if (!name) return ''
+  return lang === 'en' ? (CATEGORY_EN[name] || name) : name
+}
+export function translateTier(name: string | null | undefined, lang: Lang): string {
+  if (!name) return ''
+  return lang === 'en' ? (TIER_EN[name] || name) : name
+}
+export function translateBadge(ub: any, lang: Lang): string {
+  const key = ub?.badge?.key ?? ub?.key
+  const sportName = ub?.sportCategory?.name ?? ub?.sportName
+  if (key === 'sport_master_40' && sportName) {
+    return lang === 'en' ? `${translateCategory(sportName, lang)} Master` : `${sportName} ustası`
+  }
+  if (lang === 'en' && key && BADGE_EN[key]) return BADGE_EN[key]
+  return ub?.badge?.name ?? ub?.badgeName ?? 'Rozet'
 }
 
 interface LangCtx { lang: Lang; setLang: (l: Lang) => void; t: (key: string) => string }

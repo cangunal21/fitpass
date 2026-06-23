@@ -9,7 +9,9 @@ import { api, getToken, getUser } from '@/lib/api'
 import { Search, LayoutGrid, Map, Flame, Clock, Timer, X } from 'lucide-react'
 import { SportIcon, SportIconBox, getIconKeyForCategory, getColorForCategory } from '@/lib/sportIcons'
 import { SkeletonCardGrid } from '@/components/Skeleton'
-import { useT } from '@/lib/i18n'
+import { useT, translateCategory } from '@/lib/i18n'
+
+const dateLocale = () => (typeof window !== 'undefined' && localStorage.getItem('fitpass_lang') === 'en') ? 'en-US' : 'tr-TR'
 
 // Kategoriler API'dan dinamik olarak yüklenir
 interface Category { id: number; name: string; icon: string; color: string }
@@ -19,6 +21,7 @@ function mapSessionToItem(session: any) {
   return {
     id: session.id,
     title: session.title,
+    titleEn: session.titleEn || null,
     venueId: session.venueId,
     venue: session.venueName,
     neighborhood: session.neighborhood,
@@ -29,8 +32,8 @@ function mapSessionToItem(session: any) {
     spots: session.availableSpots,
     rating: session.rating || 4.5,
     totalReviews: session.totalReviews || 0,
-    time: new Date(session.startsAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
-    date: new Date(session.startsAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' }),
+    time: new Date(session.startsAt).toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }),
+    date: new Date(session.startsAt).toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' }),
     duration: `${session.durationMinutes} dk`,
     isDropIn: false as const,
     sessionId: session.id,
@@ -68,7 +71,7 @@ const mockDropInItems: DisplayItem[] = mockDropInSlots.map(d => ({ ...d, isDropI
 
 export default function Home() {
   const router = useRouter()
-  const { t } = useT()
+  const { t, lang } = useT()
   const [activeCategory, setActiveCategory] = useState<number | null>(null)
   const [activeView, setActiveView] = useState<'list' | 'map'>('list')
   const [loading, setLoading] = useState(true)
@@ -281,7 +284,7 @@ export default function Home() {
                 className="category-tab-item"
                 style={{ padding: '16px 20px', border: 'none', background: 'transparent', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: activeCategory === cat.id ? cat.color : '#666', borderBottom: activeCategory === cat.id ? `2px solid ${cat.color}` : '2px solid transparent', transition: 'all 0.15s', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}
               >
-                <SportIcon name={cat.icon} size={16} color={activeCategory === cat.id ? cat.color : '#666'} />{cat.name}
+                <SportIcon name={cat.icon} size={16} color={activeCategory === cat.id ? cat.color : '#666'} />{translateCategory(cat.name, lang)}
               </button>
             ))}
           </div>
@@ -316,7 +319,7 @@ export default function Home() {
           >
             <option value="">{t('common.category')}</option>
             {categories.map(cat => (
-              <option key={cat.id} value={cat.name}>{cat.name}</option>
+              <option key={cat.id} value={cat.name}>{translateCategory(cat.name, lang)}</option>
             ))}
           </select>
 
@@ -418,7 +421,7 @@ export default function Home() {
               <span style={{ fontSize: 20, fontWeight: 700, color: '#aaa' }}>{t('common.loading')}</span>
             ) : (
               <>
-                <span style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a' }}>{filtered.length} etkinlik</span>
+                <span style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a' }}>{filtered.length} {t('home.events')}</span>
                 {activeCategory && <span style={{ fontSize: 14, color: '#888', marginLeft: 8 }}>· {categories.find(c => c.id === activeCategory)?.name}</span>}
                 {filters.search && <span style={{ fontSize: 14, color: '#888', marginLeft: 8 }}>· "{filters.search}" için</span>}
               </>
@@ -443,7 +446,7 @@ export default function Home() {
                   <div style={{ backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden', border: '1px solid #F0F0F0' }}>
                     <div style={{ background: item.color, padding: '16px 16px 14px' }}>
                       <SportIconBox name={item.icon} bgColor='rgba(255,255,255,0.2)' iconColor='#fff' boxSize={40} borderRadius={12} size={18} />
-                      <h3 style={{ fontSize: 15, fontWeight: 700, color: '#fff', margin: '10px 0 2px', lineHeight: 1.3 }}>{item.title}</h3>
+                      <h3 style={{ fontSize: 15, fontWeight: 700, color: '#fff', margin: '10px 0 2px', lineHeight: 1.3 }}>{lang === 'en' && item.titleEn ? String(item.titleEn) : item.title}</h3>
                       <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)' }}>{'venue' in item && typeof item.venue === 'string' ? item.venue : ''} · {item.neighborhood}</p>
                     </div>
                     <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -493,7 +496,7 @@ export default function Home() {
                       <div style={{ marginBottom: 10 }}>
                         <SportIconBox name={item.icon} bgColor='rgba(255,255,255,0.2)' iconColor='#fff' boxSize={48} borderRadius={14} size={22} />
                       </div>
-                      <h3 style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 3, lineHeight: 1.3 }}>{item.title}</h3>
+                      <h3 style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 3, lineHeight: 1.3 }}>{lang === 'en' && item.titleEn ? String(item.titleEn) : item.title}</h3>
                       <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', fontWeight: 500 }}>
                         {'venueId' in item && item.venueId ? (
                           <Link href={`/venue/${item.venueId}`} onClick={e => e.stopPropagation()} style={{ color: 'rgba(255,255,255,0.9)', textDecoration: 'underline', fontWeight: 600 }}>

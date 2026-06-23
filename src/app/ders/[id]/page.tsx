@@ -8,7 +8,9 @@ import Navbar from '@/components/Navbar'
 import { api, getToken, getUser } from '@/lib/api'
 import { MapPin, Calendar, Clock, Timer, Users, User, ShieldCheck, Flame, AlertCircle, X } from 'lucide-react'
 import { SportIconBox } from '@/lib/sportIcons'
-import { useT } from '@/lib/i18n'
+import { useT, translateCategory } from '@/lib/i18n'
+
+const dateLocale = () => (typeof window !== 'undefined' && localStorage.getItem('fitpass_lang') === 'en') ? 'en-US' : 'tr-TR'
 
 const categoryColorMap: Record<string, string> = {
   'Yoga': '#C4A882', 'Pilates': '#C9849A', 'Boks': '#DC2626',
@@ -27,6 +29,7 @@ function mapSessionToDisplay(session: any) {
   return {
     id: session.id,
     title: session.title,
+    titleEn: session.titleEn || null,
     venueId: session.venueId,
     venue: session.venueName,
     venueAddress: session.venueAddress || '',
@@ -38,8 +41,8 @@ function mapSessionToDisplay(session: any) {
     spots: session.availableSpots,
     rating: session.rating || 4.5,
     totalReviews: session.totalReviews || 0,
-    time: new Date(session.startsAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
-    date: new Date(session.startsAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' }),
+    time: new Date(session.startsAt).toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }),
+    date: new Date(session.startsAt).toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' }),
     duration: `${session.durationMinutes} dk`,
     sessionId: session.id,
     instructorName: session.instructorName || '',
@@ -54,7 +57,7 @@ function mapSessionToDisplay(session: any) {
 type DisplayClass = ReturnType<typeof mapSessionToDisplay> | (typeof mockClasses[0] & { sessionId?: number; isRealSession?: boolean })
 
 export default function DersDetay() {
-  const { t } = useT()
+  const { t, lang } = useT()
   const params = useParams()
   const [cls, setCls] = useState<DisplayClass | null>(null)
   const [loading, setLoading] = useState(true)
@@ -123,7 +126,7 @@ export default function DersDetay() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ marginBottom: 14 }}><SportIconBox name={cls.icon} bgColor={cls.color + '20'} iconColor={cls.color} boxSize={64} borderRadius={18} size={30} /></div>
-                    <h1 style={{ fontSize: 30, fontWeight: 800, color: '#111', marginBottom: 6, letterSpacing: -0.5 }}>{cls.title}</h1>
+                    <h1 style={{ fontSize: 30, fontWeight: 800, color: '#111', marginBottom: 6, letterSpacing: -0.5 }}>{lang === 'en' && (cls as any).titleEn ? String((cls as any).titleEn) : cls.title}</h1>
                     {venueId ? (
                       <Link href={`/venue/${venueId}`} style={{ fontSize: 15, color: '#4F46E5', textDecoration: 'none', fontWeight: 600 }}>{venueName}</Link>
                     ) : (
@@ -305,7 +308,7 @@ export default function DersDetay() {
 }
 
 function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void }) {
-  const { t } = useT()
+  const { t, lang } = useT()
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [cashbackEarned, setCashbackEarned] = useState(0)
@@ -420,7 +423,7 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
               <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 16 }}>
                 <SportIconBox name={cls.icon} bgColor={cls.color + '20'} iconColor={cls.color} boxSize={56} borderRadius={14} size={26} />
                 <div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>{cls.title}</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>{lang === 'en' && (cls as any).titleEn ? String((cls as any).titleEn) : cls.title}</div>
                   <div style={{ fontSize: 13, color: '#888', marginTop: 3 }}>{cls.date} · {cls.time}</div>
                 </div>
               </div>
@@ -543,7 +546,7 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
             <div style={{ fontSize: 72, marginBottom: 20 }}>🎉</div>
             <h2 style={{ fontSize: 24, fontWeight: 800, color: '#111', marginBottom: 10 }}>{t('booking.successTitle')}</h2>
             <p style={{ fontSize: 15, color: '#666', marginBottom: cashbackEarned > 0 ? 16 : 28, lineHeight: 1.7 }}>
-              <strong>{cls.title}</strong> {t('booking.successText')}
+              <strong>{lang === 'en' && (cls as any).titleEn ? String((cls as any).titleEn) : cls.title}</strong> {t('booking.successText')}
             </p>
             {cashbackEarned > 0 && (
               <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 14, padding: '14px 16px', marginBottom: 24, color: '#15803D', fontSize: 14, fontWeight: 600 }}>

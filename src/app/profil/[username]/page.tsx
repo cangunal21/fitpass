@@ -31,10 +31,10 @@ function BadgeIcon({ ub, size = 20, color }: { ub: any; size?: number; color?: s
 }
 
 function BadgesCard({ badges }: { badges: any[] }) {
-  const { t } = useT()
+  const { t, lang } = useT()
   return (
     <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '22px 24px', border: '1px solid #F0F0F0' }}>
-      <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}><Award size={16} /> Rozetler {badges.length > 0 && <span style={{ color: '#aaa', fontWeight: 600 }}>· {badges.length}</span>}</h3>
+      <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}><Award size={16} /> {t('prof.badges')} {badges.length > 0 && <span style={{ color: '#aaa', fontWeight: 600 }}>· {badges.length}</span>}</h3>
       {badges.length === 0 ? (
         <div style={{ color: '#bbb', fontSize: 13 }}>{t('prof.noBadges')}</div>
       ) : (
@@ -45,7 +45,7 @@ function BadgesCard({ badges }: { badges: any[] }) {
                 <BadgeIcon ub={ub} size={18} color="#4F46E5" />
               </div>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{badgeDisplayName(ub)}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{translateBadge(ub, lang)}</div>
                 {ub.badge?.description && <div style={{ fontSize: 11, color: '#999', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ub.badge.description}</div>}
               </div>
             </div>
@@ -58,7 +58,7 @@ function BadgesCard({ badges }: { badges: any[] }) {
 import type { ReactNode } from 'react'
 import { User, Users, Ticket, Award, ClipboardList, BarChart2, BookOpen, Calendar, Flame, Dumbbell, Heart, Building, MapPin, Gift, Medal, Check, X, Lock, CreditCard, Copy, CheckCheck, Flag, Target, Compass, Trophy } from 'lucide-react'
 import { SportIcon, SportIconBox, getIconKeyForCategory, getColorForCategory } from '@/lib/sportIcons'
-import { useT } from '@/lib/i18n'
+import { useT, translateTier, translateBadge, translateCategory } from '@/lib/i18n'
 import AvatarUpload from '@/components/AvatarUpload'
 import { getInitialsAvatar } from '@/lib/cloudinary'
 
@@ -66,7 +66,7 @@ type OwnTab = 'rezervasyonlar' | 'hesap' | 'ödeme' | 'favoriler' | 'referans'
 type PublicTab = 'aktivite' | 'arkadaşlar' | 'istatistik'
 
 export default function ProfilPage() {
-  const { t } = useT()
+  const { t, lang } = useT()
   const params = useParams()
   const username = params.username as string
   const loggedInUser = getUser()
@@ -362,6 +362,7 @@ export default function ProfilPage() {
   const displayTotalLessons = isOwnProfile && meData ? meData.totalLessonsCompleted : (pubUser?.totalLessonsCompleted ?? mockUser.stats.totalLessons)
   const displayTierIcon = isOwnProfile && meData?.tier ? 'medal' : (pubUser?.tier ? 'medal' : mockUser.tier.icon)
 
+  const tierLabel = translateTier(displayTierName, lang)
   const currentTierIndex = tiers.findIndex(t => t.name === displayTierName)
   const nextTier = tiers[currentTierIndex + 1]
   const progressPercent = nextTier
@@ -430,7 +431,7 @@ export default function ProfilPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
               <h1 style={{ fontSize: 24, fontWeight: 800, color: '#111', letterSpacing: -0.5 }}>{displayName}</h1>
               <span style={{ fontSize: 12, fontWeight: 700, color: displayTierColor, backgroundColor: displayTierColor + '18', padding: '4px 12px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                <SportIcon name={displayTierIcon} size={12} color={displayTierColor} /> {displayTierName}
+                <SportIcon name={displayTierIcon} size={12} color={displayTierColor} /> {tierLabel}
               </span>
             </div>
             <div style={{ fontSize: 14, color: '#aaa', marginBottom: 4 }}>@{displayUsername}</div>
@@ -449,7 +450,7 @@ export default function ProfilPage() {
             {nextTier ? (
               <div style={{ backgroundColor: '#FAFAFA', borderRadius: 14, padding: '14px 18px', marginBottom: 16, border: '1px solid #F0F0F0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <span style={{ fontSize: 13, color: '#555', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}><SportIcon name={displayTierIcon} size={13} color={displayTierColor} /> {displayTierName}</span>
+                  <span style={{ fontSize: 13, color: '#555', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}><SportIcon name={displayTierIcon} size={13} color={displayTierColor} /> {tierLabel}</span>
                   <span style={{ fontSize: 12, color: '#999' }}>{nextTier.min - displayTotalLessons} ders daha → <strong style={{ color: '#111' }}>{nextTier.name}</strong></span>
                 </div>
                 <div style={{ height: 6, backgroundColor: '#EBEBEB', borderRadius: 100 }}>
@@ -459,13 +460,13 @@ export default function ProfilPage() {
             ) : (
               <div style={{ backgroundColor: displayTierColor + '12', borderRadius: 14, padding: '14px 18px', marginBottom: 16, border: `1px solid ${displayTierColor}33`, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <SportIcon name={displayTierIcon} size={16} color={displayTierColor} />
-                <span style={{ fontSize: 13, fontWeight: 700, color: displayTierColor }}>En üst seviyedesin — {displayTierName}!</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: displayTierColor }}>{lang === 'en' ? `You are at the top tier — ${tierLabel}!` : `En üst seviyedesin — ${tierLabel}!`}</span>
               </div>
             )}
 
             {displayTierDiscount > 0 && (
               <div style={{ backgroundColor: '#F0FDF4', borderRadius: 12, padding: '10px 16px', display: 'inline-flex', alignItems: 'center', gap: 8, border: '1px solid #BBF7D0', marginBottom: isOwnProfile ? 16 : 0 }}>
-                <span style={{ fontSize: 13, color: '#15803D', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Gift size={16} /> {displayTierName} avantajı: rezervasyonlarında %{displayTierDiscount} cashback</span>
+                <span style={{ fontSize: 13, color: '#15803D', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6 }}><Gift size={16} /> {t('prof.cashbackAdvantage').replace('{tier}', tierLabel).replace('{pct}', String(displayTierDiscount))}</span>
               </div>
             )}
 
@@ -629,7 +630,7 @@ export default function ProfilPage() {
                           <div key={`pb-${b.id}`} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '18px 22px', border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 14 }}>
                             <SportIconBox name={icon} bgColor={color + '18'} iconColor={color} boxSize={50} borderRadius={14} size={22} />
                             <div style={{ flex: 1 }}>
-                              <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 3 }}>{classObj?.title || 'Ders'}</div>
+                              <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 3 }}>{lang === 'en' && classObj?.titleEn ? classObj.titleEn : (classObj?.title || t('prof.classFallback'))}</div>
                               <div style={{ fontSize: 13, color: '#aaa', marginBottom: 2 }}>{venue?.name || ''}</div>
                               <div style={{ fontSize: 12, color: '#bbb' }}>{dateStr}{timeStr ? ` · ${timeStr}` : ''}</div>
                             </div>
@@ -743,7 +744,7 @@ export default function ProfilPage() {
                           <div key={`b-${b.id}`} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '18px 22px', border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 14 }}>
                             <SportIconBox name={icon} bgColor={isCancelled ? '#F5F5F5' : color + '18'} iconColor={isCancelled ? '#ccc' : color} boxSize={50} borderRadius={14} size={22} />
                             <div style={{ flex: 1 }}>
-                              <div style={{ fontSize: 15, fontWeight: 700, color: isCancelled ? '#bbb' : '#111', textDecoration: isCancelled ? 'line-through' : 'none', marginBottom: 3 }}>{classObj?.title || 'Ders'}</div>
+                              <div style={{ fontSize: 15, fontWeight: 700, color: isCancelled ? '#bbb' : '#111', textDecoration: isCancelled ? 'line-through' : 'none', marginBottom: 3 }}>{lang === 'en' && classObj?.titleEn ? classObj.titleEn : (classObj?.title || t('prof.classFallback'))}</div>
                               <div style={{ fontSize: 13, color: '#aaa', marginBottom: 2 }}>{venue?.name || ''}</div>
                               <div style={{ fontSize: 12, color: '#bbb' }}>{dateStr}{timeStr ? ` · ${timeStr}` : ''}</div>
                             </div>
@@ -886,7 +887,7 @@ export default function ProfilPage() {
                           <div key={`b-${b.id}`} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '18px 22px', border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 14 }}>
                             <SportIconBox name={icon} bgColor={isCancelled ? '#F5F5F5' : color + '18'} iconColor={isCancelled ? '#ccc' : color} boxSize={50} borderRadius={14} size={22} />
                             <div style={{ flex: 1 }}>
-                              <div style={{ fontSize: 15, fontWeight: 700, color: isCancelled ? '#bbb' : '#111', textDecoration: isCancelled ? 'line-through' : 'none', marginBottom: 3 }}>{classObj?.title || 'Ders'}</div>
+                              <div style={{ fontSize: 15, fontWeight: 700, color: isCancelled ? '#bbb' : '#111', textDecoration: isCancelled ? 'line-through' : 'none', marginBottom: 3 }}>{lang === 'en' && classObj?.titleEn ? classObj.titleEn : (classObj?.title || t('prof.classFallback'))}</div>
                               <div style={{ fontSize: 13, color: '#aaa', marginBottom: 2 }}>{venue?.name || ''}</div>
                               <div style={{ fontSize: 12, color: '#bbb' }}>{dateStr}{timeStr ? ` · ${timeStr}` : ''}</div>
                             </div>
@@ -1074,7 +1075,7 @@ export default function ProfilPage() {
                   }}
                   style={{ padding: '8px 20px', borderRadius: 100, border: 'none', background: privacy === 'public' ? '#4F46E5' : '#F0F0F0', color: privacy === 'public' ? '#fff' : '#555', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
                 >
-                  🌍 Herkese Açık
+                  🌍 {t('privacy.public')}
                 </button>
                 <button
                   onClick={async () => {
@@ -1089,7 +1090,7 @@ export default function ProfilPage() {
                   }}
                   style={{ padding: '8px 20px', borderRadius: 100, border: 'none', background: privacy === 'private' ? '#4F46E5' : '#F0F0F0', color: privacy === 'private' ? '#fff' : '#555', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
                 >
-                  🔒 Gizli
+                  🔒 {t('privacy.private')}
                 </button>
               </div>
               <div style={{ fontSize: 13, color: '#888' }}>
@@ -1369,11 +1370,11 @@ function ReferralTab({ referralInfo, setReferralInfo, copied, setCopied }: any) 
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Nasıl çalışır */}
       <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 14 }}>🎁 Arkadaşını Davet Et</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 14 }}>{t('ref.inviteTitle')}</div>
         {[
-          { step: '1', text: 'Linki arkadaşınla paylaş' },
-          { step: '2', text: "Arkadaşın kayıt olup email'ini doğrulayınca 150 TL kredi kazanır" },
-          { step: '3', text: 'Arkadaşın ilk dersini alınca sen de 150 TL kazanırsın' },
+          { step: '1', text: t('ref.step1') },
+          { step: '2', text: t('ref.step2') },
+          { step: '3', text: t('ref.step3') },
         ].map(({ step, text }) => (
           <div key={step} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
             <div style={{ width: 28, height: 28, borderRadius: '50%', backgroundColor: '#EEF2FF', color: '#4F46E5', fontSize: 13, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{step}</div>
@@ -1381,7 +1382,7 @@ function ReferralTab({ referralInfo, setReferralInfo, copied, setCopied }: any) 
           </div>
         ))}
         <div style={{ marginTop: 6, padding: '10px 14px', backgroundColor: '#FEF9C3', borderRadius: 10, fontSize: 13, color: '#92400e' }}>
-          ⚠️ En fazla 3 arkadaş davet edebilirsin. ({referralInfo?.referralCount || 0}/3 kullanıldı)
+          {t('ref.limit').replace('{n}', String(referralInfo?.referralCount || 0))}
         </div>
       </div>
 
@@ -1390,13 +1391,13 @@ function ReferralTab({ referralInfo, setReferralInfo, copied, setCopied }: any) 
         <div style={{ fontSize: 13, fontWeight: 600, color: '#555', marginBottom: 10 }}>{t('ref.yourLink')}</div>
         <div style={{ display: 'flex', gap: 8 }}>
           <div style={{ flex: 1, padding: '12px 14px', backgroundColor: '#F5F5F5', borderRadius: 10, fontSize: 13, color: '#333', fontFamily: 'monospace', wordBreak: 'break-all' }}>
-            {referralLink || 'Yükleniyor...'}
+            {referralLink || t('common.loading')}
           </div>
           <button onClick={handleCopy} style={{ padding: '12px 16px', borderRadius: 10, border: 'none', background: copied ? '#10B981' : '#4F46E5', color: '#fff', cursor: 'pointer', flexShrink: 0, transition: 'background 0.2s' }}>
             {copied ? <CheckCheck size={18} /> : <Copy size={18} />}
           </button>
         </div>
-        {copied && <div style={{ fontSize: 12, color: '#10B981', marginTop: 6, fontWeight: 600 }}>✓ Link kopyalandı!</div>}
+        {copied && <div style={{ fontSize: 12, color: '#10B981', marginTop: 6, fontWeight: 600 }}>{t('ref.copied')}</div>}
       </div>
 
       {/* Davet edilenler listesi */}
@@ -1410,7 +1411,7 @@ function ReferralTab({ referralInfo, setReferralInfo, copied, setCopied }: any) 
                 <div style={{ fontSize: 12, color: '#aaa' }}>@{r.username}</div>
               </div>
               <span style={{ fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 20, backgroundColor: r.status === 'completed' ? '#F0FDF4' : '#FEF9C3', color: r.status === 'completed' ? '#16a34a' : '#92400e' }}>
-                {r.status === 'completed' ? '✓ +150 ₺ kazandın' : '⏳ Bekliyor'}
+                {r.status === 'completed' ? t('ref.completed') : t('ref.pending')}
               </span>
             </div>
           ))}
