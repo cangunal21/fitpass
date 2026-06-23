@@ -9,7 +9,8 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false)
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState('')
-  const [activeTab, setActiveTab] = useState<'stats' | 'venues' | 'users' | 'bookings' | 'coupons' | 'categories'>('venues')
+  const [activeTab, setActiveTab] = useState<'stats' | 'venues' | 'venue-images' | 'users' | 'bookings' | 'coupons' | 'categories'>('venues')
+  const [pendingImages, setPendingImages] = useState<any[]>([])
   const [stats, setStats] = useState<any>(null)
   const [venues, setVenues] = useState<any[]>([])
   const [users, setUsers] = useState<any[]>([])
@@ -66,6 +67,25 @@ export default function AdminPage() {
     setCategories(data.categories || [])
   }
 
+  const fetchPendingImages = async () => {
+    const res = await fetch(`${API_URL}/api/admin/venue-images/pending`, { headers: getHeaders() })
+    const data = await res.json()
+    setPendingImages(data.venues || [])
+  }
+
+  const handleReviewImages = async (venueId: number, approve: boolean) => {
+    const res = await fetch(`${API_URL}/api/admin/venue-images/${venueId}/review`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify({ approve }),
+    })
+    if (res.ok) {
+      setPendingImages(prev => prev.filter(v => v.id !== venueId))
+    } else {
+      alert('İşlem başarısız.')
+    }
+  }
+
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newCat.name.trim()) return
@@ -116,6 +136,7 @@ export default function AdminPage() {
     if (tab === 'bookings') fetchBookings()
     if (tab === 'coupons') fetchCoupons()
     if (tab === 'categories') fetchCategories()
+    if (tab === 'venue-images') fetchPendingImages()
   }
 
   const handleApprove = async (id: number, approve: boolean) => {
@@ -207,6 +228,7 @@ export default function AdminPage() {
           {([
             { key: 'stats', label: 'İstatistikler' },
             { key: 'venues', label: 'Salonlar' },
+            { key: 'venue-images', label: 'Resim Onayı' },
             { key: 'users', label: 'Kullanıcılar' },
             { key: 'bookings', label: 'Rezervasyonlar' },
             { key: 'coupons', label: 'Kuponlar' },
@@ -268,6 +290,47 @@ export default function AdminPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* SALON RESİM ONAYI */}
+        {activeTab === 'venue-images' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {pendingImages.length === 0 && (
+              <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: 40, textAlign: 'center', color: '#999', fontSize: 14 }}>
+                Onay bekleyen salon resmi yok.
+              </div>
+            )}
+            {pendingImages.map(v => {
+              const pendImgs: string[] = Array.isArray(v.pendingImages) ? v.pendingImages : []
+              return (
+                <div key={v.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a' }}>{v.name}</div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button onClick={() => handleReviewImages(v.id, true)} style={{ padding: '8px 18px', borderRadius: 10, border: 'none', background: '#10B981', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>✓ Onayla & Yayınla</button>
+                      <button onClick={() => handleReviewImages(v.id, false)} style={{ padding: '8px 18px', borderRadius: 10, border: 'none', background: '#EF4444', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>✕ Reddet</button>
+                    </div>
+                  </div>
+                  {v.pendingCoverImageUrl && (
+                    <div style={{ marginBottom: 10 }}>
+                      <div style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>Kapak (onay bekliyor)</div>
+                      <img src={v.pendingCoverImageUrl} alt="kapak" style={{ width: '100%', maxWidth: 400, height: 160, objectFit: 'cover', borderRadius: 12 }} />
+                    </div>
+                  )}
+                  {pendImgs.length > 0 && (
+                    <div>
+                      <div style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>Galeri ({pendImgs.length} resim, onay bekliyor)</div>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        {pendImgs.map((url, i) => (
+                          <img key={i} src={url} alt={`resim ${i + 1}`} style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 10 }} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
 

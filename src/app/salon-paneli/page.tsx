@@ -65,6 +65,7 @@ export default function SalonPaneliPage() {
   const [venueImages, setVenueImages] = useState<string[]>([])
   const [coverImage, setCoverImage] = useState<string>('')
   const [uploadingImage, setUploadingImage] = useState(false)
+  const [imagesPendingReview, setImagesPendingReview] = useState(false)
 
   // New instructor avatar state
   const [newInstructorAvatar, setNewInstructorAvatar] = useState('')
@@ -126,8 +127,11 @@ export default function SalonPaneliPage() {
       const data = await res.json()
       if (data.error) { router.push('/salon-giris'); return }
       setVenue(data.venue)
-      setVenueImages(data.venue?.images || [])
-      setCoverImage(data.venue?.coverImageUrl || '')
+      // Onay bekleyen set varsa onu göster (salon ne yüklediğini görsün), yoksa canlı set
+      const pending = !!data.venue?.imagesPendingReview
+      setImagesPendingReview(pending)
+      setVenueImages((pending ? data.venue?.pendingImages : data.venue?.images) || [])
+      setCoverImage((pending ? data.venue?.pendingCoverImageUrl : data.venue?.coverImageUrl) || '')
       setProfileForm({
         name: data.venue?.name || '',
         phone: data.venue?.phone || '',
@@ -318,6 +322,8 @@ export default function SalonPaneliPage() {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ images, coverImageUrl: cover ?? coverImage }),
     })
+    // Yüklenen resimler artık admin onayına gider
+    setImagesPendingReview(true)
   }
 
   const handleAddInstructor = async (e: React.FormEvent) => {
@@ -898,6 +904,11 @@ export default function SalonPaneliPage() {
         {/* SALON RESİMLERİ */}
         {activeTab === 'resimler' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {imagesPendingReview && (
+              <div style={{ backgroundColor: '#FEF9C3', border: '1px solid #FDE68A', borderRadius: 12, padding: '12px 16px', fontSize: 13, color: '#92400e', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <AlertCircle size={16} /> Resimleriniz admin onayını bekliyor. Onaylanana kadar sitede görünmez; onaydan sonra otomatik yayınlanır.
+              </div>
+            )}
             {/* Cover image */}
             <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
               <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 4 }}>Kapak Fotoğrafı</h3>

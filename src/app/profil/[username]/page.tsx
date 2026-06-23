@@ -1203,7 +1203,7 @@ function ReferralTab({ referralInfo, setReferralInfo, copied, setCopied }: any) 
         <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 14 }}>🎁 Arkadaşını Davet Et</div>
         {[
           { step: '1', text: 'Linki arkadaşınla paylaş' },
-          { step: '2', text: 'Arkadaşın kayıt olunca 150 TL kredi kazanır' },
+          { step: '2', text: "Arkadaşın kayıt olup email'ini doğrulayınca 150 TL kredi kazanır" },
           { step: '3', text: 'Arkadaşın ilk dersini alınca sen de 150 TL kazanırsın' },
         ].map(({ step, text }) => (
           <div key={step} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
