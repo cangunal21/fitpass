@@ -380,6 +380,17 @@ export default function SosyalPage() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 14, color: '#333', lineHeight: 1.5 }}>
                         <Link href={`/profil/${item.user.username}`} style={{ fontWeight: 700, color: '#111', textDecoration: 'none' }}>{item.user.fullName}</Link>
+                        {item.taggedFriends && item.taggedFriends.length > 0 && (
+                          <>
+                            {item.taggedFriends.map((t: any, i: number) => (
+                              <span key={t.username}>
+                                {i === 0 ? ' ' : ', '}
+                                <Link href={`/profil/${t.username}`} style={{ fontWeight: 700, color: '#4F46E5', textDecoration: 'none' }}>@{t.username}</Link>
+                              </span>
+                            ))}
+                            {' ile birlikte'}
+                          </>
+                        )}
                         {' '}{item.type === 'dropin' ? 'drop-in etkinliğine katıldı' : 'dersine katıldı'}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
