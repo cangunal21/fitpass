@@ -186,8 +186,8 @@ export default function ProfilPage() {
 
   // Tiers for progress bar
   const tiers = [
-    { name: 'Acemi', min: 1 }, { name: 'Aday', min: 10 }, { name: 'Sporcu', min: 35 },
-    { name: 'Atlet', min: 70 }, { name: 'Şampiyon', min: 120 },
+    { name: 'Aday', min: 0 }, { name: 'Sporcu', min: 10 }, { name: 'Profesyonel', min: 35 },
+    { name: 'Elit', min: 70 }, { name: 'Olimpik', min: 120 },
   ]
 
   // Use real data for own profile, mock for others
@@ -260,7 +260,7 @@ export default function ProfilPage() {
   const displayName = isOwnProfile && meData ? meData.fullName : (pubUser?.fullName ?? mockUser.fullName)
   const displayUsername = isOwnProfile && meData ? meData.username : (pubUser?.username ?? mockUser.username)
   const displayTierName = isOwnProfile && meData?.tier ? meData.tier.name : (pubUser?.tier?.name ?? mockUser.tier.name)
-  const displayTierColor = isOwnProfile && meData?.tier ? `#${meData.tier.colorHex || '4F46E5'}` : (pubUser?.tier?.colorHex ? `#${pubUser.tier.colorHex}` : mockUser.tier.color)
+  const displayTierColor = isOwnProfile && meData?.tier ? (meData.tier.colorHex || '#4F46E5') : (pubUser?.tier?.colorHex || mockUser.tier.color)
   const displayTierDiscount = isOwnProfile && meData?.tier ? meData.tier.discountPercent : (pubUser?.tier?.discountPercent ?? mockUser.tier.discountPercent)
   const displayNeighborhood = isOwnProfile && meData?.neighborhood ? meData.neighborhood.name : (pubUser?.neighborhood?.name ?? (isOwnProfile ? '' : mockUser.neighborhood))
   const displayTotalLessons = isOwnProfile && meData ? meData.totalLessonsCompleted : (pubUser?.totalLessonsCompleted ?? mockUser.stats.totalLessons)
@@ -1070,7 +1070,7 @@ export default function ProfilPage() {
                             <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 2 }}>{f.fullName}</div>
                             <div style={{ fontSize: 12, color: '#bbb', marginBottom: 6 }}>@{f.username}</div>
                             {f.tier && (
-                              <div style={{ fontSize: 11, fontWeight: 700, color: `#${f.tier.colorHex || '4F46E5'}`, backgroundColor: `#${f.tier.colorHex || '4F46E5'}18`, padding: '3px 10px', borderRadius: 100, display: 'inline-block' }}>{f.tier.name}</div>
+                              <div style={{ fontSize: 11, fontWeight: 700, color: f.tier.colorHex || '#4F46E5', backgroundColor: `${f.tier.colorHex || '#4F46E5'}18`, padding: '3px 10px', borderRadius: 100, display: 'inline-block' }}>{f.tier.name}</div>
                             )}
                           </div>
                         </Link>
@@ -1093,7 +1093,7 @@ export default function ProfilPage() {
                             <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 2 }}>{f.fullName}</div>
                             <div style={{ fontSize: 12, color: '#bbb', marginBottom: 6 }}>@{f.username}</div>
                             {f.tier && (
-                              <div style={{ fontSize: 11, fontWeight: 700, color: `#${f.tier.colorHex || '4F46E5'}`, backgroundColor: `#${f.tier.colorHex || '4F46E5'}18`, padding: '3px 10px', borderRadius: 100, display: 'inline-block' }}>{f.tier.name}</div>
+                              <div style={{ fontSize: 11, fontWeight: 700, color: f.tier.colorHex || '#4F46E5', backgroundColor: `${f.tier.colorHex || '#4F46E5'}18`, padding: '3px 10px', borderRadius: 100, display: 'inline-block' }}>{f.tier.name}</div>
                             )}
                           </div>
                         </Link>
