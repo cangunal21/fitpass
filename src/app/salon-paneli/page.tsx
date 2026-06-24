@@ -25,7 +25,13 @@ const FORMAT_PLAYERS: Record<string, number> = {
 export default function SalonPaneliPage() {
   const router = useRouter()
   const [venue, setVenue] = useState<any>(null)
-  const [activeTab, setActiveTab] = useState<'dersler' | 'hocalar' | 'resimler' | 'rezervasyonlar' | 'dropin' | 'istatistikler' | 'kuponlar' | 'gelir' | 'yorumlar' | 'qr' | 'profil'>('dersler')
+  const [activeTab, setActiveTab] = useState<'dersler' | 'hocalar' | 'resimler' | 'rezervasyonlar' | 'dropin' | 'istatistikler' | 'kuponlar' | 'gelir' | 'yorumlar' | 'qr' | 'profil' | 'odeme'>('dersler')
+
+  // Alt-üye (ödeme/işyeri onayı) formu
+  const [smForm, setSmForm] = useState({ subMerchantType: 'LIMITED_OR_JOINT_STOCK_COMPANY', legalCompanyTitle: '', iban: 'TR', taxOffice: '', taxNumber: '', identityNumber: '', contactName: '', contactSurname: '', payoutGsm: '+90', ibanMatchConsent: false })
+  const [smError, setSmError] = useState('')
+  const [smSuccess, setSmSuccess] = useState('')
+  const [smSubmitting, setSmSubmitting] = useState(false)
   const [bookings, setBookings] = useState<any[]>([])
   const [instructors, setInstructors] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -313,6 +319,44 @@ export default function SalonPaneliPage() {
     if (tab === 'kuponlar') fetchCoupons()
     if (tab === 'gelir') fetchRevenue()
     if (tab === 'yorumlar') fetchReviews()
+    if (tab === 'odeme') {
+      // formu mevcut verilerle doldur
+      if (venue) setSmForm(f => ({
+        ...f,
+        subMerchantType: venue.subMerchantType || f.subMerchantType,
+        legalCompanyTitle: venue.legalCompanyTitle || '',
+        iban: venue.iban || 'TR',
+        taxOffice: venue.taxOffice || '',
+        taxNumber: venue.taxNumber || '',
+        identityNumber: venue.identityNumber || '',
+        contactName: venue.contactName || '',
+        contactSurname: venue.contactSurname || '',
+        payoutGsm: venue.payoutGsm || '+90',
+        ibanMatchConsent: !!venue.ibanMatchConsent,
+      }))
+    }
+  }
+
+  const handleSubmitSubMerchant = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSmError(''); setSmSuccess('')
+    if (!smForm.ibanMatchConsent) { setSmError('IBAN-kimlik eşleşmesi ve aktarım onayını işaretleyin.'); return }
+    setSmSubmitting(true)
+    try {
+      const token = localStorage.getItem('fitpass_venue_token')!
+      const res = await fetch(`${API_URL}/api/venue/submerchant`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(smForm),
+      })
+      const data = await res.json()
+      if (!res.ok) { setSmError(data.error || 'Gönderilemedi.'); setSmSubmitting(false); return }
+      setSmSuccess(data.message || 'Bilgileriniz alındı.')
+      await fetchVenue(token)
+    } catch {
+      setSmError('Bağlantı hatası, tekrar deneyin.')
+    }
+    setSmSubmitting(false)
   }
 
   const saveVenueImages = async (images: string[], cover?: string) => {
@@ -531,6 +575,7 @@ export default function SalonPaneliPage() {
               { key: 'kuponlar', label: 'Kuponlar' },
               { key: 'yorumlar', label: 'Yorumlar' },
               { key: 'qr', label: 'QR Kod' },
+              { key: 'odeme', label: 'Ödeme & Onay' },
               { key: 'profil', label: 'Profil & Şifre' },
             ]
             return tabs as { key: typeof activeTab; label: string }[]
@@ -1434,6 +1479,74 @@ export default function SalonPaneliPage() {
         )}
         {activeTab === 'qr' && venue && (
           <QRTab venueId={venue.id} venueName={venue.name} />
+        )}
+
+        {activeTab === 'odeme' && (
+          <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', maxWidth: 720 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111', marginBottom: 6 }}>Ödeme & İşyeri Onayı</h2>
+            <p style={{ fontSize: 13, color: '#888', marginBottom: 18, lineHeight: 1.6 }}>
+              Ödeme alabilmek için işyeri/banka bilgilerinizi tamamlayın. Bilgiler ödeme kuruluşuna (iyzico/PayTR) iletilir; onaylandığında <strong>Verified ✓</strong> alır ve ders ekleyip ödeme alabilirsiniz. Ödeme kuruluşuyla doğrudan muhatap olmazsınız.
+            </p>
+
+            {venue?.subMerchantStatus === 'approved' && (
+              <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '12px 14px', fontSize: 13, color: '#16a34a', marginBottom: 18, fontWeight: 600 }}>✓ Onaylandı (Verified) — ders ekleyip ödeme alabilirsiniz.</div>
+            )}
+            {venue?.subMerchantStatus === 'submitted' && (
+              <div style={{ backgroundColor: '#FEFCE8', border: '1px solid #FDE68A', borderRadius: 10, padding: '12px 14px', fontSize: 13, color: '#92400e', marginBottom: 18 }}>⏳ Bilgileriniz alındı, inceleniyor.</div>
+            )}
+            {venue?.subMerchantStatus === 'rejected' && (
+              <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '12px 14px', fontSize: 13, color: '#DC2626', marginBottom: 18 }}>Reddedildi{venue.subMerchantRejection ? `: ${venue.subMerchantRejection}` : ''}. Lütfen düzeltip tekrar gönderin.</div>
+            )}
+
+            <form onSubmit={handleSubmitSubMerchant} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={labelStyle}>İşletme Türü *</label>
+                <select value={smForm.subMerchantType} onChange={e => setSmForm({ ...smForm, subMerchantType: e.target.value })} style={inputStyle}>
+                  <option value="PERSONAL">Şahıs / Bireysel</option>
+                  <option value="PRIVATE_COMPANY">Şahıs Şirketi</option>
+                  <option value="LIMITED_OR_JOINT_STOCK_COMPANY">Limited / Anonim Şirket</option>
+                </select>
+              </div>
+
+              {smForm.subMerchantType === 'PERSONAL' ? (
+                <>
+                  <div><label style={labelStyle}>Ad *</label><input value={smForm.contactName} onChange={e => setSmForm({ ...smForm, contactName: e.target.value })} required style={inputStyle} /></div>
+                  <div><label style={labelStyle}>Soyad *</label><input value={smForm.contactSurname} onChange={e => setSmForm({ ...smForm, contactSurname: e.target.value })} required style={inputStyle} /></div>
+                  <div><label style={labelStyle}>TCKN *</label><input value={smForm.identityNumber} onChange={e => setSmForm({ ...smForm, identityNumber: e.target.value })} required maxLength={11} style={inputStyle} /></div>
+                </>
+              ) : (
+                <>
+                  <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Ünvan *</label><input value={smForm.legalCompanyTitle} onChange={e => setSmForm({ ...smForm, legalCompanyTitle: e.target.value })} required style={inputStyle} /></div>
+                  <div><label style={labelStyle}>Vergi Dairesi *</label><input value={smForm.taxOffice} onChange={e => setSmForm({ ...smForm, taxOffice: e.target.value })} required style={inputStyle} /></div>
+                  <div><label style={labelStyle}>Vergi No {smForm.subMerchantType === 'PRIVATE_COMPANY' ? '' : '*'}</label><input value={smForm.taxNumber} onChange={e => setSmForm({ ...smForm, taxNumber: e.target.value })} style={inputStyle} /></div>
+                  {smForm.subMerchantType === 'PRIVATE_COMPANY' && (
+                    <div><label style={labelStyle}>TCKN (vergi no yoksa)</label><input value={smForm.identityNumber} onChange={e => setSmForm({ ...smForm, identityNumber: e.target.value })} maxLength={11} style={inputStyle} /></div>
+                  )}
+                </>
+              )}
+
+              <div><label style={labelStyle}>IBAN *</label><input value={smForm.iban} onChange={e => setSmForm({ ...smForm, iban: e.target.value.toUpperCase().replace(/\s/g, '') })} required placeholder="TR..." style={inputStyle} /></div>
+              <div><label style={labelStyle}>Telefon *</label><input value={smForm.payoutGsm} onChange={e => setSmForm({ ...smForm, payoutGsm: e.target.value })} required placeholder="+90..." style={inputStyle} /></div>
+
+              <div style={{ gridColumn: '1 / -1', marginTop: 4 }}>
+                <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 12, color: '#555', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={smForm.ibanMatchConsent} onChange={e => setSmForm({ ...smForm, ibanMatchConsent: e.target.checked })} style={{ marginTop: 2 }} />
+                  <span>IBAN'ın işletmeme/yetkiliye ait olduğunu, bilgilerimin ödeme kuruluşuna ve MASAK kapsamında aktarılmasını kabul ediyorum.</span>
+                </label>
+              </div>
+
+              <div style={{ gridColumn: '1 / -1', fontSize: 12, color: '#999' }}>📄 Belgeler (vergi levhası, imza sirküleri, kimlik vb.) onay sürecinde talep edilebilir.</div>
+
+              {smError && <div style={{ gridColumn: '1 / -1', backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#DC2626' }}>{smError}</div>}
+              {smSuccess && <div style={{ gridColumn: '1 / -1', backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#16a34a' }}>{smSuccess}</div>}
+
+              <div style={{ gridColumn: '1 / -1' }}>
+                <button type="submit" disabled={smSubmitting} style={{ padding: '12px 24px', borderRadius: 12, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 700, cursor: smSubmitting ? 'default' : 'pointer', opacity: smSubmitting ? 0.7 : 1 }}>
+                  {smSubmitting ? 'Gönderiliyor...' : 'Bilgileri Gönder'}
+                </button>
+              </div>
+            </form>
+          </div>
         )}
 
         {activeTab === 'profil' && (
