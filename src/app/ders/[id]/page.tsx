@@ -311,7 +311,7 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
   const { t, lang } = useT()
   const router = useRouter()
   const [step, setStep] = useState(1)
-  const [cashbackEarned, setCashbackEarned] = useState(0)
+  const [pointsEarned, setPointsEarned] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [groupSize, setGroupSize] = useState(1)
@@ -384,7 +384,7 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
           setError(data?.error || data?.message || t('common.error'))
           return
         }
-        setCashbackEarned(data?.booking?.cashbackEarned || 0)
+        setPointsEarned(data?.booking?.pointsEarned || 0)
       } else {
         // Mock fallback — save to localStorage
         const booking = {
@@ -545,12 +545,12 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
           <div style={{ textAlign: 'center', padding: '24px 0' }}>
             <div style={{ fontSize: 72, marginBottom: 20 }}>🎉</div>
             <h2 style={{ fontSize: 24, fontWeight: 800, color: '#111', marginBottom: 10 }}>{t('booking.successTitle')}</h2>
-            <p style={{ fontSize: 15, color: '#666', marginBottom: cashbackEarned > 0 ? 16 : 28, lineHeight: 1.7 }}>
+            <p style={{ fontSize: 15, color: '#666', marginBottom: pointsEarned > 0 ? 16 : 28, lineHeight: 1.7 }}>
               <strong>{lang === 'en' && (cls as any).titleEn ? String((cls as any).titleEn) : cls.title}</strong> {t('booking.successText')}
             </p>
-            {cashbackEarned > 0 && (
+            {pointsEarned > 0 && (
               <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 14, padding: '14px 16px', marginBottom: 24, color: '#15803D', fontSize: 14, fontWeight: 600 }}>
-                {t('booking.cashback').replace('{n}', String(cashbackEarned))}
+                {t('booking.cashback').replace('{n}', String(pointsEarned))}
               </div>
             )}
             <button onClick={onClose} style={{ width: '100%', padding: '15px', borderRadius: 14, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>

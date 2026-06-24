@@ -347,7 +347,7 @@ export default function ProfilPage() {
   const displayUsername = isOwnProfile && meData ? meData.username : (pubUser?.username ?? mockUser.username)
   const displayTierName = isOwnProfile && meData?.tier ? meData.tier.name : (pubUser?.tier?.name ?? mockUser.tier.name)
   const displayTierColor = isOwnProfile && meData?.tier ? (meData.tier.colorHex || '#4F46E5') : (pubUser?.tier?.colorHex || mockUser.tier.color)
-  const displayTierDiscount = isOwnProfile && meData?.tier ? meData.tier.cashbackPercent : (pubUser?.tier?.cashbackPercent ?? mockUser.tier.cashbackPercent)
+  const displayTierDiscount = isOwnProfile && meData?.tier ? meData.tier.pointRate : (pubUser?.tier?.pointRate ?? mockUser.tier.pointRate)
   const displayNeighborhood = isOwnProfile && meData?.neighborhood ? meData.neighborhood.name : (pubUser?.neighborhood?.name ?? (isOwnProfile ? '' : mockUser.neighborhood))
   const displayTotalLessons = isOwnProfile && meData ? meData.totalLessonsCompleted : (pubUser?.totalLessonsCompleted ?? mockUser.stats.totalLessons)
   const displayTierIcon = isOwnProfile && meData?.tier ? 'medal' : (pubUser?.tier ? 'medal' : mockUser.tier.icon)
@@ -464,7 +464,8 @@ export default function ProfilPage() {
               <div style={{ backgroundColor: '#4F46E5', borderRadius: 16, padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#fff', marginBottom: 16 }}>
                 <div>
                   <div style={{ fontSize: 12, opacity: 0.8 }}>{t('prof.credit')}</div>
-                  <div style={{ fontSize: 26, fontWeight: 800, marginTop: 2 }}>₺{meData.creditBalance ?? 0}</div>
+                  <div style={{ fontSize: 26, fontWeight: 800, marginTop: 2 }}>{meData.rewardPoints ?? 0}</div>
+                  <div style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}>{t('prof.pointsHint')}</div>
                 </div>
                 <Gift size={28} style={{ opacity: 0.5 }} />
               </div>
@@ -782,7 +783,7 @@ export default function ProfilPage() {
                                               {transferOptions.map((o: any) => (
                                                 <button key={o.sessionId} onClick={() => doTransfer(b.id, o.sessionId)} style={{ textAlign: 'left', background: '#fff', border: '1px solid #E0E7FF', borderRadius: 10, padding: '8px 10px', cursor: 'pointer' }}>
                                                   <div style={{ fontSize: 12, fontWeight: 700, color: '#111' }}>{o.title} · ₺{o.basePrice}</div>
-                                                  <div style={{ fontSize: 11, color: '#888' }}>{new Date(o.startsAt).toLocaleString(dateLocale(), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · {o.available} {lang === 'en' ? 'spots free' : 'yer boş'}{o.priceRefund > 0 ? ` · ₺${o.priceRefund} ${lang === 'en' ? 'credit refund' : 'kredi iade'}` : ''}</div>
+                                                  <div style={{ fontSize: 11, color: '#888' }}>{new Date(o.startsAt).toLocaleString(dateLocale(), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · {o.available} {lang === 'en' ? 'spots free' : 'yer boş'}{o.priceRefund > 0 ? ` · ₺${o.priceRefund} ${lang === 'en' ? 'refund' : 'iade'}` : ''}</div>
                                                 </button>
                                               ))}
                                             </div>
