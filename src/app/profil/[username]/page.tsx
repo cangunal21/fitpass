@@ -347,7 +347,7 @@ export default function ProfilPage() {
   const displayUsername = isOwnProfile && meData ? meData.username : (pubUser?.username ?? mockUser.username)
   const displayTierName = isOwnProfile && meData?.tier ? meData.tier.name : (pubUser?.tier?.name ?? mockUser.tier.name)
   const displayTierColor = isOwnProfile && meData?.tier ? (meData.tier.colorHex || '#4F46E5') : (pubUser?.tier?.colorHex || mockUser.tier.color)
-  const displayTierDiscount = isOwnProfile && meData?.tier ? meData.tier.discountPercent : (pubUser?.tier?.discountPercent ?? mockUser.tier.discountPercent)
+  const displayTierDiscount = isOwnProfile && meData?.tier ? meData.tier.cashbackPercent : (pubUser?.tier?.cashbackPercent ?? mockUser.tier.cashbackPercent)
   const displayNeighborhood = isOwnProfile && meData?.neighborhood ? meData.neighborhood.name : (pubUser?.neighborhood?.name ?? (isOwnProfile ? '' : mockUser.neighborhood))
   const displayTotalLessons = isOwnProfile && meData ? meData.totalLessonsCompleted : (pubUser?.totalLessonsCompleted ?? mockUser.stats.totalLessons)
   const displayTierIcon = isOwnProfile && meData?.tier ? 'medal' : (pubUser?.tier ? 'medal' : mockUser.tier.icon)
