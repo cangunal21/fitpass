@@ -39,9 +39,6 @@ export const api = {
   getMe: (token: string) =>
     request('/api/auth/me', { headers: authHeaders(token) }),
 
-  createBooking: (token: string, data: { classSessionId: number; notes?: string }) =>
-    request('/api/bookings', { method: 'POST', headers: jsonHeaders(token), body: JSON.stringify(data) }),
-
   getMyBookings: (token: string) =>
     request('/api/bookings/my', { headers: authHeaders(token) }),
 
