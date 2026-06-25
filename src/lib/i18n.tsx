@@ -7,6 +7,9 @@ export type Lang = 'tr' | 'en'
 // Çeviri sözlüğü. Yeni metinler eklendikçe iki dile de eklenir.
 const dict: Record<Lang, Record<string, string>> = {
   tr: {
+    'errorBoundary.title': 'Bir şeyler ters gitti',
+    'errorBoundary.sub': 'Beklenmedik bir hata oluştu. Lütfen tekrar dene.',
+    'errorBoundary.retry': 'Tekrar dene',
     // Navbar
     'nav.social': 'Sosyal',
     'nav.login': 'Giriş Yap',
@@ -429,6 +432,9 @@ const dict: Record<Lang, Record<string, string>> = {
     'comp.namePlaceholder': 'Can Günal',
   },
   en: {
+    'errorBoundary.title': 'Something went wrong',
+    'errorBoundary.sub': 'An unexpected error occurred. Please try again.',
+    'errorBoundary.retry': 'Try again',
     // Navbar
     'nav.social': 'Social',
     'nav.login': 'Log in',

@@ -20,7 +20,8 @@ const SCAN_DIRS = ['src/app', 'src/components']
 // Bu dosyalar meşru biçimde Türkçe içerir (sözlük / mock veri / bu script).
 const SKIP_FILES = new Set(['i18n.tsx', 'mockData.ts'])
 // layout.tsx = SEO metadata (SSR, ayrı konu); admin + salon-* = dahili/B2B panel (kasıtlı Türkçe)
-const SKIP_FILE_RE = /(^|\/)(layout|sitemap|robots)\.tsx?$/
+// global-error.tsx = i18n context'ine erişemez (Next tasarımı) → kasıtlı iki dilli statik metin
+const SKIP_FILE_RE = /(^|\/)(layout|sitemap|robots|global-error)\.tsx?$/
 const SKIP_DIR_RE = /(^|\/)(admin|salon-[a-z-]+)\//   // admin + salon-giris/salon-paneli/... : Türkçe-only
 // Marka adı çevrilmez
 const BRAND_RE = /^(©\s*\d{4}\s*)?[\s•·|—-]*şip[şs]akspor[\s•·|—-]*$/i

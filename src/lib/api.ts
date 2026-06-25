@@ -1,158 +1,112 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
+const DEFAULT_TIMEOUT = 15000
+
+// Tek noktadan güvenli istek: timeout + ağ hatası + JSON-dışı yanıt yakalanır.
+// ASLA exception fırlatmaz → çağıran sayfalar offline/timeout/502'de çökmez,
+// tutarlı `{ error }` alır. (Çöp yığını whack-a-mole yerine oturan sistem.)
+export async function request(path: string, opts: RequestInit = {}, timeoutMs = DEFAULT_TIMEOUT): Promise<any> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const res = await fetch(`${API_URL}${path}`, { ...opts, signal: controller.signal })
+    const text = await res.text()
+    let body: any = null
+    if (text) { try { body = JSON.parse(text) } catch { body = null } }
+    if (body !== null && typeof body === 'object') return body
+    return { error: res.ok ? null : 'Sunucuya ulaşılamadı. Lütfen tekrar dene.' }
+  } catch (e: any) {
+    if (e?.name === 'AbortError') return { error: 'İstek zaman aşımına uğradı. Bağlantını kontrol et.' }
+    return { error: 'Bağlantı hatası. İnternetini kontrol et.' }
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+const jsonHeaders = (token?: string | null): Record<string, string> =>
+  ({ 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) })
+const authHeaders = (token: string): Record<string, string> => ({ Authorization: `Bearer ${token}` })
+const qsOf = (params?: Record<string, string | undefined>) =>
+  params ? '?' + new URLSearchParams(Object.entries(params).filter(([, v]) => v) as [string, string][]).toString() : ''
+
 export const api = {
-  async register(data: { username: string; email: string; password: string; fullName: string; phone?: string; referralCode?: string; preferredSports?: string[]; preferredNeighborhoods?: number[] }) {
-    const res = await fetch(`${API_URL}/api/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    })
-    return res.json()
-  },
+  register: (data: { username: string; email: string; password: string; fullName: string; phone?: string; referralCode?: string; preferredSports?: string[]; preferredNeighborhoods?: number[] }) =>
+    request('/api/auth/register', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify(data) }),
 
-  async login(data: { email: string; password: string }) {
-    const res = await fetch(`${API_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    })
-    return res.json()
-  },
+  login: (data: { email: string; password: string }) =>
+    request('/api/auth/login', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify(data) }),
 
-  async getMe(token: string) {
-    const res = await fetch(`${API_URL}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    return res.json()
-  },
+  getMe: (token: string) =>
+    request('/api/auth/me', { headers: authHeaders(token) }),
 
-  async createBooking(token: string, data: { classSessionId: number; notes?: string }) {
-    const res = await fetch(`${API_URL}/api/bookings`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify(data),
-    })
-    return res.json()
-  },
+  createBooking: (token: string, data: { classSessionId: number; notes?: string }) =>
+    request('/api/bookings', { method: 'POST', headers: jsonHeaders(token), body: JSON.stringify(data) }),
 
-  async getMyBookings(token: string) {
-    const res = await fetch(`${API_URL}/api/bookings/my`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    return res.json()
-  },
+  getMyBookings: (token: string) =>
+    request('/api/bookings/my', { headers: authHeaders(token) }),
 
-  async cancelBooking(token: string, bookingId: number) {
-    const res = await fetch(`${API_URL}/api/bookings/${bookingId}/cancel`, {
-      method: 'PUT',
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    return res.json()
-  },
+  cancelBooking: (token: string, bookingId: number) =>
+    request(`/api/bookings/${bookingId}/cancel`, { method: 'PUT', headers: authHeaders(token) }),
 
-  async getSessions(params?: { category?: string; date?: string; dateFrom?: string; dateTo?: string; neighborhoodId?: string; search?: string; sort?: string; userNeighborhoodId?: string }) {
-    const qs = params ? '?' + new URLSearchParams(Object.entries(params).filter(([, v]) => v) as [string, string][]).toString() : ''
-    const res = await fetch(`${API_URL}/api/public/sessions${qs}`)
-    return res.json()
-  },
+  getSessions: (params?: { category?: string; date?: string; dateFrom?: string; dateTo?: string; neighborhoodId?: string; search?: string; sort?: string; userNeighborhoodId?: string }) =>
+    request(`/api/public/sessions${qsOf(params)}`),
 
-  async getSessionById(id: number) {
-    const res = await fetch(`${API_URL}/api/public/sessions/${id}`)
-    return res.json()
-  },
+  getSessionById: (id: number) =>
+    request(`/api/public/sessions/${id}`),
 
-  async getVenues() {
-    const res = await fetch(`${API_URL}/api/public/venues`)
-    return res.json()
-  },
+  getVenues: () =>
+    request('/api/public/venues'),
 
-  async getVenueById(id: number) {
-    const res = await fetch(`${API_URL}/api/public/venues/${id}`)
-    return res.json()
-  },
+  getVenueById: (id: number) =>
+    request(`/api/public/venues/${id}`),
 
-  async getCategories() {
-    const res = await fetch(`${API_URL}/api/public/categories`)
-    return res.json()
-  },
+  getCategories: () =>
+    request('/api/public/categories'),
 
-  async getDropInSlots() {
-    const res = await fetch(`${API_URL}/api/public/dropin`)
-    return res.json()
-  },
+  getDropInSlots: () =>
+    request('/api/public/dropin'),
 
-  async joinDropIn(token: string, slotId: number) {
-    const res = await fetch(`${API_URL}/api/bookings/dropin/${slotId}/join`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    })
-    return res.json()
-  },
+  joinDropIn: (token: string, slotId: number) =>
+    request(`/api/bookings/dropin/${slotId}/join`, { method: 'POST', headers: jsonHeaders(token) }),
 
-  async getNeighborhoods() {
-    const res = await fetch(`${API_URL}/api/public/neighborhoods`)
-    return res.json()
-  },
+  getNeighborhoods: () =>
+    request('/api/public/neighborhoods'),
 
-  async getVenuesList() {
-    const res = await fetch(`${API_URL}/api/public/venues-list`)
-    return res.json()
-  },
+  getVenuesList: () =>
+    request('/api/public/venues-list'),
 
-  async getDropInSlotById(id: number) {
-    const res = await fetch(`${API_URL}/api/public/dropin/${id}`)
-    return res.json()
-  },
+  getDropInSlotById: (id: number) =>
+    request(`/api/public/dropin/${id}`),
 
-  getUserActivities: async (username: string) =>
-    fetch(`${API_URL}/api/public/users/${username}`).then(r => r.json()),
+  getUserActivities: (username: string) =>
+    request(`/api/public/users/${username}`),
 
-  updatePrivacy: async (token: string, activityPrivacy: string) =>
-    fetch(`${API_URL}/api/auth/privacy`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ activityPrivacy }),
-    }).then(r => r.json()),
+  updatePrivacy: (token: string, activityPrivacy: string) =>
+    request('/api/auth/privacy', { method: 'PUT', headers: jsonHeaders(token), body: JSON.stringify({ activityPrivacy }) }),
 
-  forgotPassword: async (email: string) => {
-    const res = await fetch(`${API_URL}/api/auth/forgot-password`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    })
-    return res.json()
-  },
+  forgotPassword: (email: string) =>
+    request('/api/auth/forgot-password', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ email }) }),
 
-  resetPassword: async (token: string, password: string) => {
-    const res = await fetch(`${API_URL}/api/auth/reset-password`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token, password }),
-    })
-    return res.json()
-  },
+  resetPassword: (token: string, password: string) =>
+    request('/api/auth/reset-password', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ token, password }) }),
 
-  followUser: async (token: string, username: string) =>
-    fetch(`${API_URL}/api/social/follow/${username}`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+  followUser: (token: string, username: string) =>
+    request(`/api/social/follow/${username}`, { method: 'POST', headers: authHeaders(token) }),
 
-  unfollowUser: async (token: string, username: string) =>
-    fetch(`${API_URL}/api/social/unfollow/${username}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+  unfollowUser: (token: string, username: string) =>
+    request(`/api/social/unfollow/${username}`, { method: 'DELETE', headers: authHeaders(token) }),
 
-  getFollowStatus: async (token: string, username: string) =>
-    fetch(`${API_URL}/api/social/status/${username}`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+  getFollowStatus: (token: string, username: string) =>
+    request(`/api/social/status/${username}`, { headers: authHeaders(token) }),
 
-  getFollowers: async (username: string) =>
-    fetch(`${API_URL}/api/social/followers/${username}`).then(r => r.json()),
+  getFollowers: (username: string) =>
+    request(`/api/social/followers/${username}`),
 
-  getFollowing: async (username: string) =>
-    fetch(`${API_URL}/api/social/following/${username}`).then(r => r.json()),
+  getFollowing: (username: string) =>
+    request(`/api/social/following/${username}`),
 
-  updateProfile: async (token: string, data: { fullName?: string; bio?: string; neighborhoodId?: number; avatarUrl?: string }) =>
-    fetch(`${API_URL}/api/auth/profile`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify(data),
-    }).then(r => r.json()),
+  updateProfile: (token: string, data: { fullName?: string; bio?: string; neighborhoodId?: number; avatarUrl?: string }) =>
+    request('/api/auth/profile', { method: 'PUT', headers: jsonHeaders(token), body: JSON.stringify(data) }),
 }
 
 export const saveToken = (token: string) => { if (typeof window !== 'undefined') localStorage.setItem('fitpass_token', token) }
