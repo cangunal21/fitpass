@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation'
 import { mockUsers } from '@/lib/mockData'
 import Navbar from '@/components/Navbar'
 import ActivityCalendar from '@/components/ActivityCalendar'
-import { api, getUser, getToken } from '@/lib/api'
+import { api, getUser, getToken, removeToken, removeUser } from '@/lib/api'
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
 const BADGE_ICON_MAP: Record<string, any> = { Flag, Target, Flame, Compass, Heart, Users, Trophy }
@@ -45,7 +45,7 @@ function BadgesCard({ badges }: { badges: any[] }) {
   )
 }
 import type { ReactNode } from 'react'
-import { User, Users, Ticket, Award, ClipboardList, BarChart2, BookOpen, Calendar, Flame, Dumbbell, Heart, Building, MapPin, Gift, Medal, Check, X, Lock, CreditCard, Copy, CheckCheck, Flag, Target, Compass, Trophy } from 'lucide-react'
+import { User, Users, Ticket, Award, ClipboardList, BarChart2, BookOpen, Calendar, Flame, Dumbbell, Heart, Building, MapPin, Gift, Medal, Check, X, Lock, CreditCard, Copy, CheckCheck, Flag, Target, Compass, Trophy, Trash2 } from 'lucide-react'
 import { SportIcon, SportIconBox, getIconKeyForCategory, getColorForCategory } from '@/lib/sportIcons'
 import { useT, translateTier, translateBadge, translateCategory } from '@/lib/i18n'
 
@@ -1132,6 +1132,9 @@ export default function ProfilPage() {
           </div>
         )}
 
+        {/* Tehlikeli bölge — Hesabı Sil (hesap sekmesi) */}
+        {activeTab === 'hesap' && isOwnProfile && <DeleteAccountSection />}
+
         {/* Ödeme Bilgilerim — own profile only */}
         {activeTab === 'ödeme' && isOwnProfile && (
           <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '64px 32px', border: '1px solid #F0F0F0', textAlign: 'center' }}>
@@ -1328,6 +1331,42 @@ function CheckInQR({ code }: { code: string }) {
           <canvas ref={canvasRef} style={{ borderRadius: 8, display: 'block', margin: '0 auto 10px' }} />
           <div style={{ fontSize: 20, fontWeight: 900, color: '#1a1a1a', letterSpacing: 4, fontFamily: 'monospace' }}>{code}</div>
           <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>{t('prof.showQR')}</div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function DeleteAccountSection() {
+  const { t } = useT()
+  const [open, setOpen] = useState(false)
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleDelete = async () => {
+    if (!password) return
+    setLoading(true); setError('')
+    const r = await api.deleteAccount(getToken() || '', password)
+    if (r?.error) { setError(r.error); setLoading(false); return }
+    removeToken(); removeUser()
+    window.location.href = '/'
+  }
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 20, padding: '28px 32px', border: '1px solid #FECACA', marginTop: 16 }}>
+      <h4 style={{ fontSize: 15, fontWeight: 700, color: '#DC2626', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><Trash2 size={16} /> {t('acc.dangerZone')}</h4>
+      <p style={{ fontSize: 13, color: '#888', marginBottom: 16, lineHeight: 1.6 }}>{t('acc.deleteWarning')}</p>
+      {!open ? (
+        <button onClick={() => setOpen(true)} style={{ padding: '10px 20px', borderRadius: 12, border: '1.5px solid #FECACA', background: '#fff', color: '#DC2626', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>{t('acc.deleteAccount')}</button>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 360 }}>
+          <input type="password" value={password} onChange={e => { setPassword(e.target.value); setError('') }} placeholder={t('acc.deletePwPlaceholder')} style={{ padding: '11px 14px', borderRadius: 12, border: '1.5px solid #E5E5E5', fontSize: 14, outline: 'none' }} />
+          {error && <div style={{ fontSize: 13, color: '#DC2626' }}>{error}</div>}
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={() => { setOpen(false); setPassword(''); setError('') }} style={{ flex: 1, padding: '11px', borderRadius: 12, border: '1.5px solid #eee', background: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: '#555' }}>{t('common.cancelBtn')}</button>
+            <button onClick={handleDelete} disabled={loading || !password} style={{ flex: 1, padding: '11px', borderRadius: 12, border: 'none', background: '#DC2626', color: '#fff', fontSize: 14, fontWeight: 600, cursor: loading || !password ? 'default' : 'pointer', opacity: loading || !password ? 0.6 : 1 }}>{loading ? t('acc.deleting') : t('acc.deleteConfirm')}</button>
+          </div>
         </div>
       )}
     </div>

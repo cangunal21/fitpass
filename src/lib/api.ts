@@ -45,6 +45,9 @@ export const api = {
   getMyCalendar: (token: string) =>
     request('/api/social/my-calendar', { headers: authHeaders(token) }),
 
+  deleteAccount: (token: string, password: string) =>
+    request('/api/auth/account', { method: 'DELETE', headers: jsonHeaders(token), body: JSON.stringify({ password }) }),
+
   cancelBooking: (token: string, bookingId: number) =>
     request(`/api/bookings/${bookingId}/cancel`, { method: 'PUT', headers: authHeaders(token) }),
 
