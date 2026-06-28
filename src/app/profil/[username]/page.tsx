@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { mockUsers } from '@/lib/mockData'
 import Navbar from '@/components/Navbar'
+import ActivityCalendar from '@/components/ActivityCalendar'
 import { api, getUser, getToken } from '@/lib/api'
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
@@ -52,7 +53,7 @@ const dateLocale = () => (typeof window !== 'undefined' && localStorage.getItem(
 import AvatarUpload from '@/components/AvatarUpload'
 import { getInitialsAvatar } from '@/lib/cloudinary'
 
-type OwnTab = 'rezervasyonlar' | 'hesap' | 'ödeme' | 'favoriler' | 'referans'
+type OwnTab = 'rezervasyonlar' | 'takvim' | 'hesap' | 'ödeme' | 'favoriler' | 'referans'
 type PublicTab = 'aktivite' | 'arkadaşlar' | 'istatistik'
 
 export default function ProfilPage() {
@@ -307,6 +308,7 @@ export default function ProfilPage() {
 
   const ownTabs: { key: OwnTab; label: ReactNode }[] = [
     { key: 'rezervasyonlar', label: <><Ticket size={15} style={{ marginRight: 5 }} />{t('prof.tabReservations')}</> },
+    { key: 'takvim', label: <><Calendar size={15} style={{ marginRight: 5 }} />{t('cal.tab')}</> },
     { key: 'hesap', label: <><User size={15} style={{ marginRight: 5 }} />{t('prof.tabAccount')}</> },
     { key: 'ödeme', label: <><CreditCard size={15} style={{ marginRight: 5 }} />{t('prof.tabPayment')}</> },
     { key: 'favoriler', label: <><Heart size={15} style={{ marginRight: 5 }} />{t('prof.tabFavorites')}</> },
@@ -958,6 +960,11 @@ export default function ProfilPage() {
               </button>
             </div>
           </div>
+        )}
+
+        {/* Aktivite takvimi — own profile only */}
+        {activeTab === 'takvim' && isOwnProfile && (
+          <ActivityCalendar token={getToken() || ''} />
         )}
 
         {/* Hesap Bilgilerim — own profile only */}

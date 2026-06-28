@@ -10,6 +10,8 @@ const dict: Record<Lang, Record<string, string>> = {
     'errorBoundary.title': 'Bir şeyler ters gitti',
     'errorBoundary.sub': 'Beklenmedik bir hata oluştu. Lütfen tekrar dene.',
     'errorBoundary.retry': 'Tekrar dene',
+    'cal.tab': 'Takvim',
+    'cal.monthSummary': 'Bu ay {n} aktivite',
     // Navbar
     'nav.social': 'Sosyal',
     'nav.login': 'Giriş Yap',
@@ -435,6 +437,8 @@ const dict: Record<Lang, Record<string, string>> = {
     'errorBoundary.title': 'Something went wrong',
     'errorBoundary.sub': 'An unexpected error occurred. Please try again.',
     'errorBoundary.retry': 'Try again',
+    'cal.tab': 'Calendar',
+    'cal.monthSummary': '{n} activities this month',
     // Navbar
     'nav.social': 'Social',
     'nav.login': 'Log in',

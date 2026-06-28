@@ -42,6 +42,9 @@ export const api = {
   getMyBookings: (token: string) =>
     request('/api/bookings/my', { headers: authHeaders(token) }),
 
+  getMyCalendar: (token: string) =>
+    request('/api/social/my-calendar', { headers: authHeaders(token) }),
+
   cancelBooking: (token: string, bookingId: number) =>
     request(`/api/bookings/${bookingId}/cancel`, { method: 'PUT', headers: authHeaders(token) }),
 
