@@ -12,6 +12,8 @@ const dict: Record<Lang, Record<string, string>> = {
     'errorBoundary.retry': 'Tekrar dene',
     'cal.tab': 'Takvim',
     'cal.monthSummary': 'Bu ay {n} aktivite',
+    'cal.dayStreak': 'günlük seri',
+    'cal.weekStreak': 'haftalık seri',
     // Navbar
     'nav.social': 'Sosyal',
     'nav.login': 'Giriş Yap',
@@ -439,6 +441,8 @@ const dict: Record<Lang, Record<string, string>> = {
     'errorBoundary.retry': 'Try again',
     'cal.tab': 'Calendar',
     'cal.monthSummary': '{n} activities this month',
+    'cal.dayStreak': 'day streak',
+    'cal.weekStreak': 'week streak',
     // Navbar
     'nav.social': 'Social',
     'nav.login': 'Log in',

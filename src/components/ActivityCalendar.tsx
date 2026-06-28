@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight, Flame } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Flame, CalendarCheck } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useT } from '@/lib/i18n'
 import { SportIcon, getColorForCategory } from '@/lib/sportIcons'
@@ -15,13 +15,18 @@ const pad = (n: number) => String(n).padStart(2, '0')
 export default function ActivityCalendar({ token }: { token: string }) {
   const { t, lang } = useT()
   const [activities, setActivities] = useState<Activity[]>([])
+  const [streaks, setStreaks] = useState({ daily: 0, weekly: 0 })
   const [loading, setLoading] = useState(true)
   const [cursor, setCursor] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() } })
 
   useEffect(() => {
     let alive = true
     api.getMyCalendar(token)
-      .then(r => { if (alive && Array.isArray(r?.activities)) setActivities(r.activities) })
+      .then(r => {
+        if (!alive) return
+        if (Array.isArray(r?.activities)) setActivities(r.activities)
+        setStreaks({ daily: Number(r?.dailyStreak) || 0, weekly: Number(r?.weeklyStreak) || 0 })
+      })
       .finally(() => { if (alive) setLoading(false) })
     return () => { alive = false }
   }, [token])
@@ -67,6 +72,24 @@ export default function ActivityCalendar({ token }: { token: string }) {
 
   return (
     <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #eee', padding: 20 }}>
+      {/* Seri rozetleri */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: '#FEF2F2', borderRadius: 12, padding: '10px 14px' }}>
+          <Flame size={20} color="#EF4444" />
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#EF4444', lineHeight: 1 }}>{streaks.daily}</div>
+            <div style={{ fontSize: 11, color: '#B91C1C' }}>{t('cal.dayStreak')}</div>
+          </div>
+        </div>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: '#EEF2FF', borderRadius: 12, padding: '10px 14px' }}>
+          <CalendarCheck size={20} color="#4F46E5" />
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#4F46E5', lineHeight: 1 }}>{streaks.weekly}</div>
+            <div style={{ fontSize: 11, color: '#3730A3' }}>{t('cal.weekStreak')}</div>
+          </div>
+        </div>
+      </div>
+
       {/* Başlık + ay navigasyonu */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <button onClick={() => move(-1)} aria-label="prev" style={navBtn}><ChevronLeft size={18} /></button>
