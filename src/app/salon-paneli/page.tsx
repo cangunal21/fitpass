@@ -102,7 +102,8 @@ export default function SalonPaneliPage() {
   const [dropInSuccess, setDropInSuccess] = useState('')
 
   // Profil güncelleme state
-  const [profileForm, setProfileForm] = useState({ name: '', phone: '', address: '', description: '', website: '' })
+  const [profileForm, setProfileForm] = useState({ name: '', phone: '', address: '', description: '', website: '', neighborhoodId: '' })
+  const [neighborhoods, setNeighborhoods] = useState<{ id: number; name: string }[]>([])
   const [profileError, setProfileError] = useState('')
   const [profileSuccess, setProfileSuccess] = useState('')
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', newPassword2: '' })
@@ -125,6 +126,11 @@ export default function SalonPaneliPage() {
       .then(r => r.json())
       .then(d => { if (d.categories) setSportCategories(d.categories) })
       .catch(() => {})
+    // İlçeleri çek (profil formundaki ilçe dropdown'u için)
+    fetch(`${API_URL}/api/public/neighborhoods`)
+      .then(r => r.json())
+      .then(d => { if (Array.isArray(d?.neighborhoods)) setNeighborhoods(d.neighborhoods) })
+      .catch(() => {})
   }, [])
 
   const fetchVenue = async (token: string) => {
@@ -144,6 +150,7 @@ export default function SalonPaneliPage() {
         address: data.venue?.address || '',
         description: data.venue?.description || '',
         website: data.venue?.website || '',
+        neighborhoodId: data.venue?.neighborhoodId ? String(data.venue.neighborhoodId) : '',
       })
     } catch {
       router.push('/salon-giris')
@@ -1571,6 +1578,20 @@ export default function SalonPaneliPage() {
                     />
                   </div>
                 ))}
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: '#555', marginBottom: 6, display: 'block' }}>İlçe</label>
+                  <select
+                    value={profileForm.neighborhoodId}
+                    onChange={e => setProfileForm(f => ({ ...f, neighborhoodId: e.target.value }))}
+                    style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: '1.5px solid #e5e5e5', fontSize: 14, outline: 'none', boxSizing: 'border-box', backgroundColor: '#fff' }}
+                  >
+                    <option value="">İlçe seçin</option>
+                    {[...neighborhoods].sort((a, b) => a.name.localeCompare(b.name, 'tr')).map(n => (
+                      <option key={n.id} value={n.id}>{n.name}</option>
+                    ))}
+                  </select>
+                  <p style={{ fontSize: 12, color: '#888', margin: '6px 0 0' }}>Kullanıcılar bu ilçeyle arama yapınca salonunuz çıkar.</p>
+                </div>
                 <div>
                   <label style={{ fontSize: 13, fontWeight: 600, color: '#555', marginBottom: 6, display: 'block' }}>Açıklama</label>
                   <textarea

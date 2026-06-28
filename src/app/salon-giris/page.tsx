@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Building2, AlertCircle } from 'lucide-react'
@@ -10,7 +10,8 @@ const SPORT_OPTIONS = ['Yoga', 'Pilates', 'Boks', 'HIIT', 'Halı Saha', 'Basketb
 export default function SalonGirisPage() {
   const router = useRouter()
   const [tab, setTab] = useState<'giris' | 'kayit' | 'sifre'>('giris')
-  const [form, setForm] = useState({ name: '', email: '', password: '', phone: '', address: '', description: '' })
+  const [form, setForm] = useState({ name: '', email: '', password: '', phone: '', address: '', description: '', neighborhoodId: '' })
+  const [neighborhoods, setNeighborhoods] = useState<{ id: number; name: string }[]>([])
   const [selectedSports, setSelectedSports] = useState<string[]>([])
   const [instructor, setInstructor] = useState({ fullName: '', email: '', phone: '' })
   const [error, setError] = useState('')
@@ -20,10 +21,18 @@ export default function SalonGirisPage() {
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value })
     setError('')
   }
+
+  // İlçe listesini çek (salon kayıt formundaki dropdown için)
+  useEffect(() => {
+    fetch(`${API_URL}/api/public/neighborhoods`)
+      .then(r => r.json())
+      .then(d => { if (Array.isArray(d?.neighborhoods)) setNeighborhoods(d.neighborhoods) })
+      .catch(() => {})
+  }, [API_URL])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -71,11 +80,13 @@ export default function SalonGirisPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     if (selectedSports.length === 0) { setError('En az bir spor branşı seçmelisiniz.'); return }
+    if (!form.neighborhoodId) { setError('Lütfen salonun bulunduğu ilçeyi seçin.'); return }
     setLoading(true)
     try {
       const body: any = {
         name: form.name, email: form.email, password: form.password,
         phone: form.phone, address: form.address, description: form.description,
+        neighborhoodId: parseInt(form.neighborhoodId), cityId: 1,
         sportCategories: selectedSports,
       }
       if (instructor.fullName.trim()) {
@@ -179,6 +190,16 @@ export default function SalonGirisPage() {
               <div>
                 <label style={labelStyle}>Adres</label>
                 <input name="address" type="text" placeholder="Salon adresi" value={form.address} onChange={handleChange} required style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>İlçe <span style={{ color: '#DC2626' }}>*</span></label>
+                <select name="neighborhoodId" value={form.neighborhoodId} onChange={handleChange} required style={inputStyle}>
+                  <option value="">İlçe seçin</option>
+                  {[...neighborhoods].sort((a, b) => a.name.localeCompare(b.name, 'tr')).map(n => (
+                    <option key={n.id} value={n.id}>{n.name}</option>
+                  ))}
+                </select>
+                <p style={{ fontSize: 12, color: '#888', margin: '6px 0 0' }}>Kullanıcılar bu ilçeyle arama yapınca salonunuz çıkar.</p>
               </div>
               <div>
                 <label style={labelStyle}>Şifre</label>
