@@ -86,6 +86,9 @@ export default function Home() {
   const [neighborhoods, setNeighborhoods] = useState<{ id: number; name: string }[]>([])
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [searchInput, setSearchInput] = useState('')
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [venueResults, setVenueResults] = useState<any[]>([])
   const [allVenues, setAllVenues] = useState<any[]>([])
   const [forYouItems, setForYouItems] = useState<DisplayItem[]>([])
@@ -138,10 +141,10 @@ export default function Home() {
     return {}
   }
 
-  const fetchSessions = useCallback(async (activeFilters: typeof filters, activeSortParam?: string, activeTimeFilter?: string) => {
-    setLoading(true)
+  const fetchSessions = useCallback(async (activeFilters: typeof filters, activeSortParam?: string, activeTimeFilter?: string, pageNum = 1, append = false) => {
+    if (append) setLoadingMore(true); else setLoading(true)
     try {
-      const params: Record<string, string> = {}
+      const params: Record<string, string> = { page: String(pageNum), limit: '24' }
       if (activeFilters.category) params.category = activeFilters.category
       if (activeFilters.date) params.date = activeFilters.date
       if (activeFilters.neighborhoodId) params.neighborhoodId = activeFilters.neighborhoodId
@@ -161,18 +164,29 @@ export default function Home() {
       const sessions: unknown[] = result?.sessions ?? []
       if (Array.isArray(sessions) && sessions.length > 0) {
         const mapped = sessions.map(mapSessionToItem)
-        setAllItems(mapped)
-      } else {
+        setAllItems(prev => append ? [...prev, ...mapped] : mapped)
+        setHasMore(!!result?.hasMore)
+        setPage(pageNum)
+      } else if (!append) {
+        // Yalnızca ilk sayfada boşsa demo verisine düş (sonraki sayfalarda eklemeyiz)
         console.warn('[fitpass] API boş seans döndü — DEMO verisi gösteriliyor. Filtreler:', activeFilters)
         setAllItems([...mockClassItems, ...mockDropInItems])
+        setHasMore(false)
+      } else {
+        setHasMore(false)
       }
     } catch (err) {
-      console.error('[fitpass] Seanslar yüklenemedi — DEMO verisine düşülüyor:', err)
-      setAllItems([...mockClassItems, ...mockDropInItems])
+      if (!append) {
+        console.error('[fitpass] Seanslar yüklenemedi — DEMO verisine düşülüyor:', err)
+        setAllItems([...mockClassItems, ...mockDropInItems])
+      }
+      setHasMore(false)
     } finally {
-      setLoading(false)
+      if (append) setLoadingMore(false); else setLoading(false)
     }
   }, [])
+
+  const loadMore = () => fetchSessions(filters, sort, timeFilter, page + 1, true)
 
   useEffect(() => {
     fetchSessions(filters, sort, timeFilter)
@@ -463,6 +477,7 @@ export default function Home() {
         {loading ? (
           <SkeletonCardGrid count={6} />
         ) : activeView === 'list' ? (
+          <>
           <div className="cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
             {filtered.map(item => {
               const href = item.isDropIn ? `/dropin/${item.id}` : `/ders/${item.id}`
@@ -563,6 +578,14 @@ export default function Home() {
               )
             })}
           </div>
+          {hasMore && (
+            <div style={{ textAlign: 'center', marginTop: 28 }}>
+              <button onClick={loadMore} disabled={loadingMore} style={{ padding: '12px 32px', borderRadius: 100, border: '1.5px solid #4F46E5', background: '#fff', color: '#4F46E5', fontSize: 15, fontWeight: 600, cursor: loadingMore ? 'default' : 'pointer', opacity: loadingMore ? 0.6 : 1 }}>
+                {loadingMore ? t('common.loading') : t('home.loadMore')}
+              </button>
+            </div>
+          )}
+          </>
         ) : (
           <div style={{ backgroundColor: '#F0F7FF', borderRadius: 24, height: 480, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '1.5px dashed #BFDBFE', gap: 12 }}>
             <Map size={56} color="#93C5FD" />
