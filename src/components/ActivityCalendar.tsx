@@ -69,7 +69,7 @@ export default function ActivityCalendar({ token }: { token: string }) {
   })
 
   const handleShare = async () => {
-    const text = `🔥 ${streaks.daily} ${t('cal.dayStreak')}, 📅 ${streaks.weekly} ${t('cal.weekStreak')} — ${t('cal.shareTag')}`
+    const text = `🔥 ${streaks.daily} ${t('cal.dayStreak')} · ${streaks.weekly} ${t('cal.weekStreak')} — Şipşakspor`
     const url = 'https://sipsakspor.com'
     if (typeof navigator !== 'undefined' && navigator.share) {
       try { await navigator.share({ title: 'Şipşakspor', text, url }) } catch { /* kullanıcı iptal etti */ }
