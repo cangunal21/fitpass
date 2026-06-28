@@ -345,14 +345,16 @@ export default function ProfilPage() {
 
   // Determine display values
   const pubUser = !isOwnProfile ? publicData?.user : null
-  const displayName = isOwnProfile && meData ? meData.fullName : (pubUser?.fullName ?? mockUser.fullName)
-  const displayUsername = isOwnProfile && meData ? meData.username : (pubUser?.username ?? mockUser.username)
-  const displayTierName = isOwnProfile && meData?.tier ? meData.tier.name : (pubUser?.tier?.name ?? mockUser.tier.name)
-  const displayTierColor = isOwnProfile && meData?.tier ? (meData.tier.colorHex || '#4F46E5') : (pubUser?.tier?.colorHex || mockUser.tier.color)
-  const displayTierDiscount = isOwnProfile && meData?.tier ? meData.tier.pointRate : (pubUser?.tier?.pointRate ?? mockUser.tier.pointRate)
-  const displayNeighborhood = isOwnProfile && meData?.neighborhood ? meData.neighborhood.name : (pubUser?.neighborhood?.name ?? (isOwnProfile ? '' : mockUser.neighborhood))
-  const displayTotalLessons = isOwnProfile && meData ? meData.totalLessonsCompleted : (pubUser?.totalLessonsCompleted ?? mockUser.stats.totalLessons)
-  const displayTierIcon = isOwnProfile && meData?.tier ? 'medal' : (pubUser?.tier ? 'medal' : mockUser.tier.icon)
+  // ÖNEMLİ: kendi profilinde ASLA mock kullanıcıya (Mehmet Kaya) düşme.
+  // meData (gerçek) → yoksa saklı login bilgisi (loggedInUser) → yoksa makul varsayılan.
+  const displayName = isOwnProfile ? (meData?.fullName ?? loggedInUser?.fullName ?? '') : (pubUser?.fullName ?? mockUser.fullName)
+  const displayUsername = isOwnProfile ? (meData?.username ?? loggedInUser?.username ?? username) : (pubUser?.username ?? mockUser.username)
+  const displayTierName = isOwnProfile ? (meData?.tier?.name ?? 'Aday') : (pubUser?.tier?.name ?? mockUser.tier.name)
+  const displayTierColor = isOwnProfile ? (meData?.tier?.colorHex || '#4F46E5') : (pubUser?.tier?.colorHex || mockUser.tier.color)
+  const displayTierDiscount = isOwnProfile ? (meData?.tier?.pointRate ?? 1) : (pubUser?.tier?.pointRate ?? mockUser.tier.pointRate)
+  const displayNeighborhood = isOwnProfile ? (meData?.neighborhood?.name ?? '') : (pubUser?.neighborhood?.name ?? mockUser.neighborhood)
+  const displayTotalLessons = isOwnProfile ? (meData?.totalLessonsCompleted ?? 0) : (pubUser?.totalLessonsCompleted ?? mockUser.stats.totalLessons)
+  const displayTierIcon = isOwnProfile ? 'medal' : (pubUser?.tier ? 'medal' : mockUser.tier.icon)
 
   const tierLabel = translateTier(displayTierName, lang)
   const currentTierIndex = tiers.findIndex(t => t.name === displayTierName)

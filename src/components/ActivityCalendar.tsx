@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight, Flame, CalendarCheck } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Flame, CalendarCheck, Share2 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useT } from '@/lib/i18n'
 import { SportIcon, getColorForCategory } from '@/lib/sportIcons'
@@ -67,6 +67,16 @@ export default function ActivityCalendar({ token }: { token: string }) {
     const nm = c.m + delta
     return { y: c.y + Math.floor(nm / 12), m: ((nm % 12) + 12) % 12 }
   })
+
+  const handleShare = async () => {
+    const text = `🔥 ${streaks.daily} ${t('cal.dayStreak')}, 📅 ${streaks.weekly} ${t('cal.weekStreak')} — ${t('cal.shareTag')}`
+    const url = 'https://sipsakspor.com'
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try { await navigator.share({ title: 'Şipşakspor', text, url }) } catch { /* kullanıcı iptal etti */ }
+    } else {
+      try { await navigator.clipboard.writeText(`${text} ${url}`); alert(t('cal.copied')) } catch { /* yoksay */ }
+    }
+  }
 
   const cells: (number | null)[] = [...Array(startOffset).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)]
 
@@ -137,10 +147,15 @@ export default function ActivityCalendar({ token }: { token: string }) {
         })}
       </div>
 
-      {/* Alt özet */}
-      <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#666' }}>
-        <Flame size={15} color="#EF4444" />
-        {loading ? t('common.loading') : t('cal.monthSummary').replace('{n}', String(monthActivityCount))}
+      {/* Alt özet + paylaş */}
+      <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#666' }}>
+          <Flame size={15} color="#EF4444" />
+          {loading ? t('common.loading') : t('cal.monthSummary').replace('{n}', String(monthActivityCount))}
+        </span>
+        <button onClick={handleShare} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#EEF2FF', color: '#4F46E5', border: 'none', borderRadius: 100, padding: '7px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+          <Share2 size={15} /> {t('cal.share')}
+        </button>
       </div>
     </div>
   )
