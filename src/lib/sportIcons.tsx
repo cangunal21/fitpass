@@ -70,6 +70,7 @@ export function getColorForCategory(name: string): string {
   if (n.includes('dans') || n.includes('dance') || n.includes('zumba')) return '#9333EA'
   if (n.includes('halı') || n.includes('futbol')) return '#16A34A'
   if (n.includes('basket')) return '#C2501F'
+  if (n.includes('tenis')) return '#65A30D'
   if (n.includes('padel')) return '#EAB308'
   if (n.includes('boks') || n.includes('dövüş') || n.includes('mma') || n.includes('kick')) return '#DC2626'
   if (n.includes('cross') || n.includes('hiit')) return '#F97316'

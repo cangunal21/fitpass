@@ -888,7 +888,7 @@ const dict: Record<Lang, Record<string, string>> = {
 const CATEGORY_EN: Record<string, string> = {
   'Basketbol': 'Basketball', 'Binicilik': 'Horse Riding', 'Crossfit': 'CrossFit',
   'Dans': 'Dance', 'Dövüş Sporları': 'Combat Sports', 'Halı Saha': 'Football',
-  'HIIT': 'HIIT', 'Padel': 'Padel', 'Pilates': 'Pilates', 'Yatçılık': 'Sailing',
+  'HIIT': 'HIIT', 'Padel': 'Padel', 'Tenis': 'Tennis', 'Pilates': 'Pilates', 'Yatçılık': 'Sailing',
   'Yoga': 'Yoga', 'Yüzme': 'Swimming',
 }
 const TIER_EN: Record<string, string> = {
