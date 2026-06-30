@@ -590,7 +590,7 @@ export default function Home() {
       {/* Footer */}
       <footer style={{ borderTop: '1px solid #F0F0F0', backgroundColor: '#fff', padding: '32px 24px', marginTop: 40 }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontSize: 20, fontWeight: 800, color: '#4F46E5' }}>şipşakspor</div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}<img src="/sipsakspor-logo.svg" alt="Şipşakspor" style={{ height: 30, width: 'auto', display: 'block' }} />
           <div style={{ fontSize: 13, color: '#aaa' }}>{t('footer.tagline')}</div>
           <div style={{ display: 'flex', gap: 20 }}>
             <Link href="/salon-giris" style={{ fontSize: 13, color: '#666', textDecoration: 'none', fontWeight: 500 }}>{t('footer.venueApply')}</Link>

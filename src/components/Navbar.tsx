@@ -65,7 +65,10 @@ export default function Navbar() {
 
   return (
     <nav style={{ backgroundColor: '#fff', borderBottom: '1px solid #F0F0F0', padding: '0 16px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
-      <Link href="/" style={{ fontSize: 24, fontWeight: 800, color: '#4F46E5', letterSpacing: -0.5, textDecoration: 'none' }}>şipşakspor</Link>
+      <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/sipsakspor-logo.svg" alt="Şipşakspor" style={{ height: 34, width: 'auto', display: 'block' }} />
+      </Link>
 
       <Link href="/sosyal" style={{ fontSize: 16, fontWeight: 800, color: '#4F46E5', textDecoration: 'none', padding: '6px 12px', borderRadius: 8, letterSpacing: -0.3 }}>
         {t('nav.social')}

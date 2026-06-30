@@ -42,7 +42,7 @@ function GirisForm() {
       <div className="split-left" style={{ flex: 1, background: 'linear-gradient(145deg, #4F46E5 0%, #6366F1 50%, #818CF8 100%)', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '60px', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: -80, right: -80, width: 300, height: 300, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
         <div style={{ position: 'absolute', bottom: -60, left: -60, width: 240, height: 240, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
-        <Link href="/" style={{ fontSize: 28, fontWeight: 800, color: '#fff', textDecoration: 'none', marginBottom: 48, display: 'block' }}>şipşakspor</Link>
+        <Link href="/" style={{ display: 'block', marginBottom: 48 }}>{/* eslint-disable-next-line @next/next/no-img-element */}<img src="/sipsakspor-logo-beyaz.svg" alt="Şipşakspor" style={{ height: 40, width: 'auto', display: 'block' }} /></Link>
         <h2 style={{ fontSize: 36, fontWeight: 800, color: '#fff', marginBottom: 16, lineHeight: 1.2 }}>{t('auth.heroTitle')}</h2>
         <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.8)', lineHeight: 1.7, maxWidth: 320 }}>
           {t('auth.heroDesc')}
