@@ -269,14 +269,6 @@ export default function Home() {
               style={{ width: '100%', padding: '16px 20px 16px 52px', borderRadius: 100, border: 'none', fontSize: 15, outline: 'none', backgroundColor: '#fff', color: '#1a1a1a', boxShadow: '0 8px 32px rgba(0,0,0,0.15)', boxSizing: 'border-box' }}
             />
           </div>
-          <div style={{ display: 'flex', gap: 20, justifyContent: 'center', marginTop: 24 }}>
-            {[{ n: '500+', l: t('home.statClasses') }, { n: '50+', l: t('home.statVenues') }, { n: '10K+', l: t('home.statBookings') }].map((s, i) => (
-              <div key={i} style={{ color: '#fff', textAlign: 'center' }}>
-                <div style={{ fontSize: 22, fontWeight: 800 }}>{s.n}</div>
-                <div style={{ fontSize: 12, opacity: 0.8, fontWeight: 500 }}>{s.l}</div>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
 

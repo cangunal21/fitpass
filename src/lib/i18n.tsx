@@ -50,8 +50,8 @@ const dict: Record<Lang, Record<string, string>> = {
     'login.venueOwner': 'Salon sahibi misiniz? →',
     'auth.heroTitle': "İstanbul'un spor platformu",
     'auth.heroDesc': "Yoga'dan boksa, halı sahadan pilates'e — İstanbul'un en iyi spor derslerini tek platformda keşfet.",
-    'auth.feat1': '500+ aktif ders ve etkinlik',
-    'auth.feat2': '50+ onaylı tesis ve salon',
+    'auth.feat1': 'Yoga\'dan tenise onlarca spor branşı',
+    'auth.feat2': 'Onaylı tesisler ve eğitmenler',
     'auth.feat3': 'Kolay rezervasyon ve iptal',
     'auth.emailLabel': 'E-posta adresi',
     // Kayıt
@@ -488,8 +488,8 @@ const dict: Record<Lang, Record<string, string>> = {
     'login.venueOwner': 'Are you a venue owner? →',
     'auth.heroTitle': "Istanbul's sports platform",
     'auth.heroDesc': 'From yoga to boxing, football to pilates — discover the best sports classes in Istanbul, all in one place.',
-    'auth.feat1': '500+ active classes and events',
-    'auth.feat2': '50+ verified venues and studios',
+    'auth.feat1': 'Dozens of sports, from yoga to tennis',
+    'auth.feat2': 'Verified venues and trainers',
     'auth.feat3': 'Easy booking and cancellation',
     'auth.emailLabel': 'Email address',
     // Register
