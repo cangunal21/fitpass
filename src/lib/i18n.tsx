@@ -370,7 +370,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'prof.cashbackAdvantage': '{tier} avantajı: her rezervasyonda %{pct} puan',
 
     'dropin.title': 'Drop-In Maçlar',
-    'dropin.subtitle': 'Basketbol, Padel ve Halı Saha — takım bul, hemen katıl!',
+    'dropin.subtitle': 'Takım bul, hemen katıl!',
     'dropin.empty': 'Açık maç yok',
     'dropin.emptySub': 'Yakında yeni maçlar eklenecek!',
     'dropin.occupancy': 'Doluluk',
@@ -808,7 +808,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'prof.cashbackAdvantage': '{tier} perk: {pct}% points on every booking',
 
     'dropin.title': 'Drop-In Matches',
-    'dropin.subtitle': 'Basketball, Padel & Football — find a team, join now!',
+    'dropin.subtitle': 'Find a team, join now!',
     'dropin.empty': 'No open matches',
     'dropin.emptySub': 'New matches coming soon!',
     'dropin.occupancy': 'Occupancy',

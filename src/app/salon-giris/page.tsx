@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Building2, AlertCircle } from 'lucide-react'
 
-const SPORT_OPTIONS = ['Yoga', 'Pilates', 'Boks', 'HIIT', 'Halı Saha', 'Basketbol', 'Padel', 'Tenis', 'Dans', 'Yüzme', 'Crossfit', 'Binicilik', 'Diğer']
 
 export default function SalonGirisPage() {
   const router = useRouter()
@@ -13,6 +12,7 @@ export default function SalonGirisPage() {
   const [form, setForm] = useState({ name: '', email: '', password: '', phone: '', address: '', description: '', neighborhoodId: '' })
   const [neighborhoods, setNeighborhoods] = useState<{ id: number; name: string }[]>([])
   const [selectedSports, setSelectedSports] = useState<string[]>([])
+  const [sportOptions, setSportOptions] = useState<string[]>([])
   const [instructor, setInstructor] = useState({ fullName: '', email: '', phone: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -31,6 +31,11 @@ export default function SalonGirisPage() {
     fetch(`${API_URL}/api/public/neighborhoods`)
       .then(r => r.json())
       .then(d => { if (Array.isArray(d?.neighborhoods)) setNeighborhoods(d.neighborhoods) })
+      .catch(() => {})
+    // Spor branşları DB kategorilerinden (hardcoded liste yerine — hep senkron)
+    fetch(`${API_URL}/api/public/categories`)
+      .then(r => r.json())
+      .then(d => { if (Array.isArray(d?.categories)) setSportOptions(d.categories.map((c: any) => c.name)) })
       .catch(() => {})
   }, [API_URL])
 
@@ -210,7 +215,7 @@ export default function SalonGirisPage() {
               <div>
                 <label style={labelStyle}>Spor Branşları <span style={{ color: '#DC2626' }}>*</span></label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
-                  {SPORT_OPTIONS.map(sport => (
+                  {sportOptions.map(sport => (
                     <button key={sport} type="button" onClick={() => toggleSport(sport)} style={{ padding: '6px 14px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, backgroundColor: selectedSports.includes(sport) ? '#4F46E5' : '#f0f0f0', color: selectedSports.includes(sport) ? '#fff' : '#555', transition: 'all 0.15s' }}>
                       {sport}
                     </button>
