@@ -10,6 +10,16 @@ export async function request(path: string, opts: RequestInit = {}, timeoutMs = 
   const timer = setTimeout(() => controller.abort(), timeoutMs)
   try {
     const res = await fetch(`${API_URL}${path}`, { ...opts, signal: controller.signal })
+    // Token süresi dolmuş/geçersiz (kullanıcı oturumu) → temizle + girişe yönlendir.
+    // Salon/admin kendi oturumunu kullanır; giriş/kayıt zaten token göndermez.
+    if (res.status === 401 && (opts.headers as Record<string, string> | undefined)?.Authorization && typeof window !== 'undefined') {
+      const p = window.location.pathname
+      if (!p.startsWith('/giris') && !p.startsWith('/kayit') && !p.startsWith('/salon') && !p.startsWith('/admin')) {
+        localStorage.removeItem('fitpass_token')
+        localStorage.removeItem('fitpass_user')
+        window.location.href = '/giris?expired=1'
+      }
+    }
     const text = await res.text()
     let body: any = null
     if (text) { try { body = JSON.parse(text) } catch { body = null } }
