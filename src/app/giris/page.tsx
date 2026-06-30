@@ -3,7 +3,7 @@
 import { useState, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { api, saveToken, saveUser } from '@/lib/api'
+import { api, saveToken, saveUser, saveRefreshToken } from '@/lib/api'
 import { AlertCircle } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 
@@ -27,6 +27,7 @@ function GirisForm() {
       const res = await api.login({ email: form.email, password: form.password })
       if (res.error) { setError(res.error); setLoading(false); return }
       saveToken(res.token)
+      saveRefreshToken(res.refreshToken)
       saveUser(res.user)
       const redirect = searchParams.get('redirect')
       router.push(redirect || '/')

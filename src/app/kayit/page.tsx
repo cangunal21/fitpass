@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { api, saveToken, saveUser } from '@/lib/api'
+import { api, saveToken, saveUser, saveRefreshToken } from '@/lib/api'
 import { AlertCircle, Gift } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 
@@ -59,6 +59,7 @@ function KayitForm() {
       if (res.error) { setError(res.error); setLoading(false); return }
 
       saveToken(res.token)
+      saveRefreshToken(res.refreshToken)
       saveUser(res.user)
       router.push('/')
     } catch {

@@ -5,18 +5,42 @@ const DEFAULT_TIMEOUT = 15000
 // Tek noktadan güvenli istek: timeout + ağ hatası + JSON-dışı yanıt yakalanır.
 // ASLA exception fırlatmaz → çağıran sayfalar offline/timeout/502'de çökmez,
 // tutarlı `{ error }` alır. (Çöp yığını whack-a-mole yerine oturan sistem.)
-export async function request(path: string, opts: RequestInit = {}, timeoutMs = DEFAULT_TIMEOUT): Promise<any> {
+// Sessiz yenileme: access token 401 dönünce refresh token ile yenisini al.
+// Eşzamanlı 401'ler tek bir refresh çağrısını paylaşır (refreshPromise).
+let refreshPromise: Promise<string | null> | null = null
+async function doRefresh(): Promise<string | null> {
+  if (typeof window === 'undefined') return null
+  const rt = localStorage.getItem('fitpass_refresh')
+  if (!rt) return null
+  try {
+    const res = await fetch(`${API_URL}/api/auth/refresh`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) })
+    if (!res.ok) return null
+    const data = await res.json()
+    if (data?.token) { localStorage.setItem('fitpass_token', data.token); return data.token }
+    return null
+  } catch { return null }
+}
+
+export async function request(path: string, opts: RequestInit = {}, timeoutMs = DEFAULT_TIMEOUT, _retried = false): Promise<any> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
   try {
     const res = await fetch(`${API_URL}${path}`, { ...opts, signal: controller.signal })
-    // Token süresi dolmuş/geçersiz (kullanıcı oturumu) → temizle + girişe yönlendir.
-    // Salon/admin kendi oturumunu kullanır; giriş/kayıt zaten token göndermez.
-    if (res.status === 401 && (opts.headers as Record<string, string> | undefined)?.Authorization && typeof window !== 'undefined') {
+    const hasAuth = !!(opts.headers as Record<string, string> | undefined)?.Authorization
+    // Access token süresi dolmuş → sessizce yenile + isteği bir kez tekrar dene.
+    if (res.status === 401 && hasAuth && !_retried && typeof window !== 'undefined' && !path.includes('/api/auth/refresh')) {
+      if (!refreshPromise) refreshPromise = doRefresh().finally(() => { refreshPromise = null })
+      const newToken = await refreshPromise
+      if (newToken) {
+        clearTimeout(timer)
+        return request(path, { ...opts, headers: { ...(opts.headers as object), Authorization: `Bearer ${newToken}` } }, timeoutMs, true)
+      }
+      // Yenileme de başarısız → oturum gerçekten bitti → temizle + girişe yönlendir
       const p = window.location.pathname
       if (!p.startsWith('/giris') && !p.startsWith('/kayit') && !p.startsWith('/salon') && !p.startsWith('/admin')) {
         localStorage.removeItem('fitpass_token')
         localStorage.removeItem('fitpass_user')
+        localStorage.removeItem('fitpass_refresh')
         window.location.href = '/giris?expired=1'
       }
     }
@@ -128,3 +152,11 @@ export const removeToken = () => { if (typeof window !== 'undefined') localStora
 export const saveUser = (user: object) => { if (typeof window !== 'undefined') localStorage.setItem('fitpass_user', JSON.stringify(user)) }
 export const getUser = () => { if (typeof window === 'undefined') return null; const u = localStorage.getItem('fitpass_user'); return u ? JSON.parse(u) : null }
 export const removeUser = () => { if (typeof window !== 'undefined') localStorage.removeItem('fitpass_user') }
+export const saveRefreshToken = (t: string) => { if (typeof window !== 'undefined' && t) localStorage.setItem('fitpass_refresh', t) }
+export const removeRefreshToken = () => { if (typeof window !== 'undefined') localStorage.removeItem('fitpass_refresh') }
+// Çıkış: refresh token'ı sunucuda iptal et + yerel oturumu tamamen temizle
+export const apiLogout = async () => {
+  const rt = typeof window !== 'undefined' ? localStorage.getItem('fitpass_refresh') : null
+  if (rt) { try { await fetch(`${API_URL}/api/auth/logout`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) }) } catch { /* yoksay */ } }
+  removeToken(); removeUser(); removeRefreshToken()
+}

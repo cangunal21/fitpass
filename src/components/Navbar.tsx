@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { getUser, getToken, removeToken, removeUser } from '@/lib/api'
+import { getUser, getToken, apiLogout } from '@/lib/api'
 import { useRouter } from 'next/navigation'
 import { User, LogOut, Bell } from 'lucide-react'
 import { useT } from '@/lib/i18n'
@@ -56,8 +56,7 @@ export default function Navbar() {
   }
 
   const handleLogout = () => {
-    removeToken()
-    removeUser()
+    apiLogout()
     setUser(null)
     setShowMenu(false)
     router.push('/')
