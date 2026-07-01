@@ -634,7 +634,7 @@ export default function SalonPaneliPage() {
                   <div className="form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                     <div>
                       <label style={labelStyle}>Ders Adı *</label>
-                      <input type="text" placeholder="Vinyasa Flow Yoga" value={classForm.title} onChange={e => setClassForm({ ...classForm, title: e.target.value })} required style={inputStyle} />
+                      <input type="text" placeholder="Ders adı" value={classForm.title} onChange={e => setClassForm({ ...classForm, title: e.target.value })} required style={inputStyle} />
                     </div>
                     <div>
                       <label style={labelStyle}>Kategori *</label>
@@ -942,7 +942,7 @@ export default function SalonPaneliPage() {
               <form onSubmit={handleAddInstructor} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div>
                   <label style={labelStyle}>Ad Soyad *</label>
-                  <input type="text" placeholder="Ayşe Kaya" value={instructorForm.fullName} onChange={e => setInstructorForm({ ...instructorForm, fullName: e.target.value })} required style={inputStyle} />
+                  <input type="text" placeholder="Hoca adı soyadı" value={instructorForm.fullName} onChange={e => setInstructorForm({ ...instructorForm, fullName: e.target.value })} required style={inputStyle} />
                 </div>
                 <div>
                   <label style={labelStyle}>Uzmanlık Alanı *</label>

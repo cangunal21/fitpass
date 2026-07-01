@@ -234,7 +234,7 @@ export default function SalonGirisPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <div>
                     <label style={labelStyle}>Ad Soyad</label>
-                    <input type="text" placeholder="Ayşe Kaya" value={instructor.fullName} onChange={e => setInstructor({ ...instructor, fullName: e.target.value })} style={inputStyle} />
+                    <input type="text" placeholder="Hoca adı soyadı" value={instructor.fullName} onChange={e => setInstructor({ ...instructor, fullName: e.target.value })} style={inputStyle} />
                   </div>
                   <div>
                     <label style={labelStyle}>E-posta</label>
