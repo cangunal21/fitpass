@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Building2, Clock, BookOpen, Calendar, Ticket, AlertCircle, User, Check, ChevronDown, ChevronUp, Plus } from 'lucide-react'
+import { Building2, Clock, BookOpen, Calendar, Ticket, AlertCircle, User, Check, ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react'
 import AvatarUpload from '@/components/AvatarUpload'
 import { getInitialsAvatar, uploadToCloudinary } from '@/lib/cloudinary'
 
@@ -391,6 +391,25 @@ export default function SalonPaneliPage() {
     setInstructorSuccess('Hoca başarıyla eklendi!')
     setInstructorForm({ fullName: '', specialty: '', bio: '', avatarUrl: '', phone: '', email: '' })
     setNewInstructorAvatar('')
+    fetchInstructors()
+    setTimeout(() => setInstructorSuccess(''), 2000)
+  }
+
+  const handleDeleteInstructor = async (inst: any) => {
+    const n = inst._count?.classes || 0
+    const msg = n > 0
+      ? `${inst.fullName} adlı hocayı silmek istediğinize emin misiniz?\n\n${n} derse atanmış — silince o dersler "hoca atanmamış" olur (dersler silinmez, sonra başka hoca atayabilirsiniz).`
+      : `${inst.fullName} adlı hocayı silmek istediğinize emin misiniz?`
+    if (!confirm(msg)) return
+    setInstructorError(''); setInstructorSuccess('')
+    const token = localStorage.getItem('fitpass_venue_token')!
+    const res = await fetch(`${API_URL}/api/venue/instructors/${inst.id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    const data = await res.json()
+    if (data.error) { setInstructorError(data.error); return }
+    setInstructorSuccess('Hoca silindi.')
     fetchInstructors()
     setTimeout(() => setInstructorSuccess(''), 2000)
   }
@@ -905,6 +924,15 @@ export default function SalonPaneliPage() {
                     {inst.bio && <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{inst.bio}</div>}
                     <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>{inst._count?.classes || 0} ders</div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteInstructor(inst)}
+                    title="Hocayı sil"
+                    aria-label={`${inst.fullName} hocasını sil`}
+                    style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626', padding: 8, borderRadius: 8, display: 'flex', alignItems: 'center' }}
+                  >
+                    <Trash2 size={18} />
+                  </button>
                 </div>
               ))}
             </div>
