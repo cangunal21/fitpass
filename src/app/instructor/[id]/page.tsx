@@ -7,7 +7,7 @@ const dateLocale = () => (typeof window !== 'undefined' && localStorage.getItem(
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import Navbar from '@/components/Navbar'
-import { MapPin, Calendar, Star, User, ChevronLeft } from 'lucide-react'
+import { MapPin, Calendar, Star, User, ChevronLeft, BadgeCheck } from 'lucide-react'
 import { SportIconBox, getIconKeyForCategory, getColorForCategory } from '@/lib/sportIcons'
 import { getInitialsAvatar } from '@/lib/cloudinary'
 
@@ -80,7 +80,7 @@ export default function InstructorPage() {
                 </div>
               )}
             </div>
-            <h1 style={{ fontSize: 24, fontWeight: 800, color: '#1a1a1a', marginBottom: 4 }}>{instructor.fullName}</h1>
+            <h1 style={{ fontSize: 24, fontWeight: 800, color: '#1a1a1a', marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 8 }}>{instructor.fullName}{instructor.verified && <BadgeCheck size={22} color="#2563EB" />}</h1>
             {instructor.specialty && (
               <div style={{ fontSize: 14, color: '#6366F1', fontWeight: 600, marginBottom: 8 }}>{instructor.specialty}</div>
             )}

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Building2, Clock, BookOpen, Calendar, Ticket, AlertCircle, User, Check, ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react'
+import { Building2, Clock, BookOpen, Calendar, Ticket, AlertCircle, User, Check, ChevronDown, ChevronUp, Plus, Trash2, BadgeCheck } from 'lucide-react'
 import AvatarUpload from '@/components/AvatarUpload'
 import { getInitialsAvatar, uploadToCloudinary } from '@/lib/cloudinary'
 
@@ -919,7 +919,7 @@ export default function SalonPaneliPage() {
                     }}
                   />
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>{inst.fullName}</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: 5 }}>{inst.fullName}{inst.verified && <BadgeCheck size={15} color="#2563EB" />}</div>
                     <div style={{ fontSize: 12, color: '#4F46E5', fontWeight: 600 }}>{inst.specialty}</div>
                     {inst.bio && <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{inst.bio}</div>}
                     <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>{inst._count?.classes || 0} ders</div>

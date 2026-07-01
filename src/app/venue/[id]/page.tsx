@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { mockVenues, mockClasses, mockInstructors } from '@/lib/mockData'
 import Navbar from '@/components/Navbar'
-import { MapPin, Calendar, User, Star, Clock, Timer, Flame, Bookmark } from 'lucide-react'
+import { MapPin, Calendar, User, Star, Clock, Timer, Flame, Bookmark, BadgeCheck } from 'lucide-react'
 import { SportIconBox } from '@/lib/sportIcons'
 import { api } from '@/lib/api'
 import { SkeletonVenuePage } from '@/components/Skeleton'
@@ -461,7 +461,7 @@ export default function VenuePage() {
                     onMouseLeave={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor = '#F0F0F0'; el.style.boxShadow = 'none' }}
                   >
                     <div style={{ margin: '0 auto 16px', display: 'flex', justifyContent: 'center' }}><SportIconBox name={instructor.icon} bgColor={instructor.color + '30'} iconColor={instructor.color} boxSize={72} borderRadius={36} size={32} /></div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: '#111', marginBottom: 4 }}>{instructor.fullName}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#111', marginBottom: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>{instructor.fullName}{instructor.verified && <BadgeCheck size={16} color="#2563EB" />}</div>
                     <div style={{ fontSize: 12, fontWeight: 600, color: '#6366F1', background: '#EEF2FF', padding: '3px 12px', borderRadius: 100, display: 'inline-block', marginBottom: 10 }}>{lang === 'en' && instructor.specialtyEn ? instructor.specialtyEn : instructor.specialty}</div>
                     <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
                       <span style={{ fontSize: 13, color: '#F59E0B', fontWeight: 700 }}>★ {instructor.avgRating}</span>
@@ -484,7 +484,7 @@ export default function VenuePage() {
                     ) : (
                       <div style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}><User size={32} color="#4F46E5" /></div>
                     )}
-                    <div style={{ fontSize: 16, fontWeight: 700, color: '#111', marginBottom: 4 }}>{instructor.fullName}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#111', marginBottom: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>{instructor.fullName}{instructor.verified && <BadgeCheck size={16} color="#2563EB" />}</div>
                     {instructor.specialty && <div style={{ fontSize: 12, fontWeight: 600, color: '#6366F1', background: '#EEF2FF', padding: '3px 12px', borderRadius: 100, display: 'inline-block', marginBottom: 10 }}>{lang === 'en' && instructor.specialtyEn ? instructor.specialtyEn : instructor.specialty}</div>}
                     {instructor.bio && <div style={{ fontSize: 13, color: '#888', marginBottom: 10, lineHeight: 1.5 }}>{lang === 'en' && instructor.bioEn ? instructor.bioEn : instructor.bio}</div>}
                     <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>

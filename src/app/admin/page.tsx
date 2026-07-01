@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Lock, User, Building2, Ticket, Clock } from 'lucide-react'
+import { Lock, User, Building2, Ticket, Clock, BadgeCheck } from 'lucide-react'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false)
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState('')
-  const [activeTab, setActiveTab] = useState<'stats' | 'venues' | 'venue-images' | 'reports' | 'users' | 'bookings' | 'coupons' | 'categories'>('venues')
+  const [activeTab, setActiveTab] = useState<'stats' | 'venues' | 'venue-images' | 'reports' | 'users' | 'bookings' | 'coupons' | 'categories' | 'instructors'>('venues')
   const [pendingImages, setPendingImages] = useState<any[]>([])
   const [reports, setReports] = useState<any[]>([])
   const [stats, setStats] = useState<any>(null)
@@ -18,6 +18,7 @@ export default function AdminPage() {
   const [bookings, setBookings] = useState<any[]>([])
   const [coupons, setCoupons] = useState<any[]>([])
   const [categories, setCategories] = useState<any[]>([])
+  const [instructors, setInstructors] = useState<any[]>([])
   const [newCat, setNewCat] = useState({ name: '', colorHex: '#4F46E5', iconUrl: '' })
   const [editingCatId, setEditingCatId] = useState<number | null>(null)
   const [editCat, setEditCat] = useState({ name: '', colorHex: '' })
@@ -158,6 +159,7 @@ export default function AdminPage() {
     if (tab === 'categories') fetchCategories()
     if (tab === 'venue-images') fetchPendingImages()
     if (tab === 'reports') fetchReports()
+    if (tab === 'instructors') fetchInstructors()
   }
 
   const handleApprove = async (id: number, approve: boolean) => {
@@ -197,6 +199,21 @@ export default function AdminPage() {
     if (!confirm('Bu kuponu silmek istediğinize emin misiniz?')) return
     await fetch(`${API_URL}/api/admin/coupons/${id}`, { method: 'DELETE', headers: getHeaders() })
     setCoupons(prev => prev.filter(c => c.id !== id))
+  }
+
+  const fetchInstructors = async () => {
+    const res = await fetch(`${API_URL}/api/admin/instructors`, { headers: getHeaders() })
+    const data = await res.json()
+    setInstructors(data.instructors || [])
+  }
+
+  const handleVerifyInstructor = async (id: number, verified: boolean) => {
+    await fetch(`${API_URL}/api/admin/instructors/${id}/verify`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify({ verified }),
+    })
+    setInstructors(prev => prev.map(i => i.id === id ? { ...i, verified } : i))
   }
 
   if (!authed) {
@@ -255,6 +272,7 @@ export default function AdminPage() {
             { key: 'bookings', label: 'Rezervasyonlar' },
             { key: 'coupons', label: 'Kuponlar' },
             { key: 'categories', label: 'Kategoriler' },
+            { key: 'instructors', label: 'Hocalar' },
           ] as const).map(tab => (
             <button key={tab.key} onClick={() => handleTab(tab.key)} style={{ padding: '10px 20px', borderRadius: 12, border: 'none', background: activeTab === tab.key ? '#fff' : 'transparent', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: activeTab === tab.key ? '#1a1a1a' : '#888', boxShadow: activeTab === tab.key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
               {tab.label}
@@ -513,6 +531,35 @@ export default function AdminPage() {
                     <div style={{ fontSize: 11, color: '#F59E0B', fontWeight: 600 }}>
                       {b.notes.split('İptal: ')[1] || 'İptal'}
                     </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* HOCALAR */}
+        {activeTab === 'instructors' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {instructors.length === 0 && <div style={{ color: '#888', fontSize: 14 }}>Hoca yok.</div>}
+            {instructors.map(inst => (
+              <div key={inst.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {inst.fullName}
+                    {inst.verified && <BadgeCheck size={16} color="#2563EB" />}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#888' }}>{inst.specialty || '—'} · {inst.venue?.name || 'Salon yok'}</div>
+                  <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{inst._count?.classes || 0} ders · ⭐ {(inst.avgRating ?? 0).toFixed(1)} ({inst.totalReviews || 0})</div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                  {inst.verified ? (
+                    <>
+                      <span style={{ fontSize: 12, backgroundColor: '#EFF6FF', color: '#2563EB', padding: '3px 10px', borderRadius: 100, fontWeight: 600 }}>Doğrulanmış</span>
+                      <button onClick={() => handleVerifyInstructor(inst.id, false)} style={{ padding: '5px 12px', borderRadius: 8, border: 'none', background: '#EF4444', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Doğrulamayı Kaldır</button>
+                    </>
+                  ) : (
+                    <button onClick={() => handleVerifyInstructor(inst.id, true)} style={{ padding: '5px 12px', borderRadius: 8, border: 'none', background: '#2563EB', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Doğrula</button>
                   )}
                 </div>
               </div>
