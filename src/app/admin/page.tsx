@@ -9,7 +9,7 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false)
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState('')
-  const [activeTab, setActiveTab] = useState<'stats' | 'venues' | 'venue-images' | 'reports' | 'users' | 'bookings' | 'coupons' | 'categories' | 'instructors'>('venues')
+  const [activeTab, setActiveTab] = useState<'stats' | 'venues' | 'venue-images' | 'reports' | 'users' | 'bookings' | 'coupons' | 'categories' | 'instructors' | 'complaints'>('venues')
   const [pendingImages, setPendingImages] = useState<any[]>([])
   const [reports, setReports] = useState<any[]>([])
   const [stats, setStats] = useState<any>(null)
@@ -19,6 +19,7 @@ export default function AdminPage() {
   const [coupons, setCoupons] = useState<any[]>([])
   const [categories, setCategories] = useState<any[]>([])
   const [instructors, setInstructors] = useState<any[]>([])
+  const [complaints, setComplaints] = useState<any[]>([])
   const [newCat, setNewCat] = useState({ name: '', colorHex: '#4F46E5', iconUrl: '' })
   const [editingCatId, setEditingCatId] = useState<number | null>(null)
   const [editCat, setEditCat] = useState({ name: '', colorHex: '' })
@@ -160,6 +161,7 @@ export default function AdminPage() {
     if (tab === 'venue-images') fetchPendingImages()
     if (tab === 'reports') fetchReports()
     if (tab === 'instructors') fetchInstructors()
+    if (tab === 'complaints') fetchComplaints()
   }
 
   const handleApprove = async (id: number, approve: boolean) => {
@@ -214,6 +216,17 @@ export default function AdminPage() {
       body: JSON.stringify({ verified }),
     })
     setInstructors(prev => prev.map(i => i.id === id ? { ...i, verified } : i))
+  }
+
+  const fetchComplaints = async () => {
+    const res = await fetch(`${API_URL}/api/admin/complaints`, { headers: getHeaders() })
+    const data = await res.json()
+    setComplaints(data.complaints || [])
+  }
+
+  const handleResolveComplaint = async (id: number) => {
+    await fetch(`${API_URL}/api/admin/complaints/${id}/resolve`, { method: 'PUT', headers: getHeaders() })
+    setComplaints(prev => prev.map(c => c.id === id ? { ...c, status: 'resolved' } : c))
   }
 
   if (!authed) {
@@ -273,6 +286,7 @@ export default function AdminPage() {
             { key: 'coupons', label: 'Kuponlar' },
             { key: 'categories', label: 'Kategoriler' },
             { key: 'instructors', label: 'Hocalar' },
+            { key: 'complaints', label: 'Mesajlar' },
           ] as const).map(tab => (
             <button key={tab.key} onClick={() => handleTab(tab.key)} style={{ padding: '10px 20px', borderRadius: 12, border: 'none', background: activeTab === tab.key ? '#fff' : 'transparent', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: activeTab === tab.key ? '#1a1a1a' : '#888', boxShadow: activeTab === tab.key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
               {tab.label}
@@ -561,6 +575,31 @@ export default function AdminPage() {
                   ) : (
                     <button onClick={() => handleVerifyInstructor(inst.id, true)} style={{ padding: '5px 12px', borderRadius: 8, border: 'none', background: '#2563EB', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Doğrula</button>
                   )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* MESAJLAR (iletişim/şikayet formu) */}
+        {activeTab === 'complaints' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {complaints.length === 0 && <div style={{ color: '#888', fontSize: 14 }}>Mesaj yok.</div>}
+            {complaints.map(c => (
+              <div key={c.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', opacity: c.status === 'resolved' ? 0.6 : 1 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a' }}>{c.subject}</div>
+                    <div style={{ fontSize: 12, color: '#888', marginBottom: 6 }}>{c.name} · {c.email} · {new Date(c.createdAt).toLocaleString('tr-TR')}</div>
+                    <div style={{ fontSize: 14, color: '#444', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{c.message}</div>
+                  </div>
+                  <div style={{ flexShrink: 0 }}>
+                    {c.status === 'resolved' ? (
+                      <span style={{ fontSize: 12, backgroundColor: '#F0FDF4', color: '#16a34a', padding: '4px 12px', borderRadius: 100, fontWeight: 600 }}>Çözüldü</span>
+                    ) : (
+                      <button onClick={() => handleResolveComplaint(c.id)} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', background: '#10B981', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Çözüldü işaretle</button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
