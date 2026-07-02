@@ -68,14 +68,16 @@ export default function SalonlarPage() {
             <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('venues.search')} style={{ width: '100%', padding: '11px 12px 11px 36px', borderRadius: 12, border: '1.5px solid #e5e5e5', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
           </div>
-          <select value={district} onChange={e => setDistrict(e.target.value)} style={selStyle}>
-            <option value="">{t('common.district')}</option>
-            {neighborhoods.map(n => <option key={n.id} value={String(n.id)}>{n.name}</option>)}
-          </select>
-          <select value={category} onChange={e => setCategory(e.target.value)} style={selStyle}>
-            <option value="">{t('common.category')}</option>
-            {categories.map(c => <option key={c.id} value={c.name}>{translateCategory(c.name, lang)}</option>)}
-          </select>
+          <div style={{ display: 'flex', gap: 10, flex: '1 1 300px' }}>
+            <select value={district} onChange={e => setDistrict(e.target.value)} style={{ ...selStyle, flex: 1, minWidth: 0 }}>
+              <option value="">{t('common.district')}</option>
+              {neighborhoods.map(n => <option key={n.id} value={String(n.id)}>{n.name}</option>)}
+            </select>
+            <select value={category} onChange={e => setCategory(e.target.value)} style={{ ...selStyle, flex: 1, minWidth: 0 }}>
+              <option value="">{t('common.category')}</option>
+              {categories.map(c => <option key={c.id} value={c.name}>{translateCategory(c.name, lang)}</option>)}
+            </select>
+          </div>
           {hasFilters && (
             <button onClick={clearFilters} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 14px', borderRadius: 12, border: '1.5px solid #e5e5e5', background: '#fff', color: '#666', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
               <X size={14} /> {t('common.clear')}
