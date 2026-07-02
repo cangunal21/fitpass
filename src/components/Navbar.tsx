@@ -69,9 +69,14 @@ export default function Navbar() {
         <img src="/sipsakspor-logo.svg" alt="Şipşakspor" style={{ height: 34, width: 'auto', display: 'block' }} />
       </Link>
 
-      <Link href="/sosyal" style={{ fontSize: 16, fontWeight: 800, color: '#4F46E5', textDecoration: 'none', padding: '6px 12px', borderRadius: 8, letterSpacing: -0.3 }}>
-        {t('nav.social')}
-      </Link>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Link href="/salonlar" style={{ fontSize: 16, fontWeight: 800, color: '#4F46E5', textDecoration: 'none', padding: '6px 12px', borderRadius: 8, letterSpacing: -0.3 }}>
+          {t('nav.venues')}
+        </Link>
+        <Link href="/sosyal" style={{ fontSize: 16, fontWeight: 800, color: '#4F46E5', textDecoration: 'none', padding: '6px 12px', borderRadius: 8, letterSpacing: -0.3 }}>
+          {t('nav.social')}
+        </Link>
+      </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <div
