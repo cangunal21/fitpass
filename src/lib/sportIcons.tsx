@@ -1,5 +1,5 @@
 import {
-  Dumbbell, Trophy, Music2, Leaf, Target, Heart, Zap, Star, Circle, Medal, Shield, Sailboat
+  Dumbbell, Trophy, Leaf, Target, Heart, Zap, Star, Circle, Medal, Shield, Sailboat
 } from 'lucide-react'
 import type { LucideProps } from 'lucide-react'
 import {
@@ -11,20 +11,20 @@ import {
 import { PiBoxingGlove } from 'react-icons/pi'
 import { FaRunning, FaHorse } from 'react-icons/fa'
 import { GrYoga } from 'react-icons/gr'
-import { TbYoga } from 'react-icons/tb'
+import { MdSelfImprovement, MdSportsGymnastics } from 'react-icons/md'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const iconMap: Record<string, React.ComponentType<any>> = {
   // Sporlar
-  yoga: GrYoga,
-  pilates: TbYoga,
+  yoga: MdSelfImprovement,
+  pilates: GrYoga,
   boxing: PiBoxingGlove,
   hiit: FaRunning,
   football: IconBallFootball,
   basketball: IconBallBasketball,
   padel: IconBallTennis,
   swimming: IconSwimming,
-  dance: Music2,
+  dance: MdSportsGymnastics,
   wellness: Leaf,
   weightlifting: Dumbbell,
   strength: Dumbbell,

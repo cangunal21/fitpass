@@ -8,9 +8,9 @@ import { getUser, getToken } from '@/lib/api'
 import { getInitialsAvatar } from '@/lib/cloudinary'
 import { MapPin, Heart, MessageCircle, X, Send, Award, Flag, Target, Flame, Compass, Users, Trophy } from 'lucide-react'
 import Link from 'next/link'
-import { SportIconBox, SportIcon, getIconKeyForCategory } from '@/lib/sportIcons'
+import { SportIcon, getIconKeyForCategory } from '@/lib/sportIcons'
 import { useT, translateCategory, translateBadge } from '@/lib/i18n'
-import { mockSocialUsers as MOCK_USERS, mockSocialFeed as MOCK_FEED, mockSocialVenues as MOCK_VENUES } from '@/lib/mockData'
+import { mockSocialUsers as MOCK_USERS, mockSocialFeed as MOCK_FEED } from '@/lib/mockData'
 
 const FEED_BADGE_ICONS: Record<string, any> = { Flag, Target, Flame, Compass, Heart, Users, Trophy }
 function FeedBadgeIcon({ icon, sportName, size = 16, color = '#4F46E5' }: { icon: string; sportName?: string | null; size?: number; color?: string }) {
@@ -31,12 +31,11 @@ export default function SosyalPage() {
   const [feed, setFeed] = useState<any[]>([])
   const [isMockFeed, setIsMockFeed] = useState(false)
   const [feedLoading, setFeedLoading] = useState(false)
-  const [siralamaType, setSiralamaType] = useState<'kullanici' | 'streak' | 'salon'>('kullanici')
+  const [siralamaType, setSiralamaType] = useState<'kullanici' | 'streak'>('kullanici')
   const [selectedBranch, setSelectedBranch] = useState('all')
   const [neighborhoods, setNeighborhoods] = useState<{ id: number; name: string }[]>([])
   const [selectedNeighborhood, setSelectedNeighborhood] = useState('')
   const [userLeaderboard, setUserLeaderboard] = useState<any[]>([])
-  const [venueLeaderboard, setVenueLeaderboard] = useState<any[]>([])
   const [streakLeaderboard, setStreakLeaderboard] = useState<any[]>([])
   const [following, setFollowing] = useState<any[]>([])
   const [followers, setFollowers] = useState<any[]>([])
@@ -78,14 +77,10 @@ export default function SosyalPage() {
         const res = await fetch(`${API_URL}/api/social/leaderboard/users?${params}`)
         const data = await res.json()
         setUserLeaderboard(data.leaderboard || [])
-      } else if (siralamaType === 'streak') {
+      } else {
         const res = await fetch(`${API_URL}/api/social/leaderboard/streaks?${params}`)
         const data = await res.json()
         setStreakLeaderboard(data.leaderboard || [])
-      } else {
-        const res = await fetch(`${API_URL}/api/social/leaderboard/venues?${params}`)
-        const data = await res.json()
-        setVenueLeaderboard(data.leaderboard || [])
       }
     } catch {}
     setLoading(false)
@@ -235,7 +230,7 @@ export default function SosyalPage() {
           <div>
             {/* Type toggle */}
             <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-              {[{ key: 'kullanici', label: t('lb.users') }, { key: 'streak', label: t('lb.streak') }, { key: 'salon', label: t('lb.venues') }].map(t => (
+              {[{ key: 'kullanici', label: t('lb.users') }, { key: 'streak', label: t('lb.streak') }].map(t => (
                 <button key={t.key} onClick={() => setSiralamaType(t.key as any)}
                   style={{ padding: '8px 20px', borderRadius: 100, border: siralamaType === t.key ? 'none' : '1.5px solid #e5e5e5', background: siralamaType === t.key ? '#4F46E5' : '#fff', color: siralamaType === t.key ? '#fff' : '#666', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
                   {t.label}
@@ -330,44 +325,6 @@ export default function SosyalPage() {
             )}
 
             {/* Venue Leaderboard */}
-            {siralamaType === 'salon' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {loading ? (
-                  <SkeletonList count={5} />
-                ) : (venueLeaderboard.length === 0 ? MOCK_VENUES : venueLeaderboard).map((venue, i) => (
-                  <Link key={venue.id} href={typeof venue.id === 'number' ? `/venue/${venue.id}` : '#'} style={{ textDecoration: 'none' }}>
-                    <div style={{ backgroundColor: i < 3 ? '#FFFBEB' : '#fff', borderRadius: 16, padding: '14px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 14, border: i === 0 ? '2px solid #F59E0B' : '1px solid transparent' }}>
-                      <div style={{ width: 36, textAlign: 'center', fontSize: i < 3 ? 22 : 14, fontWeight: 800, color: medalColor(i) }}>
-                        {medalEmoji(i)}
-                      </div>
-                      {venue.coverImageUrl ? (
-                        <img src={venue.coverImageUrl} style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} alt="" />
-                      ) : (
-                        <SportIconBox
-                          name={venue.mainIcon || (venue.sportCategories?.[0]?.sportCategory?.name?.toLowerCase() ?? 'weightlifting')}
-                          bgColor={venue.iconBg || '#EEF2FF'}
-                          iconColor={venue.iconColor || '#4F46E5'}
-                          boxSize={44}
-                          size={22}
-                        />
-                      )}
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a' }}>{venue.name}</div>
-                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 3 }}>
-                          {venue.sportCategories?.slice(0, 3).map((sc: any) => (
-                            <span key={sc.sportCategory.name} style={{ fontSize: 11, backgroundColor: '#EEF2FF', color: '#4F46E5', padding: '2px 8px', borderRadius: 20 }}>{sc.sportCategory.name}</span>
-                          ))}
-                        </div>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 18, fontWeight: 800, color: '#F59E0B' }}>★ {venue.avgRating?.toFixed(1) || '—'}</div>
-                        <div style={{ fontSize: 11, color: '#888' }}>{venue.totalReviews} {t('cls.reviews')}</div>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
           </div>
         )}
 

@@ -20,6 +20,7 @@ export default function SalonlarPage() {
   const [city, setCity] = useState('')          // cityId (string)
   const [district, setDistrict] = useState('')   // neighborhoodId (string)
   const [category, setCategory] = useState('')   // kategori adı
+  const [sort, setSort] = useState<'recommended' | 'rating' | 'newest'>('recommended')
 
   // Türkçe alfabetik sıralama (İ/ı, ş, ğ, ö, ü, ç doğru sıralansın)
   const trSort = (arr: any[]) => [...arr].sort((a, b) => a.name.localeCompare(b.name, 'tr'))
@@ -44,7 +45,7 @@ export default function SalonlarPage() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
-    return base.filter(v => {
+    const list = base.filter(v => {
       if (q) {
         const hay = `${v.name || ''} ${v.address || ''} ${v.neighborhood?.name || ''}`.toLowerCase()
         if (!hay.includes(q)) return false
@@ -60,7 +61,15 @@ export default function SalonlarPage() {
       }
       return true
     })
-  }, [base, search, city, district, category])
+    const rating = (v: any) => Number(v.avgRating) || 0
+    const reviews = (v: any) => Number(v.totalReviews) || 0
+    const created = (v: any) => new Date(v.createdAt || 0).getTime()
+    const arr = [...list]
+    if (sort === 'rating') arr.sort((a, b) => rating(b) - rating(a) || reviews(b) - reviews(a))
+    else if (sort === 'newest') arr.sort((a, b) => created(b) - created(a))
+    else arr.sort((a, b) => (Number(!!b.isVerified) - Number(!!a.isVerified)) || rating(b) - rating(a) || reviews(b) - reviews(a)) // önerilen
+    return arr
+  }, [base, search, city, district, category, sort])
 
   const hasFilters = !!(search || city || district || category)
   const clearFilters = () => { setSearch(''); setCity(''); setDistrict(''); setCategory('') }
@@ -102,7 +111,14 @@ export default function SalonlarPage() {
           )}
         </div>
 
-        <div style={{ fontSize: 13, color: '#888', marginBottom: 14, fontWeight: 600 }}>{filtered.length} {t('venues.countLabel')}</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ fontSize: 13, color: '#888', fontWeight: 600 }}>{filtered.length} {t('venues.countLabel')}</div>
+          <select value={sort} onChange={e => setSort(e.target.value as 'recommended' | 'rating' | 'newest')} style={{ ...selStyle, padding: '8px 12px', fontSize: 13 }}>
+            <option value="recommended">{t('sort.recommended')}</option>
+            <option value="rating">{t('sort.rating')}</option>
+            <option value="newest">{t('sort.newest')}</option>
+          </select>
+        </div>
 
         {filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 20px', color: '#bbb', fontSize: 15 }}>{t('venues.empty')}</div>
