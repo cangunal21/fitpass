@@ -887,6 +887,7 @@ const dict: Record<Lang, Record<string, string>> = {
 // Veri çevirileri (DB'den gelen sabit değerler)
 const CATEGORY_EN: Record<string, string> = {
   'Basketbol': 'Basketball', 'Binicilik': 'Horse Riding', 'Crossfit': 'CrossFit',
+  'Fitness': 'Fitness',
   'Dans': 'Dance', 'Dövüş Sporları': 'Combat Sports', 'Halı Saha': 'Football',
   'HIIT': 'HIIT', 'Padel': 'Padel', 'Tenis': 'Tennis', 'Pilates': 'Pilates',
   'Deniz Sporları': 'Water Sports', 'Yatçılık': 'Sailing',
