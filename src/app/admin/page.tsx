@@ -479,7 +479,7 @@ export default function AdminPage() {
             <form onSubmit={handleAddCategory} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 2, minWidth: 160 }}>
                 <label style={{ fontSize: 12, fontWeight: 600, color: '#555' }}>Kategori Adı</label>
-                <input value={newCat.name} onChange={e => setNewCat(p => ({ ...p, name: e.target.value }))} placeholder="örn. Yelken / Yatçılık" style={inputStyle} />
+                <input value={newCat.name} onChange={e => setNewCat(p => ({ ...p, name: e.target.value }))} placeholder="örn. Deniz Sporları" style={inputStyle} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <label style={{ fontSize: 12, fontWeight: 600, color: '#555' }}>Renk</label>
