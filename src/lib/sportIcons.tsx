@@ -1,5 +1,5 @@
 import {
-  Dumbbell, Trophy, Music2, Leaf, Target, Heart, Zap, Star, Circle, Medal, Shield, Waves
+  Dumbbell, Trophy, Music2, Leaf, Target, Heart, Zap, Star, Circle, Medal, Shield, Sailboat
 } from 'lucide-react'
 import type { LucideProps } from 'lucide-react'
 import {
@@ -31,8 +31,8 @@ const iconMap: Record<string, React.ComponentType<any>> = {
   crossfit: Dumbbell,
   equestrian: FaHorse,
   binicilik: FaHorse,
-  sailing: Waves,
-  yelken: Waves,
+  sailing: Sailboat,
+  yelken: Sailboat,
   // Rozetler
   target: Target,
   heart: Heart,
