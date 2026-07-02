@@ -25,6 +25,16 @@ export const metadata: Metadata = {
   authors: [{ name: "Şipşakspor" }],
   creator: "Şipşakspor",
   metadataBase: new URL("https://sipsakspor.com"),
+  icons: {
+    // Safari sekme favicon'u SVG'yi güvenilir göstermiyor → PNG'leri önce ver (Safari PNG'yi seçer).
+    icon: [
+      { url: "/favicon-32.png", type: "image/png", sizes: "32x32" },
+      { url: "/favicon-512.png", type: "image/png", sizes: "512x512" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: ["/favicon-32.png"],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180" }],
+  },
   openGraph: {
     type: "website",
     locale: "tr_TR",
