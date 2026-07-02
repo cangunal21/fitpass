@@ -76,8 +76,7 @@ export function getColorForCategory(name: string): string {
   if (n.includes('padel')) return '#EAB308'
   if (n.includes('boks') || n.includes('dövüş') || n.includes('mma') || n.includes('kick')) return '#DC2626'
   if (n.includes('cross')) return '#B45309'
-  if (n.includes('hiit') || n.includes('kondisyon')) return '#EA580C'
-  if (n.includes('fitness')) return '#F97316'
+  if (n.includes('hiit') || n.includes('kondisyon') || n.includes('fitness')) return '#EA580C'
   if (n.includes('binici') || n.includes('biniç') || n.includes('equestrian')) return '#92400E'
   if (n.includes('yelken') || n.includes('yatçılık') || n.includes('deniz')) return '#0EA5E9'
   return '#4F46E5'
@@ -91,10 +90,13 @@ export function resolveCategoryColor(colorHex?: string | null, name = ''): strin
   return getColorForCategory(name)
 }
 
-// DB iconUrl geçerliyse onu, yoksa isimden türetir — TEK ikon kaynağı.
+// İsim net bir spora işaret ediyorsa ONDAN türet (yeniden adlandırmada DB iconUrl bayatlayabilir —
+// örn. HIIT->Fitness rename'inde iconUrl 'hiit' kalır); isim genelse DB iconUrl'e düş. TEK ikon kaynağı.
 export function resolveCategoryIcon(iconUrl?: string | null, name = ''): string {
+  const byName = getIconKeyForCategory(name)
+  if (byName !== 'strength') return byName
   if (iconUrl && iconMap[iconUrl]) return iconUrl
-  return getIconKeyForCategory(name)
+  return 'strength'
 }
 
 interface SportIconProps extends LucideProps {
