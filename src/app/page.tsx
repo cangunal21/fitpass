@@ -80,10 +80,11 @@ export default function Home() {
     ...mockClassItems,
     ...mockDropInItems,
   ])
-  const [filters, setFilters] = useState({ category: '', date: '', neighborhoodId: '', search: '' })
+  const [filters, setFilters] = useState({ category: '', date: '', neighborhoodId: '', cityId: '', search: '' })
   const [timeFilter, setTimeFilter] = useState<'all' | 'today' | 'week' | 'weekend'>('all')
   const [sort, setSort] = useState<'latest' | 'rating' | 'nearby'>('latest')
   const [neighborhoods, setNeighborhoods] = useState<{ id: number; name: string }[]>([])
+  const [cities, setCities] = useState<{ id: number; name: string }[]>([])
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [searchInput, setSearchInput] = useState('')
   const [page, setPage] = useState(1)
@@ -108,8 +109,8 @@ export default function Home() {
 
   // Fetch neighborhoods + categories on mount
   useEffect(() => {
-    api.getNeighborhoods().then((r: any) => {
-      if (r?.neighborhoods) setNeighborhoods(r.neighborhoods)
+    api.getCities().then((r: any) => {
+      if (r?.cities) setCities([...r.cities].sort((a: any, b: any) => a.name.localeCompare(b.name, 'tr')))
     }).catch(() => {})
     api.getCategories().then((r: any) => {
       if (r?.categories) {
@@ -148,6 +149,7 @@ export default function Home() {
       if (activeFilters.category) params.category = activeFilters.category
       if (activeFilters.date) params.date = activeFilters.date
       if (activeFilters.neighborhoodId) params.neighborhoodId = activeFilters.neighborhoodId
+      if (activeFilters.cityId) params.cityId = activeFilters.cityId
       if (activeFilters.search) params.search = activeFilters.search
       const sortParam = activeSortParam ?? sort
       if (sortParam && sortParam !== 'latest') params.sort = sortParam
@@ -191,7 +193,14 @@ export default function Home() {
   useEffect(() => {
     fetchSessions(filters, sort, timeFilter)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.category, filters.date, filters.neighborhoodId, sort, timeFilter])
+  }, [filters.category, filters.date, filters.neighborhoodId, filters.cityId, sort, timeFilter])
+
+  // İl'e göre ilçeleri getir (il yoksa İstanbul — geriye uyum). İl değişince ilçe seçimi sıfırlanır (onChange'de).
+  useEffect(() => {
+    api.getNeighborhoods(filters.cityId || undefined).then((r: any) => {
+      if (r?.neighborhoods) setNeighborhoods(r.neighborhoods)
+    }).catch(() => {})
+  }, [filters.cityId])
 
   // Debounce search
   useEffect(() => {
@@ -330,6 +339,17 @@ export default function Home() {
           </select>
 
           <select
+            value={filters.cityId}
+            onChange={e => setFilters(f => ({ ...f, cityId: e.target.value, neighborhoodId: '' }))}
+            style={{ padding: '9px 12px', borderRadius: 10, border: '1.5px solid #E5E5E5', fontSize: 13, color: filters.cityId ? '#1a1a1a' : '#888', outline: 'none', cursor: 'pointer', background: '#fff' }}
+          >
+            <option value="">{t('common.city')}</option>
+            {cities.map(c => (
+              <option key={c.id} value={String(c.id)}>{c.name}</option>
+            ))}
+          </select>
+
+          <select
             value={filters.neighborhoodId}
             onChange={e => setFilters(f => ({ ...f, neighborhoodId: e.target.value }))}
             style={{ padding: '9px 12px', borderRadius: 10, border: '1.5px solid #E5E5E5', fontSize: 13, color: filters.neighborhoodId ? '#1a1a1a' : '#888', outline: 'none', cursor: 'pointer', background: '#fff', maxHeight: 300 }}
@@ -364,12 +384,12 @@ export default function Home() {
           {hasActiveFilter && (
             <button
               onClick={() => {
-                setFilters({ category: '', date: '', neighborhoodId: '', search: '' })
+                setFilters({ category: '', date: '', neighborhoodId: '', cityId: '', search: '' })
                 setSearchInput('')
                 setActiveCategory(null)
                 setTimeFilter('all')
                 setSort('latest')
-                fetchSessions({ category: '', date: '', neighborhoodId: '', search: '' }, 'latest', 'all')
+                fetchSessions({ category: '', date: '', neighborhoodId: '', cityId: '', search: '' }, 'latest', 'all')
               }}
               style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '9px 14px', borderRadius: 10, border: '1.5px solid #EEE', background: '#F5F5F5', fontSize: 13, color: '#666', cursor: 'pointer', fontWeight: 500 }}
             >

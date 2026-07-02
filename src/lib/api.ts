@@ -85,7 +85,7 @@ export const api = {
   cancelBooking: (token: string, bookingId: number) =>
     request(`/api/bookings/${bookingId}/cancel`, { method: 'PUT', headers: authHeaders(token) }),
 
-  getSessions: (params?: { category?: string; date?: string; dateFrom?: string; dateTo?: string; neighborhoodId?: string; search?: string; sort?: string; userNeighborhoodId?: string }) =>
+  getSessions: (params?: { category?: string; date?: string; dateFrom?: string; dateTo?: string; neighborhoodId?: string; cityId?: string; search?: string; sort?: string; userNeighborhoodId?: string }) =>
     request(`/api/public/sessions${qsOf(params)}`),
 
   getSessionById: (id: number) =>
@@ -106,8 +106,11 @@ export const api = {
   joinDropIn: (token: string, slotId: number) =>
     request(`/api/bookings/dropin/${slotId}/join`, { method: 'POST', headers: jsonHeaders(token) }),
 
-  getNeighborhoods: () =>
-    request('/api/public/neighborhoods'),
+  getNeighborhoods: (cityId?: string | number) =>
+    request(`/api/public/neighborhoods${cityId ? `?cityId=${cityId}` : ''}`),
+
+  getCities: () =>
+    request('/api/public/cities'),
 
   getVenuesList: () =>
     request('/api/public/venues-list'),

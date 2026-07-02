@@ -13,19 +13,31 @@ const selStyle = { padding: '11px 12px', borderRadius: 12, border: '1.5px solid 
 export default function SalonlarPage() {
   const { t, lang } = useT()
   const [venues, setVenues] = useState<any[]>([])
+  const [cities, setCities] = useState<{ id: number; name: string }[]>([])
   const [neighborhoods, setNeighborhoods] = useState<{ id: number; name: string }[]>([])
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([])
   const [search, setSearch] = useState('')
-  const [district, setDistrict] = useState('')  // neighborhoodId (string)
+  const [city, setCity] = useState('')          // cityId (string)
+  const [district, setDistrict] = useState('')   // neighborhoodId (string)
   const [category, setCategory] = useState('')   // kategori adı
+
+  // Türkçe alfabetik sıralama (İ/ı, ş, ğ, ö, ü, ç doğru sıralansın)
+  const trSort = (arr: any[]) => [...arr].sort((a, b) => a.name.localeCompare(b.name, 'tr'))
 
   useEffect(() => {
     fetch(`${API_URL}/api/public/venues`).then(r => r.json()).then(d => {
       setVenues(Array.isArray(d?.venues) ? d.venues : [])
     }).catch(() => {})
-    fetch(`${API_URL}/api/public/neighborhoods`).then(r => r.json()).then(d => { if (d?.neighborhoods) setNeighborhoods(d.neighborhoods) }).catch(() => {})
+    fetch(`${API_URL}/api/public/cities`).then(r => r.json()).then(d => { if (d?.cities) setCities(trSort(d.cities)) }).catch(() => {})
     fetch(`${API_URL}/api/public/categories`).then(r => r.json()).then(d => { if (d?.categories) setCategories(d.categories) }).catch(() => {})
   }, [])
+
+  // İl seçilince o ilin ilçelerini çek (il'e göre ilçe açılır); il yoksa ilçe listesi boş
+  useEffect(() => {
+    setDistrict('')
+    if (!city) { setNeighborhoods([]); return }
+    fetch(`${API_URL}/api/public/neighborhoods?cityId=${city}`).then(r => r.json()).then(d => { if (d?.neighborhoods) setNeighborhoods(trSort(d.neighborhoods)) }).catch(() => {})
+  }, [city])
 
   // Gerçek salon sayısı azken demo kartlarıyla doldur (lansmanda #35 ile tamamen kalkacak)
   const base = venues.length >= 6 ? venues : [...venues, ...MOCK_VENUES]
@@ -37,6 +49,7 @@ export default function SalonlarPage() {
         const hay = `${v.name || ''} ${v.address || ''} ${v.neighborhood?.name || ''}`.toLowerCase()
         if (!hay.includes(q)) return false
       }
+      if (city && String(v.cityId ?? v.neighborhood?.cityId ?? '') !== city) return false
       if (district) {
         const nid = v.neighborhood?.id ?? v.neighborhoodId
         if (String(nid) !== district) return false
@@ -47,10 +60,10 @@ export default function SalonlarPage() {
       }
       return true
     })
-  }, [base, search, district, category])
+  }, [base, search, city, district, category])
 
-  const hasFilters = !!(search || district || category)
-  const clearFilters = () => { setSearch(''); setDistrict(''); setCategory('') }
+  const hasFilters = !!(search || city || district || category)
+  const clearFilters = () => { setSearch(''); setCity(''); setDistrict(''); setCategory('') }
 
   return (
     <>
@@ -68,8 +81,12 @@ export default function SalonlarPage() {
             <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('venues.search')} style={{ width: '100%', padding: '11px 12px 11px 36px', borderRadius: 12, border: '1.5px solid #e5e5e5', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
           </div>
-          <div style={{ display: 'flex', gap: 10, flex: '1 1 300px' }}>
-            <select value={district} onChange={e => setDistrict(e.target.value)} style={{ ...selStyle, flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', gap: 10, flex: '1 1 380px' }}>
+            <select value={city} onChange={e => setCity(e.target.value)} style={{ ...selStyle, flex: 1, minWidth: 0 }}>
+              <option value="">{t('common.city')}</option>
+              {cities.map(c => <option key={c.id} value={String(c.id)}>{c.name}</option>)}
+            </select>
+            <select value={district} onChange={e => setDistrict(e.target.value)} disabled={!city} style={{ ...selStyle, flex: 1, minWidth: 0, opacity: city ? 1 : 0.5, cursor: city ? 'pointer' : 'not-allowed' }}>
               <option value="">{t('common.district')}</option>
               {neighborhoods.map(n => <option key={n.id} value={String(n.id)}>{n.name}</option>)}
             </select>
