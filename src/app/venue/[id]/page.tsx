@@ -8,7 +8,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { mockVenues, mockClasses, mockInstructors } from '@/lib/mockData'
 import Navbar from '@/components/Navbar'
 import { MapPin, Calendar, User, Star, Clock, Timer, Flame, Bookmark, BadgeCheck } from 'lucide-react'
-import { SportIconBox } from '@/lib/sportIcons'
+import { SportIconBox, resolveCategoryColor, resolveCategoryIcon } from '@/lib/sportIcons'
 import { api } from '@/lib/api'
 import { SkeletonVenuePage } from '@/components/Skeleton'
 
@@ -158,7 +158,7 @@ export default function VenuePage() {
   // Hero color — use first sport category color or fallback
   const heroColor = isMock
     ? venue.color
-    : (sportCategories[0]?.sportCategory?.colorHex ? `#${sportCategories[0].sportCategory.colorHex}` : '#4F46E5')
+    : resolveCategoryColor(sportCategories[0]?.sportCategory?.colorHex, sportCategories[0]?.sportCategory?.name)
   const heroIcon = isMock
     ? venue.coverEmoji
     : (sportCategories[0]?.sportCategory?.iconUrl ?? 'strength')
@@ -302,10 +302,10 @@ export default function VenuePage() {
               <div style={{ marginTop: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {sportCategories.map((sc: any, i: number) => {
                   const cat = sc.sportCategory
-                  const color = cat?.colorHex ? `#${cat.colorHex}` : '#4F46E5'
+                  const color = resolveCategoryColor(cat?.colorHex, cat?.name)
                   return (
                     <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', backgroundColor: color + '15', color: color, borderRadius: 100, fontSize: 13, fontWeight: 600 }}>
-                      <SportIconBox name={cat?.iconUrl ?? 'strength'} bgColor="transparent" iconColor={color} boxSize={18} borderRadius={4} size={14} />
+                      <SportIconBox name={resolveCategoryIcon(cat?.iconUrl, cat?.name)} bgColor="transparent" iconColor={color} boxSize={18} borderRadius={4} size={14} />
                       {cat?.name}
                     </span>
                   )
@@ -397,8 +397,8 @@ export default function VenuePage() {
               // Real class cards
               classes.map((cls: any) => {
                 const cat = cls.sportCategory
-                const color = cat?.colorHex ? `#${cat.colorHex}` : '#4F46E5'
-                const iconName = cat?.iconUrl ?? 'strength'
+                const color = resolveCategoryColor(cat?.colorHex, cat?.name)
+                const iconName = resolveCategoryIcon(cat?.iconUrl, cat?.name)
                 const nextSession = cls.sessions?.[0]
                 const nextSessionDate = nextSession?.startsAt ? new Date(nextSession.startsAt) : null
                 const nextSessionStr = nextSessionDate

@@ -46,7 +46,7 @@ function BadgesCard({ badges }: { badges: any[] }) {
 }
 import type { ReactNode } from 'react'
 import { User, Users, Ticket, Award, ClipboardList, BarChart2, BookOpen, Calendar, Flame, Dumbbell, Heart, Building, MapPin, Gift, Medal, Check, X, Lock, CreditCard, Copy, CheckCheck, Flag, Target, Compass, Trophy, Trash2 } from 'lucide-react'
-import { SportIcon, SportIconBox, getIconKeyForCategory, getColorForCategory } from '@/lib/sportIcons'
+import { SportIcon, SportIconBox, getIconKeyForCategory, getColorForCategory, resolveCategoryColor } from '@/lib/sportIcons'
 import { useT, translateTier, translateBadge, translateCategory } from '@/lib/i18n'
 
 const dateLocale = () => (typeof window !== 'undefined' && localStorage.getItem('fitpass_lang') === 'en') ? 'en-US' : 'tr-TR'
@@ -639,7 +639,7 @@ export default function ProfilPage() {
                         const slotStartsAt = slot?.startsAt ? new Date(slot.startsAt) : null
                         const dpDateStr = slotStartsAt ? slotStartsAt.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long', year: 'numeric' }) : ''
                         const dpTimeStr = slotStartsAt ? slotStartsAt.toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }) : ''
-                        const iconColor = cat?.colorHex ? `#${cat.colorHex}` : '#3B82F6'
+                        const iconColor = resolveCategoryColor(cat?.colorHex, cat?.name)
                         return (
                           <div key={`pdp-${dp.id}`} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '18px 22px', border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 14 }}>
                             <SportIconBox name={cat?.iconUrl || 'football'} bgColor={iconColor + '18'} iconColor={iconColor} boxSize={50} borderRadius={14} size={22} />
@@ -810,7 +810,7 @@ export default function ProfilPage() {
                         const dpDateStr = slotStartsAt ? slotStartsAt.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long', year: 'numeric' }) : ''
                         const dpTimeStr = slotStartsAt ? slotStartsAt.toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }) : ''
                         const dpCancelled = dp.status === 'cancelled' || slot?.status === 'cancelled'
-                        const iconColor = cat?.colorHex ? `#${cat.colorHex}` : '#3B82F6'
+                        const iconColor = resolveCategoryColor(cat?.colorHex, cat?.name)
 
                         return (
                           <div key={`dp-${dp.id}`} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '18px 22px', border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -906,7 +906,7 @@ export default function ProfilPage() {
                         const dpDateStr = slotStartsAt ? slotStartsAt.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long', year: 'numeric' }) : ''
                         const dpTimeStr = slotStartsAt ? slotStartsAt.toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }) : ''
                         const dpCancelled = dp.status === 'cancelled' || slot?.status === 'cancelled'
-                        const iconColor = cat?.colorHex ? `#${cat.colorHex}` : '#3B82F6'
+                        const iconColor = resolveCategoryColor(cat?.colorHex, cat?.name)
 
                         return (
                           <div key={`dp-${dp.id}`} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '18px 22px', border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 14 }}>

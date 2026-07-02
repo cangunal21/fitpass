@@ -55,28 +55,46 @@ export function getIconKeyForCategory(name: string): string {
   if (n.includes('basket')) return 'basketball'
   if (n.includes('padel') || n.includes('tenis') || n.includes('squash') || n.includes('badminton') || n.includes('masa tenisi')) return 'padel'
   if (n.includes('boks') || n.includes('dövüş') || n.includes('mma') || n.includes('kick') || n.includes('muay') || n.includes('jiu') || n.includes('judo') || n.includes('güreş') || n.includes('boxing')) return 'boxing'
-  if (n.includes('cross') || n.includes('hiit') || n.includes('kondisyon')) return 'hiit'
+  if (n.includes('cross')) return 'crossfit'
+  if (n.includes('hiit') || n.includes('kondisyon')) return 'hiit'
+  if (n.includes('fitness')) return 'crossfit'
   if (n.includes('binici') || n.includes('biniç') || n.includes('ata biniş') || n.includes('equestrian')) return 'equestrian'
   if (n.includes('yelken') || n.includes('yatçılık') || n.includes('deniz') || n.includes('sail')) return 'sailing'
   return 'strength'
 }
 
-// Kategori adından fallback renk döndürür (DB'de colorHex yoksa)
+// Kategori adından fallback renk döndürür (DB'de colorHex yoksa) — DB palet değerleriyle hizalı
 export function getColorForCategory(name: string): string {
   const n = name.toLowerCase()
-  if (n.includes('yoga')) return '#C4A882'
-  if (n.includes('pilates')) return '#C9849A'
-  if (n.includes('yüzme') || n.includes('swim')) return '#0891B2'
-  if (n.includes('dans') || n.includes('dance') || n.includes('zumba')) return '#9333EA'
+  if (n.includes('yoga')) return '#ed719e'
+  if (n.includes('pilates')) return '#e2b67d'
+  if (n.includes('yüzme') || n.includes('swim')) return '#0284C7'
+  if (n.includes('dans') || n.includes('dance') || n.includes('zumba')) return '#C026D3'
   if (n.includes('halı') || n.includes('futbol')) return '#16A34A'
   if (n.includes('basket')) return '#C2501F'
   if (n.includes('tenis')) return '#65A30D'
   if (n.includes('padel')) return '#EAB308'
   if (n.includes('boks') || n.includes('dövüş') || n.includes('mma') || n.includes('kick')) return '#DC2626'
-  if (n.includes('cross') || n.includes('hiit')) return '#F97316'
+  if (n.includes('cross')) return '#B45309'
+  if (n.includes('hiit') || n.includes('kondisyon')) return '#EA580C'
+  if (n.includes('fitness')) return '#F97316'
   if (n.includes('binici') || n.includes('biniç') || n.includes('equestrian')) return '#92400E'
   if (n.includes('yelken') || n.includes('yatçılık') || n.includes('deniz')) return '#0EA5E9'
   return '#4F46E5'
+}
+
+// DB colorHex'i normalize eder (#'li veya #'siz gelebilir); yoksa isim-bazlı palete düşer.
+// TEK renk kaynağı — sayfalar `#${colorHex}` (çift diyez) yerine bunu kullanmalı.
+export function resolveCategoryColor(colorHex?: string | null, name = ''): string {
+  const c = (colorHex || '').trim()
+  if (c) return c.startsWith('#') ? c : `#${c}`
+  return getColorForCategory(name)
+}
+
+// DB iconUrl geçerliyse onu, yoksa isimden türetir — TEK ikon kaynağı.
+export function resolveCategoryIcon(iconUrl?: string | null, name = ''): string {
+  if (iconUrl && iconMap[iconUrl]) return iconUrl
+  return getIconKeyForCategory(name)
 }
 
 interface SportIconProps extends LucideProps {
