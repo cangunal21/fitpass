@@ -17,6 +17,14 @@ export default function Navbar() {
   const [showNotifications, setShowNotifications] = useState(false)
   const [notifications, setNotifications] = useState<any[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
+  const [compact, setCompact] = useState(false)  // dar ekran (mobil) — navbar taşmasın diye kompakt
+
+  useEffect(() => {
+    const check = () => setCompact(window.innerWidth < 480)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   useEffect(() => {
     const u = getUser()
@@ -63,7 +71,7 @@ export default function Navbar() {
   }
 
   return (
-    <nav style={{ backgroundColor: '#fff', borderBottom: '1px solid #F0F0F0', padding: '0 16px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
+    <nav style={{ backgroundColor: '#fff', borderBottom: '1px solid #F0F0F0', padding: compact ? '0 10px' : '0 16px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
       <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -72,10 +80,10 @@ export default function Navbar() {
       </div>
 
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-        <Link href="/salonlar" style={{ fontSize: 16, fontWeight: 800, color: '#4F46E5', textDecoration: 'none', padding: '6px 12px', borderRadius: 8, letterSpacing: -0.3 }}>
+        <Link href="/salonlar" style={{ fontSize: compact ? 14 : 16, fontWeight: 800, color: '#4F46E5', textDecoration: 'none', padding: compact ? '5px 7px' : '6px 12px', borderRadius: 8, letterSpacing: -0.3 }}>
           {t('nav.venues')}
         </Link>
-        <Link href="/sosyal" style={{ fontSize: 16, fontWeight: 800, color: '#4F46E5', textDecoration: 'none', padding: '6px 12px', borderRadius: 8, letterSpacing: -0.3 }}>
+        <Link href="/sosyal" style={{ fontSize: compact ? 14 : 16, fontWeight: 800, color: '#4F46E5', textDecoration: 'none', padding: compact ? '5px 7px' : '6px 12px', borderRadius: 8, letterSpacing: -0.3 }}>
           {t('nav.social')}
         </Link>
       </div>
@@ -92,8 +100,8 @@ export default function Navbar() {
               onClick={() => setLang(l)}
               aria-pressed={lang === l}
               style={{
-                padding: '6px 11px',
-                height: 34,
+                padding: compact ? '6px 8px' : '6px 11px',
+                height: compact ? 32 : 34,
                 border: 'none',
                 cursor: 'pointer',
                 fontSize: 12,
@@ -163,10 +171,10 @@ export default function Navbar() {
           </div>
         ) : (
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <Link href="/giris" style={{ padding: '9px 18px', borderRadius: 100, border: '1.5px solid #EBEBEB', background: '#fff', fontSize: 14, fontWeight: 600, color: '#333', textDecoration: 'none' }}>
+            <Link href="/giris" style={{ padding: compact ? '8px 11px' : '9px 18px', borderRadius: 100, border: '1.5px solid #EBEBEB', background: '#fff', fontSize: compact ? 13 : 14, fontWeight: 600, color: '#333', textDecoration: 'none', whiteSpace: 'nowrap' }}>
               {t("nav.login")}
             </Link>
-            <Link href="/kayit" style={{ padding: '9px 18px', borderRadius: 100, border: 'none', background: '#4F46E5', fontSize: 14, fontWeight: 600, color: '#fff', textDecoration: 'none' }}>
+            <Link href="/kayit" style={{ padding: compact ? '8px 11px' : '9px 18px', borderRadius: 100, border: 'none', background: '#4F46E5', fontSize: compact ? 13 : 14, fontWeight: 600, color: '#fff', textDecoration: 'none', whiteSpace: 'nowrap' }}>
               {t("nav.register")}
             </Link>
           </div>
