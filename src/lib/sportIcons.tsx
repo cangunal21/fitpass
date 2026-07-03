@@ -1,5 +1,5 @@
 import {
-  Dumbbell, Trophy, Leaf, Target, Heart, Zap, Star, Circle, Medal, Shield, Sailboat
+  Dumbbell, Trophy, Leaf, Target, Heart, Zap, Star, Circle, Medal, Shield
 } from 'lucide-react'
 import type { LucideProps } from 'lucide-react'
 import {
@@ -11,7 +11,18 @@ import {
 import { PiBoxingGlove } from 'react-icons/pi'
 import { FaRunning, FaHorse } from 'react-icons/fa'
 import { GrYoga } from 'react-icons/gr'
-import { MdSelfImprovement, MdSportsGymnastics } from 'react-icons/md'
+import { MdSelfImprovement } from 'react-icons/md'
+import { mdiHumanFemaleDance, mdiSailBoat } from '@mdi/js'
+
+// MCI (Material Design Icons) — mobil ile BİREBİR aynı ikon seti (@mdi/js). Web'de SVG olarak çizer.
+function makeMdi(path: string) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return function MdiIcon({ size = 20, color = 'currentColor', ...props }: any) {
+    return <svg width={size} height={size} viewBox="0 0 24 24" fill={color} {...props}><path d={path} /></svg>
+  }
+}
+const IconDance = makeMdi(mdiHumanFemaleDance)
+const IconSailboat = makeMdi(mdiSailBoat)
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const iconMap: Record<string, React.ComponentType<any>> = {
@@ -24,15 +35,15 @@ const iconMap: Record<string, React.ComponentType<any>> = {
   basketball: IconBallBasketball,
   padel: IconBallTennis,
   swimming: IconSwimming,
-  dance: MdSportsGymnastics,
+  dance: IconDance,
   wellness: Leaf,
   weightlifting: Dumbbell,
   strength: Dumbbell,
   crossfit: Dumbbell,
   equestrian: FaHorse,
   binicilik: FaHorse,
-  sailing: Sailboat,
-  yelken: Sailboat,
+  sailing: IconSailboat,
+  yelken: IconSailboat,
   // Rozetler
   target: Target,
   heart: Heart,
