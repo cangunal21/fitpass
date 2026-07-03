@@ -111,18 +111,18 @@ export default function DersDetay() {
     <div style={{ minHeight: '100vh', backgroundColor: '#FAFAFA', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
       <Navbar />
 
-      <div style={{ maxWidth: 1080, margin: '0 auto', padding: '32px 24px' }}>
+      <div className="ders-container" style={{ maxWidth: 1080, margin: '0 auto', padding: '32px 24px' }}>
         <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#666', fontSize: 14, textDecoration: 'none', fontWeight: 500, marginBottom: 28 }}>
           {t('common.allClasses')}
         </Link>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 28, alignItems: 'start' }}>
+        <div className="mobile-grid-1" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 28, alignItems: 'start' }}>
           {/* Sol kolon */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
             {/* Hero kart */}
             <div style={{ backgroundColor: '#fff', borderRadius: 24, overflow: 'hidden', border: '1px solid #F0F0F0' }}>
-              <div style={{ background: `linear-gradient(135deg, ${cls.color}20 0%, ${cls.color}08 100%)`, padding: '36px 32px 28px' }}>
+              <div className="ders-hero" style={{ background: `linear-gradient(135deg, ${cls.color}20 0%, ${cls.color}08 100%)`, padding: '36px 32px 28px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ marginBottom: 14 }}><SportIconBox name={cls.icon} bgColor={cls.color + '20'} iconColor={cls.color} boxSize={64} borderRadius={18} size={30} /></div>
@@ -146,7 +146,7 @@ export default function DersDetay() {
                 </div>
               </div>
 
-              <div style={{ padding: '20px 32px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, borderTop: '1px solid #F5F5F5' }}>
+              <div className="mobile-grid-2" style={{ padding: '20px 32px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, borderTop: '1px solid #F5F5F5' }}>
                 {[
                   { icon: <Calendar size={18} />, label: t('cls.date'), value: localizeText(cls.date, lang) },
                   { icon: <Clock size={18} />, label: t('cls.time'), value: localizeText(cls.time, lang) },

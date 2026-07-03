@@ -71,7 +71,7 @@ export default function Navbar() {
   }
 
   return (
-    <nav style={{ backgroundColor: '#fff', borderBottom: '1px solid #F0F0F0', padding: compact ? '0 10px' : '0 16px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
+    <nav style={{ backgroundColor: '#fff', borderBottom: '1px solid #F0F0F0', padding: compact ? '0 7px' : '0 16px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
       <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -171,10 +171,10 @@ export default function Navbar() {
           </div>
         ) : (
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <Link href="/giris" style={{ padding: compact ? '8px 11px' : '9px 18px', borderRadius: 100, border: '1.5px solid #EBEBEB', background: '#fff', fontSize: compact ? 13 : 14, fontWeight: 600, color: '#333', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+            <Link href="/giris" style={{ padding: compact ? '8px 10px' : '9px 18px', borderRadius: 100, border: '1.5px solid #EBEBEB', background: '#fff', fontSize: compact ? 13 : 14, fontWeight: 600, color: '#333', textDecoration: 'none', whiteSpace: 'nowrap' }}>
               {t("nav.login")}
             </Link>
-            <Link href="/kayit" style={{ padding: compact ? '8px 11px' : '9px 18px', borderRadius: 100, border: 'none', background: '#4F46E5', fontSize: compact ? 13 : 14, fontWeight: 600, color: '#fff', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+            <Link href="/kayit" style={{ padding: compact ? '8px 10px' : '9px 18px', borderRadius: 100, border: 'none', background: '#4F46E5', fontSize: compact ? 13 : 14, fontWeight: 600, color: '#fff', textDecoration: 'none', whiteSpace: 'nowrap' }}>
               {t("nav.register")}
             </Link>
           </div>
