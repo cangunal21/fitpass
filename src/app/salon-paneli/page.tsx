@@ -86,7 +86,7 @@ export default function SalonPaneliPage() {
 
   // Coupon state
   const [coupons, setCoupons] = useState<any[]>([])
-  const [couponForm, setCouponForm] = useState({ code: '', discountType: 'percent', discountValue: '', maxUses: '', expiresAt: '' })
+  const [couponForm, setCouponForm] = useState({ code: '', discountType: 'percent', discountValue: '', maxUses: '', perUserLimit: '1', expiresAt: '' })
   const [couponError, setCouponError] = useState('')
   const [couponSuccess, setCouponSuccess] = useState('')
   const [deletingCoupon, setDeletingCoupon] = useState<number | null>(null)
@@ -291,6 +291,7 @@ export default function SalonPaneliPage() {
       discountValue: Number(couponForm.discountValue),
     }
     if (couponForm.maxUses) body.maxUses = Number(couponForm.maxUses)
+    body.perUserLimit = couponForm.perUserLimit === 'unlimited' ? null : Number(couponForm.perUserLimit || 1)
     if (couponForm.expiresAt) body.expiresAt = couponForm.expiresAt
     const res = await fetch(`${API_URL}/api/venue/coupons`, {
       method: 'POST',
@@ -300,7 +301,7 @@ export default function SalonPaneliPage() {
     const data = await res.json()
     if (data.error) { setCouponError(data.error); return }
     setCouponSuccess('Kupon oluşturuldu!')
-    setCouponForm({ code: '', discountType: 'percent', discountValue: '', maxUses: '', expiresAt: '' })
+    setCouponForm({ code: '', discountType: 'percent', discountValue: '', maxUses: '', perUserLimit: '1', expiresAt: '' })
     fetchCoupons()
     setTimeout(() => setCouponSuccess(''), 3000)
   }
@@ -1274,6 +1275,15 @@ export default function SalonPaneliPage() {
                   <div>
                     <label style={labelStyle}>Maksimum Kullanım (opsiyonel)</label>
                     <input type="number" placeholder="100" value={couponForm.maxUses} onChange={e => setCouponForm({ ...couponForm, maxUses: e.target.value })} min="1" style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Kişi Başı Kullanım</label>
+                    <select value={couponForm.perUserLimit} onChange={e => setCouponForm({ ...couponForm, perUserLimit: e.target.value })} style={inputStyle}>
+                      <option value="1">Her müşteri 1 kez</option>
+                      <option value="2">Her müşteri 2 kez</option>
+                      <option value="3">Her müşteri 3 kez</option>
+                      <option value="unlimited">Sınırsız</option>
+                    </select>
                   </div>
                   <div style={{ gridColumn: '1 / -1' }}>
                     <label style={labelStyle}>Son Kullanım Tarihi (opsiyonel)</label>
