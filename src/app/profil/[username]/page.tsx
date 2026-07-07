@@ -19,26 +19,50 @@ function BadgeIcon({ ub, size = 20, color }: { ub: any; size?: number; color?: s
   return <Ic size={size} color={color} />
 }
 
-function BadgesCard({ badges }: { badges: any[] }) {
+const RANK_MEDAL: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' }
+
+function BadgesCard({ badges, recordStreak = 0 }: { badges: any[]; recordStreak?: number }) {
   const { t, lang } = useT()
+  const total = badges.length + (recordStreak >= 3 ? 1 : 0)
   return (
     <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '22px 24px', border: '1px solid #F0F0F0' }}>
-      <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}><Award size={16} /> {t('prof.badges')} {badges.length > 0 && <span style={{ color: '#aaa', fontWeight: 600 }}>· {badges.length}</span>}</h3>
-      {badges.length === 0 ? (
+      <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}><Award size={16} /> {t('prof.badges')} {total > 0 && <span style={{ color: '#aaa', fontWeight: 600 }}>· {total}</span>}</h3>
+      {total === 0 ? (
         <div style={{ color: '#bbb', fontSize: 13 }}>{t('prof.noBadges')}</div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
-          {badges.map((ub: any, i: number) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', backgroundColor: '#FAFAFA', borderRadius: 12, border: '1px solid #F0F0F0' }}>
-              <div style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <BadgeIcon ub={ub} size={18} color="#4F46E5" />
+          {/* Rekor seri rozeti — kullanıcının en uzun serisi (min 3 gün) */}
+          {recordStreak >= 3 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', backgroundColor: '#FFF7ED', borderRadius: 12, border: '1px solid #FFEDD5' }}>
+              <div style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#FFEDD5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Flame size={18} color="#F97316" />
               </div>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{translateBadge(ub, lang)}</div>
-                {ub.badge?.description && <div style={{ fontSize: 11, color: '#999', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ub.badge.description}</div>}
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{recordStreak} {lang === 'en' ? 'day record streak' : 'gün rekor seri'}</div>
+                <div style={{ fontSize: 11, color: '#EA7317', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lang === 'en' ? 'Your best streak' : 'En uzun serin'}</div>
               </div>
             </div>
-          ))}
+          )}
+          {badges.map((ub: any, i: number) => {
+            const isChamp = ub.badge?.key === 'season_champion'
+            const sport = translateCategory(ub.sportCategory?.name || '', lang)
+            const seasonLbl = lang === 'en' ? (ub.seasonLabelEn || ub.seasonLabel) : ub.seasonLabel
+            const title = isChamp
+              ? `${RANK_MEDAL[ub.rank] || '🏆'} ${[ub.scopeName, sport].filter(Boolean).join(' · ')}`.trim()
+              : translateBadge(ub, lang)
+            const sub = isChamp ? seasonLbl : ub.badge?.description
+            return (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', backgroundColor: isChamp ? '#FFFBEB' : '#FAFAFA', borderRadius: 12, border: `1px solid ${isChamp ? '#FDE68A' : '#F0F0F0'}` }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: isChamp ? '#FEF3C7' : '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {isChamp ? <Trophy size={18} color="#D97706" /> : <BadgeIcon ub={ub} size={18} color="#4F46E5" />}
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</div>
+                  {sub && <div style={{ fontSize: 11, color: isChamp ? '#B45309' : '#999', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub}</div>}
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
@@ -475,7 +499,7 @@ export default function ProfilPage() {
               </div>
             )}
 
-            {isOwnProfile && meData && <BadgesCard badges={meData.badges || []} />}
+            {isOwnProfile && meData && <BadgesCard badges={meData.badges || []} recordStreak={meData.recordStreak || 0} />}
           </div>
 
           {/* İstatistik satırı */}
@@ -530,7 +554,7 @@ export default function ProfilPage() {
               })()}
             </div>
 
-            <BadgesCard badges={publicData?.user?.badges || []} />
+            <BadgesCard badges={publicData?.user?.badges || []} recordStreak={publicData?.user?.recordStreak || 0} />
           </div>
         )}
 
