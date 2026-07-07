@@ -9,7 +9,7 @@ import ActivityCalendar from '@/components/ActivityCalendar'
 import { api, getUser, getToken, removeToken, removeUser } from '@/lib/api'
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
-const BADGE_ICON_MAP: Record<string, any> = { Flag, Target, Flame, Compass, Heart, Users, Trophy }
+const BADGE_ICON_MAP: Record<string, any> = { Flag, Target, Flame, Compass, Heart, Users, Trophy, Crown, Speakerphone: Megaphone }
 
 function BadgeIcon({ ub, size = 20, color }: { ub: any; size?: number; color?: string }) {
   if (ub.badge?.iconUrl === 'sport' && ub.sportCategory?.name) {
@@ -17,6 +17,48 @@ function BadgeIcon({ ub, size = 20, color }: { ub: any; size?: number; color?: s
   }
   const Ic = BADGE_ICON_MAP[ub.badge?.iconUrl] || Award
   return <Ic size={size} color={color} />
+}
+
+// Rozet madalyonu — renkli daire + beyaz ikon (tasarımla birebir). Şampiyon = mevsim halkası + derece.
+const SEASON_RING: Record<string, string> = { bahar: '#22C55E', yaz: '#F59E0B', guz: '#B45309', kis: '#0EA5E9' }
+const RANK_STYLE: Record<number, { c: string; t: string }> = { 1: { c: '#FBBF24', t: '#14152A' }, 2: { c: '#C7CDD4', t: '#14152A' }, 3: { c: '#CD7F32', t: '#FFFFFF' } }
+const MED_BG: Record<string, string> = { Trophy: '#DC2626', Crown: '#14152A' } // diğerleri indigo
+
+function BadgeMedallion({ ub, size = 44, streakNumber }: { ub?: any; size?: number; streakNumber?: number }) {
+  const inner = Math.round(size * 0.5)
+  // Rekor seri (sentetik): indigo daire + alev + köşe altın sayı
+  if (streakNumber != null) {
+    return (
+      <div style={{ position: 'relative', width: size, height: size }}>
+        <div style={{ width: size, height: size, borderRadius: '50%', background: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Flame size={inner} color="#fff" /></div>
+        <div style={{ position: 'absolute', bottom: -2, right: -2, minWidth: size * 0.42, height: size * 0.42, padding: '0 3px', borderRadius: 999, background: '#FBBF24', color: '#14152A', fontSize: size * 0.26, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff' }}>{streakNumber}</div>
+      </div>
+    )
+  }
+  const iu = ub?.badge?.iconUrl
+  // Sezon şampiyonu: mevsim renkli halka + indigo daire + spor ikonu + köşe derece madalyası
+  if (iu === 'champion') {
+    const ring = SEASON_RING[(ub?.seasonKey || '').split('-')[0]] || '#4F46E5'
+    const rk = RANK_STYLE[ub?.rank as number]
+    return (
+      <div style={{ position: 'relative', width: size, height: size }}>
+        <div style={{ width: size, height: size, borderRadius: '50%', background: ring, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: size - 7, height: size - 7, borderRadius: '50%', background: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {ub?.sportCategory?.name ? <SportIcon name={getIconKeyForCategory(ub.sportCategory.name)} size={inner} color="#fff" /> : <Trophy size={inner} color="#fff" />}
+          </div>
+        </div>
+        {rk && <div style={{ position: 'absolute', bottom: -2, right: -2, width: size * 0.42, height: size * 0.42, borderRadius: '50%', background: rk.c, color: rk.t, fontSize: size * 0.28, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff' }}>{ub.rank}</div>}
+      </div>
+    )
+  }
+  // Spor ustası: sporun rengi + sporun ikonu
+  if (iu === 'sport' && ub?.sportCategory?.name) {
+    const bg = getColorForCategory(ub.sportCategory.name) || '#8B5CF6'
+    return <div style={{ width: size, height: size, borderRadius: '50%', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><SportIcon name={getIconKeyForCategory(ub.sportCategory.name)} size={inner} color="#fff" /></div>
+  }
+  // Statik rozetler: indigo (Olimpik kırmızı, Kurucu siyah) + beyaz ikon
+  const bg = MED_BG[iu] || '#4F46E5'
+  return <div style={{ width: size, height: size, borderRadius: '50%', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><BadgeIcon ub={ub} size={inner} color="#fff" /></div>
 }
 
 const RANK_MEDAL: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' }
@@ -34,9 +76,7 @@ function BadgesCard({ badges, recordStreak = 0 }: { badges: any[]; recordStreak?
           {/* Rekor seri rozeti — kullanıcının en uzun serisi (min 3 gün) */}
           {recordStreak >= 3 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', backgroundColor: '#FFF7ED', borderRadius: 12, border: '1px solid #FFEDD5' }}>
-              <div style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#FFEDD5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Flame size={18} color="#F97316" />
-              </div>
+              <div style={{ flexShrink: 0 }}><BadgeMedallion streakNumber={recordStreak} size={42} /></div>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{recordStreak} {lang === 'en' ? 'day record streak' : 'gün rekor seri'}</div>
                 <div style={{ fontSize: 11, color: '#EA7317', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lang === 'en' ? 'Your best streak' : 'En uzun serin'}</div>
@@ -48,14 +88,12 @@ function BadgesCard({ badges, recordStreak = 0 }: { badges: any[]; recordStreak?
             const sport = translateCategory(ub.sportCategory?.name || '', lang)
             const seasonLbl = lang === 'en' ? (ub.seasonLabelEn || ub.seasonLabel) : ub.seasonLabel
             const title = isChamp
-              ? `${RANK_MEDAL[ub.rank] || '🏆'} ${[ub.scopeName, sport].filter(Boolean).join(' · ')}`.trim()
+              ? `${[ub.scopeName, sport].filter(Boolean).join(' · ')}`.trim()
               : translateBadge(ub, lang)
             const sub = isChamp ? seasonLbl : ub.badge?.description
             return (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', backgroundColor: isChamp ? '#FFFBEB' : '#FAFAFA', borderRadius: 12, border: `1px solid ${isChamp ? '#FDE68A' : '#F0F0F0'}` }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: isChamp ? '#FEF3C7' : '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  {isChamp ? <Trophy size={18} color="#D97706" /> : <BadgeIcon ub={ub} size={18} color="#4F46E5" />}
-                </div>
+                <div style={{ flexShrink: 0 }}><BadgeMedallion ub={ub} size={42} /></div>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</div>
                   {sub && <div style={{ fontSize: 11, color: isChamp ? '#B45309' : '#999', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub}</div>}
@@ -69,7 +107,7 @@ function BadgesCard({ badges, recordStreak = 0 }: { badges: any[]; recordStreak?
   )
 }
 import type { ReactNode } from 'react'
-import { User, Users, Ticket, Award, ClipboardList, BarChart2, BookOpen, Calendar, Flame, Dumbbell, Heart, Building, MapPin, Gift, Medal, Check, X, Lock, CreditCard, Copy, CheckCheck, Flag, Target, Compass, Trophy, Trash2 } from 'lucide-react'
+import { User, Users, Ticket, Award, ClipboardList, BarChart2, BookOpen, Calendar, Flame, Dumbbell, Heart, Building, MapPin, Gift, Medal, Check, X, Lock, CreditCard, Copy, CheckCheck, Flag, Target, Compass, Trophy, Trash2, Crown, Megaphone } from 'lucide-react'
 import { SportIcon, SportIconBox, getIconKeyForCategory, getColorForCategory, resolveCategoryColor } from '@/lib/sportIcons'
 import { useT, translateTier, translateBadge, translateCategory } from '@/lib/i18n'
 
