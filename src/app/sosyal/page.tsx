@@ -37,6 +37,7 @@ export default function SosyalPage() {
   const [selectedNeighborhood, setSelectedNeighborhood] = useState('')
   const [userLeaderboard, setUserLeaderboard] = useState<any[]>([])
   const [streakLeaderboard, setStreakLeaderboard] = useState<any[]>([])
+  const [season, setSeason] = useState<{ label?: string; labelEn?: string } | null>(null)
   const [following, setFollowing] = useState<any[]>([])
   const [followers, setFollowers] = useState<any[]>([])
   const [suggestions, setSuggestions] = useState<any[]>([])
@@ -77,10 +78,12 @@ export default function SosyalPage() {
         const res = await fetch(`${API_URL}/api/social/leaderboard/users?${params}`)
         const data = await res.json()
         setUserLeaderboard(data.leaderboard || [])
+        setSeason(data.season || null)
       } else {
         const res = await fetch(`${API_URL}/api/social/leaderboard/streaks?${params}`)
         const data = await res.json()
         setStreakLeaderboard(data.leaderboard || [])
+        setSeason(data.season || null)
       }
     } catch {}
     setLoading(false)
@@ -228,6 +231,16 @@ export default function SosyalPage() {
         {/* SIRALAMA TAB */}
         {activeTab === 'siralama' && (
           <div>
+            {/* Sezon rozeti — liderlik her mevsim sıfırlanır */}
+            {season && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, padding: '8px 14px', background: '#EEF2FF', borderRadius: 12, border: '1px solid #E0E7FF' }}>
+                <span style={{ fontSize: 18 }}>🏆</span>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: '#4F46E5' }}>{lang === 'en' ? (season.labelEn || season.label) : season.label}</div>
+                  <div style={{ fontSize: 11, color: '#6366F1' }}>{lang === 'en' ? 'Resets every season' : 'Her mevsim sıfırlanır'}</div>
+                </div>
+              </div>
+            )}
             {/* Type toggle */}
             <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
               {[{ key: 'kullanici', label: t('lb.users') }, { key: 'streak', label: t('lb.streak') }].map(t => (
