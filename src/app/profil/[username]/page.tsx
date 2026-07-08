@@ -63,19 +63,61 @@ function BadgeMedallion({ ub, size = 44, streakNumber }: { ub?: any; size?: numb
 
 const RANK_MEDAL: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' }
 
+const catalogSampleUb = (iconUrl?: string) =>
+  iconUrl === 'sport' ? { badge: { iconUrl: 'sport' }, sportCategory: { name: 'Fitness' } }
+    : iconUrl === 'champion' ? { badge: { iconUrl: 'champion' }, seasonKey: 'guz-2026', rank: 1 }
+      : { badge: { iconUrl } }
+
+function BadgeCatalogModal({ earnedIcons, recordStreak, lang, onClose }: { earnedIcons: Set<string>; recordStreak: number; lang: string; onClose: () => void }) {
+  const li = lang === 'en' ? 1 : 0
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 20, padding: 24, maxWidth: 440, width: '100%', maxHeight: '85vh', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <h3 style={{ fontSize: 17, fontWeight: 800, color: '#111' }}>{lang === 'en' ? 'How to earn badges' : 'Rozetler nasıl kazanılır'}</h3>
+          <button onClick={onClose} style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}><X size={22} color="#888" /></button>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {BADGE_CATALOG.map((b, i) => {
+            const earned = b.special === 'streak' ? recordStreak >= 3 : !!(b.iconUrl && earnedIcons.has(b.iconUrl))
+            return (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ flexShrink: 0, position: 'relative', opacity: earned ? 1 : 0.45, filter: earned ? 'none' : 'grayscale(1)' }}>
+                  {b.special === 'streak' ? <BadgeMedallion streakNumber={recordStreak >= 3 ? recordStreak : 3} size={44} /> : <BadgeMedallion ub={catalogSampleUb(b.iconUrl)} size={44} />}
+                  {!earned && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Lock size={16} color="#fff" /></div>}
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#111', display: 'flex', alignItems: 'center', gap: 6 }}>{b.name[li]} {earned && <Check size={14} color="#22C55E" />}</div>
+                  <div style={{ fontSize: 12, color: '#888' }}>{b.crit[li]}</div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function BadgesCard({ badges, recordStreak = 0 }: { badges: any[]; recordStreak?: number }) {
   const { t, lang } = useT()
+  const [catalogOpen, setCatalogOpen] = useState(false)
+  const earnedIcons = new Set(badges.map((b: any) => b.badge?.iconUrl).filter(Boolean))
   const total = badges.length + (recordStreak >= 3 ? 1 : 0)
   return (
     <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '22px 24px', border: '1px solid #F0F0F0' }}>
-      <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}><Award size={16} /> {t('prof.badges')} {total > 0 && <span style={{ color: '#aaa', fontWeight: 600 }}>· {total}</span>}</h3>
+      {catalogOpen && <BadgeCatalogModal earnedIcons={earnedIcons} recordStreak={recordStreak} lang={lang} onClose={() => setCatalogOpen(false)} />}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111', display: 'flex', alignItems: 'center', gap: 6, margin: 0 }}><Award size={16} /> {t('prof.badges')} {total > 0 && <span style={{ color: '#aaa', fontWeight: 600 }}>· {total}</span>}</h3>
+        <button onClick={() => setCatalogOpen(true)} style={{ border: 'none', background: 'transparent', color: '#4F46E5', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>{lang === 'en' ? 'How to earn ›' : 'Nasıl kazanılır ›'}</button>
+      </div>
       {total === 0 ? (
         <div style={{ color: '#bbb', fontSize: 13 }}>{t('prof.noBadges')}</div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
           {/* Rekor seri rozeti — kullanıcının en uzun serisi (min 3 gün) */}
           {recordStreak >= 3 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', backgroundColor: '#FFF7ED', borderRadius: 12, border: '1px solid #FFEDD5' }}>
+            <div onClick={() => setCatalogOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', backgroundColor: '#FFF7ED', borderRadius: 12, border: '1px solid #FFEDD5', cursor: 'pointer' }}>
               <div style={{ flexShrink: 0 }}><BadgeMedallion streakNumber={recordStreak} size={42} /></div>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{recordStreak} {lang === 'en' ? 'day record streak' : 'gün rekor seri'}</div>
@@ -92,7 +134,7 @@ function BadgesCard({ badges, recordStreak = 0 }: { badges: any[]; recordStreak?
               : translateBadge(ub, lang)
             const sub = isChamp ? seasonLbl : ub.badge?.description
             return (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', backgroundColor: isChamp ? '#FFFBEB' : '#FAFAFA', borderRadius: 12, border: `1px solid ${isChamp ? '#FDE68A' : '#F0F0F0'}` }}>
+              <div key={i} onClick={() => setCatalogOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', backgroundColor: isChamp ? '#FFFBEB' : '#FAFAFA', borderRadius: 12, border: `1px solid ${isChamp ? '#FDE68A' : '#F0F0F0'}`, cursor: 'pointer' }}>
                 <div style={{ flexShrink: 0 }}><BadgeMedallion ub={ub} size={42} /></div>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</div>
@@ -109,6 +151,7 @@ function BadgesCard({ badges, recordStreak = 0 }: { badges: any[]; recordStreak?
 import type { ReactNode } from 'react'
 import { User, Users, Ticket, Award, ClipboardList, BarChart2, BookOpen, Calendar, Flame, Dumbbell, Heart, Building, MapPin, Gift, Medal, Check, X, Lock, CreditCard, Copy, CheckCheck, Flag, Target, Compass, Trophy, Trash2, Crown, Megaphone } from 'lucide-react'
 import { SportIcon, SportIconBox, getIconKeyForCategory, getColorForCategory, resolveCategoryColor } from '@/lib/sportIcons'
+import { BADGE_CATALOG } from '@/lib/badgeCatalog'
 import { useT, translateTier, translateBadge, translateCategory } from '@/lib/i18n'
 
 const dateLocale = () => (typeof window !== 'undefined' && localStorage.getItem('fitpass_lang') === 'en') ? 'en-US' : 'tr-TR'
@@ -171,6 +214,7 @@ export default function ProfilPage() {
   const [activeTab, setActiveTab] = useState<OwnTab | PublicTab>(isOwnProfile ? 'rezervasyonlar' : 'aktivite')
   const [reservationSubTab, setReservationSubTab] = useState<'upcoming' | 'past'>('upcoming')
   const [isFollowing, setIsFollowing] = useState(false)
+  const [followStatus, setFollowStatus] = useState<'none' | 'pending' | 'accepted'>('none')
   const [referralInfo, setReferralInfo] = useState<any>(null)
   const [copied, setCopied] = useState(false)
 
@@ -198,6 +242,7 @@ export default function ProfilPage() {
         if (token) {
           api.getFollowStatus(token, username).then((data: any) => {
             if (data.isFollowing !== undefined) setIsFollowing(data.isFollowing)
+            if (data.followStatus) setFollowStatus(data.followStatus)
             if (data.followers !== undefined) setFollowersCount(data.followers)
             if (data.following !== undefined) setFollowingCount(data.following)
           }).catch(() => {})
@@ -463,23 +508,22 @@ export default function ProfilPage() {
                   onClick={async () => {
                     const token = getToken()
                     if (!token) return
-                    const prevFollowing = isFollowing
-                    setIsFollowing(!isFollowing)
-                    setFollowersCount(c => prevFollowing ? c - 1 : c + 1)
-                    try {
-                      if (prevFollowing) {
-                        await api.unfollowUser(token, username)
-                      } else {
-                        await api.followUser(token, username)
-                      }
-                    } catch {
-                      setIsFollowing(prevFollowing)
-                      setFollowersCount(c => prevFollowing ? c + 1 : c - 1)
+                    const prev = followStatus
+                    if (prev === 'none') {
+                      setFollowStatus('accepted'); setIsFollowing(true); setFollowersCount(c => c + 1)
+                      try {
+                        const r: any = await api.followUser(token, username)
+                        if (r?.status === 'pending') { setFollowStatus('pending'); setIsFollowing(false); setFollowersCount(c => c - 1) }
+                      } catch { setFollowStatus('none'); setIsFollowing(false); setFollowersCount(c => c - 1) }
+                    } else {
+                      const wasAccepted = prev === 'accepted'
+                      setFollowStatus('none'); setIsFollowing(false); if (wasAccepted) setFollowersCount(c => Math.max(0, c - 1))
+                      try { await api.unfollowUser(token, username) } catch { setFollowStatus(prev); setIsFollowing(prev === 'accepted'); if (wasAccepted) setFollowersCount(c => c + 1) }
                     }
                   }}
-                  style={{ padding: '10px 24px', borderRadius: 100, border: isFollowing ? '1.5px solid #EBEBEB' : 'none', background: isFollowing ? '#fff' : '#4F46E5', color: isFollowing ? '#555' : '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginTop: 16 }}
+                  style={{ padding: '10px 24px', borderRadius: 100, border: followStatus === 'none' ? 'none' : '1.5px solid #EBEBEB', background: followStatus === 'accepted' ? '#fff' : followStatus === 'pending' ? '#EEF2FF' : '#4F46E5', color: followStatus === 'none' ? '#fff' : '#555', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginTop: 16 }}
                 >
-                  {isFollowing ? `✓ ${t('prof.following')}` : `+ ${t('prof.follow')}`}
+                  {followStatus === 'accepted' ? `✓ ${t('prof.following')}` : followStatus === 'pending' ? (lang === 'en' ? '⏳ Requested' : '⏳ İstek gönderildi') : `+ ${t('prof.follow')}`}
                 </button>
               )}
             </div>
@@ -492,8 +536,12 @@ export default function ProfilPage() {
             </div>
             <div style={{ fontSize: 14, color: '#aaa', marginBottom: 4 }}>@{displayUsername}</div>
             {displayNeighborhood && (
-              <div style={{ fontSize: 13, color: '#bbb', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={14} /> {displayNeighborhood}, İstanbul</div>
+              <div style={{ fontSize: 13, color: '#bbb', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={14} /> {displayNeighborhood}, İstanbul</div>
             )}
+            <div style={{ display: 'flex', gap: 24, marginBottom: 20 }}>
+              <div style={{ fontSize: 14 }}><span style={{ fontWeight: 800, color: '#111' }}>{followersCount}</span> <span style={{ color: '#888' }}>{t('friends.followers')}</span></div>
+              <div style={{ fontSize: 14 }}><span style={{ fontWeight: 800, color: '#111' }}>{followingCount}</span> <span style={{ color: '#888' }}>{t('friends.following')}</span></div>
+            </div>
             {!isOwnProfile && loggedInUser && (
               <button
                 onClick={() => { setReportReason(''); setReportCustom(''); setReportSent(null); setReportOpen(true) }}
