@@ -123,6 +123,8 @@ export const api = {
 
   updatePrivacy: (token: string, activityPrivacy: string) =>
     request('/api/auth/privacy', { method: 'PUT', headers: jsonHeaders(token), body: JSON.stringify({ activityPrivacy }) }),
+  updateProfilePrivacy: (token: string, profilePrivacy: string) =>
+    request('/api/auth/privacy', { method: 'PUT', headers: jsonHeaders(token), body: JSON.stringify({ profilePrivacy }) }),
 
   forgotPassword: (email: string) =>
     request('/api/auth/forgot-password', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ email }) }),

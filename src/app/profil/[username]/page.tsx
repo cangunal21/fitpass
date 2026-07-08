@@ -197,6 +197,7 @@ export default function ProfilPage() {
 
   // Privacy toggle
   const [privacy, setPrivacy] = useState<'public' | 'private'>('public')
+  const [profilePriv, setProfilePriv] = useState<'public' | 'private'>('public')
   const [privacySaved, setPrivacySaved] = useState(false)
 
   // Bildirim tercihleri
@@ -266,6 +267,7 @@ export default function ProfilPage() {
       if (data.user) {
         setMeData(data.user)
         setPrivacy(data.user.activityPrivacy || 'public')
+        setProfilePriv(data.user.profilePrivacy || 'public')
         setEmailReminders(data.user.emailReminders !== false)
         setSmsReminders(data.user.smsReminders === true)
         setEditForm({
@@ -1237,6 +1239,16 @@ export default function ProfilPage() {
                 {privacy === 'public' ? t('prof.activityPublicNote') : t('prof.activityPrivateNote')}
               </div>
               {privacySaved && <div style={{ fontSize: 13, color: '#10B981', fontWeight: 600, marginTop: 8 }}>{t('acc.saved')}</div>}
+            </div>
+
+            {/* Gizli Hesap — profil gizliliği (takip isteği akışı) */}
+            <div style={{ marginTop: 28, paddingTop: 24, borderTop: '1px solid #F0F0F0' }}>
+              <h4 style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}><Lock size={16} /> {lang === 'en' ? 'Private account' : 'Gizli Hesap'}</h4>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                <button onClick={async () => { setProfilePriv('public'); const tk = getToken(); if (tk) await api.updateProfilePrivacy(tk, 'public') }} style={{ padding: '8px 20px', borderRadius: 100, border: 'none', background: profilePriv === 'public' ? '#4F46E5' : '#F0F0F0', color: profilePriv === 'public' ? '#fff' : '#555', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>🌍 {lang === 'en' ? 'Public' : 'Herkese açık'}</button>
+                <button onClick={async () => { setProfilePriv('private'); const tk = getToken(); if (tk) await api.updateProfilePrivacy(tk, 'private') }} style={{ padding: '8px 20px', borderRadius: 100, border: 'none', background: profilePriv === 'private' ? '#4F46E5' : '#F0F0F0', color: profilePriv === 'private' ? '#fff' : '#555', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>🔒 {lang === 'en' ? 'Private' : 'Gizli'}</button>
+              </div>
+              <div style={{ fontSize: 13, color: '#888' }}>{profilePriv === 'private' ? (lang === 'en' ? 'New followers send a request you approve.' : 'Yeni takipçiler önce istek gönderir, sen onaylarsın.') : (lang === 'en' ? 'Anyone can follow you instantly.' : 'Herkes seni anında takip edebilir.')}</div>
             </div>
 
             {/* Bildirim Tercihleri */}
