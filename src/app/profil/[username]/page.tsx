@@ -224,6 +224,7 @@ export default function ProfilPage() {
   const [followersCount, setFollowersCount] = useState(0)
   const [followingCount, setFollowingCount] = useState(0)
   const [socialLoaded, setSocialLoaded] = useState(false)
+  const [followRequests, setFollowRequests] = useState<any[]>([])
 
   // Mock data for public profiles (or fallback)
   const mockUser = mockUsers.find(u => u.username === username) || mockUsers[0]
@@ -276,6 +277,13 @@ export default function ProfilPage() {
       }
       setLoadingMe(false)
     }).catch(() => setLoadingMe(false))
+
+    // Kendi profilim: bekleyen takip istekleri + takipçi/takip sayıları
+    api.getFollowRequests(token).then((d: any) => setFollowRequests(d?.requests || [])).catch(() => {})
+    api.getFollowStatus(token, username).then((d: any) => {
+      if (typeof d?.followers === 'number') setFollowersCount(d.followers)
+      if (typeof d?.following === 'number') setFollowingCount(d.following)
+    }).catch(() => {})
 
     api.getNeighborhoods().then((data: any) => {
       if (data.neighborhoods) setNeighborhoods(data.neighborhoods)
@@ -542,6 +550,28 @@ export default function ProfilPage() {
               <div style={{ fontSize: 14 }}><span style={{ fontWeight: 800, color: '#111' }}>{followersCount}</span> <span style={{ color: '#888' }}>{t('friends.followers')}</span></div>
               <div style={{ fontSize: 14 }}><span style={{ fontWeight: 800, color: '#111' }}>{followingCount}</span> <span style={{ color: '#888' }}>{t('friends.following')}</span></div>
             </div>
+            {isOwnProfile && followRequests.length > 0 && (
+              <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '14px 18px', border: '1px solid #E0E7FF', marginBottom: 20 }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: '#4F46E5', marginBottom: 10 }}>{lang === 'en' ? 'Follow requests' : 'Takip istekleri'} ({followRequests.length})</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {followRequests.map((u: any) => (
+                    <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <Link href={`/profil/${u.username}`} style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, textDecoration: 'none', minWidth: 0 }}>
+                        <div style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: '#F5F5F5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+                          {u.avatarUrl ? <img src={u.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : <User size={20} />}
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.fullName}</div>
+                          <div style={{ fontSize: 12, color: '#aaa' }}>@{u.username}</div>
+                        </div>
+                      </Link>
+                      <button onClick={async () => { const tk = getToken(); if (!tk) return; setFollowRequests(rs => rs.filter(r => r.id !== u.id)); setFollowersCount(c => c + 1); try { await api.acceptFollowRequest(tk, u.username) } catch {} }} style={{ padding: '7px 16px', borderRadius: 100, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>{lang === 'en' ? 'Accept' : 'Kabul'}</button>
+                      <button onClick={async () => { const tk = getToken(); if (!tk) return; setFollowRequests(rs => rs.filter(r => r.id !== u.id)); try { await api.rejectFollowRequest(tk, u.username) } catch {} }} style={{ padding: '7px 14px', borderRadius: 100, border: '1.5px solid #EBEBEB', background: '#fff', color: '#888', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>{lang === 'en' ? 'Reject' : 'Reddet'}</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             {!isOwnProfile && loggedInUser && (
               <button
                 onClick={() => { setReportReason(''); setReportCustom(''); setReportSent(null); setReportOpen(true) }}

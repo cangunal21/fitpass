@@ -145,6 +145,13 @@ export const api = {
   getFollowing: (username: string) =>
     request(`/api/social/following/${username}`),
 
+  getFollowRequests: (token: string) =>
+    request(`/api/social/follow-requests`, { headers: authHeaders(token) }),
+  acceptFollowRequest: (token: string, username: string) =>
+    request(`/api/social/follow-requests/${username}/accept`, { method: 'POST', headers: authHeaders(token) }),
+  rejectFollowRequest: (token: string, username: string) =>
+    request(`/api/social/follow-requests/${username}/reject`, { method: 'POST', headers: authHeaders(token) }),
+
   updateProfile: (token: string, data: { fullName?: string; bio?: string; neighborhoodId?: number; avatarUrl?: string }) =>
     request('/api/auth/profile', { method: 'PUT', headers: jsonHeaders(token), body: JSON.stringify(data) }),
 }
