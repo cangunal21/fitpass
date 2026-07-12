@@ -638,7 +638,7 @@ export default function ProfilPage() {
         </div>
 
         {/* Sporlar + Rozetler — only for public profiles */}
-        {!isOwnProfile && !loadingPublic && !publicData?.isPrivate && (
+        {!isOwnProfile && !loadingPublic && !publicData?.isPrivate && !publicData?.isProfilePrivate && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
             <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '22px 24px', border: '1px solid #F0F0F0' }}>
               <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}><Medal size={16} /> {t('prof.topSports')}</h3>
@@ -731,10 +731,11 @@ export default function ProfilPage() {
                   </div>
                 ))}
               </div>
-            ) : publicData?.isPrivate ? (
+            ) : (publicData?.isPrivate || publicData?.isProfilePrivate) ? (
               <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '48px', textAlign: 'center', border: '1px solid #F0F0F0' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}><Lock size={48} color="#ccc" /></div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#111', marginBottom: 8 }}>{t('prof.activityPrivate')}</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#111', marginBottom: 8 }}>{publicData?.isProfilePrivate ? (lang === 'en' ? 'This account is private' : 'Bu hesap gizli') : t('prof.activityPrivate')}</div>
+                {publicData?.isProfilePrivate && <div style={{ fontSize: 13, color: '#888' }}>{lang === 'en' ? 'Follow to see their activity and badges.' : 'Aktivitelerini ve rozetlerini görmek için takip et.'}</div>}
               </div>
             ) : publicData?.bookings || publicData?.dropInParticipations ? (
               (() => {
@@ -1248,7 +1249,7 @@ export default function ProfilPage() {
                 <button onClick={async () => { setProfilePriv('public'); const tk = getToken(); if (tk) await api.updateProfilePrivacy(tk, 'public') }} style={{ padding: '8px 20px', borderRadius: 100, border: 'none', background: profilePriv === 'public' ? '#4F46E5' : '#F0F0F0', color: profilePriv === 'public' ? '#fff' : '#555', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>🌍 {lang === 'en' ? 'Public' : 'Herkese açık'}</button>
                 <button onClick={async () => { setProfilePriv('private'); const tk = getToken(); if (tk) await api.updateProfilePrivacy(tk, 'private') }} style={{ padding: '8px 20px', borderRadius: 100, border: 'none', background: profilePriv === 'private' ? '#4F46E5' : '#F0F0F0', color: profilePriv === 'private' ? '#fff' : '#555', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>🔒 {lang === 'en' ? 'Private' : 'Gizli'}</button>
               </div>
-              <div style={{ fontSize: 13, color: '#888' }}>{profilePriv === 'private' ? (lang === 'en' ? 'New followers send a request you approve.' : 'Yeni takipçiler önce istek gönderir, sen onaylarsın.') : (lang === 'en' ? 'Anyone can follow you instantly.' : 'Herkes seni anında takip edebilir.')}</div>
+              <div style={{ fontSize: 13, color: '#888' }}>{profilePriv === 'private' ? (lang === 'en' ? 'Only followers you approve can see your activity and badges. New followers must send a request.' : 'Aktiviteni ve rozetlerini sadece onayladığın takipçiler görür. Yeni takipçiler istek gönderir.') : (lang === 'en' ? 'Anyone can follow you and see your profile instantly.' : 'Herkes seni anında takip edebilir ve profilini görebilir.')}</div>
             </div>
 
             {/* Bildirim Tercihleri */}
