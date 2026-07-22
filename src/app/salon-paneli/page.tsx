@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Building2, Clock, BookOpen, Calendar, Ticket, AlertCircle, User, Check, ChevronDown, ChevronUp, Plus, Trash2, BadgeCheck } from 'lucide-react'
+import { Building2, Clock, BookOpen, Calendar, Ticket, AlertCircle, User, Check, ChevronDown, ChevronUp, Plus, Trash2, BadgeCheck, Users, ClipboardList, Zap, QrCode, BarChart3, TrendingUp, Star, Image as ImageIcon, Settings, CreditCard } from 'lucide-react'
 import AvatarUpload from '@/components/AvatarUpload'
 import { getInitialsAvatar, uploadToCloudinary } from '@/lib/cloudinary'
 
@@ -563,13 +563,55 @@ export default function SalonPaneliPage() {
         </div>
       </nav>
 
-      <div className="page-container" style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px' }}>
+      <div className="page-container" style={{ maxWidth: 1240, margin: '0 auto', padding: '32px 24px' }}>
         {!venue?.isApproved && (
           <div style={{ backgroundColor: '#FEF9C3', border: '1px solid #FDE68A', borderRadius: 16, padding: '16px 20px', marginBottom: 24, fontSize: 14, color: '#92400e' }}>
             <Clock size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 6 }} /><strong>Salonunuz onay bekliyor.</strong> Onaylandıktan sonra dersleriniz yayınlanacak. Onay süreci genellikle 1-2 iş günü sürmektedir.
           </div>
         )}
 
+        {/* GRUPLU DÜZEN: sol menü + içerik */}
+        <div className="salon-layout" style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+          <aside className="salon-sidebar" style={{ width: 216, flexShrink: 0, backgroundColor: '#fff', borderRadius: 16, border: '1px solid #eee', padding: '10px 8px', position: 'sticky', top: 76 }}>
+            {(() => {
+              const DROP_IN_SPORTS = ['padel', 'basketbol', 'halı saha', 'halısaha']
+              const venueCategories: string[] = (venue?.sportCategories || []).map((sc: any) => sc.sportCategory?.name?.toLowerCase() || '')
+              const hasDropIn = venueCategories.some((c: string) => DROP_IN_SPORTS.includes(c))
+              const groups: { title: string; items: { key: typeof activeTab; label: string; icon: React.ReactNode }[] }[] = [
+                { title: 'İşletme', items: [
+                  { key: 'dersler', label: 'Dersler & Seanslar', icon: <BookOpen size={16} /> },
+                  { key: 'hocalar', label: 'Hocalarım', icon: <Users size={16} /> },
+                  { key: 'rezervasyonlar', label: 'Rezervasyonlar', icon: <ClipboardList size={16} /> },
+                  ...(hasDropIn ? [{ key: 'dropin' as typeof activeTab, label: 'Drop-In', icon: <Zap size={16} /> }] : []),
+                  { key: 'qr', label: 'QR Kod', icon: <QrCode size={16} /> },
+                ] },
+                { title: 'Raporlar', items: [
+                  { key: 'istatistikler', label: 'İstatistikler', icon: <BarChart3 size={16} /> },
+                  { key: 'gelir', label: 'Gelir Raporu', icon: <TrendingUp size={16} /> },
+                  { key: 'yorumlar', label: 'Yorumlar', icon: <Star size={16} /> },
+                ] },
+                { title: 'Pazarlama & Vitrin', items: [
+                  { key: 'resimler', label: 'Salon Resimleri', icon: <ImageIcon size={16} /> },
+                  { key: 'kuponlar', label: 'Kuponlar', icon: <Ticket size={16} /> },
+                ] },
+                { title: 'Ayarlar', items: [
+                  { key: 'profil', label: 'Profil & Şifre', icon: <Settings size={16} /> },
+                  { key: 'odeme', label: 'Ödeme & Onay', icon: <CreditCard size={16} /> },
+                ] },
+              ]
+              return groups.map(g => (
+                <div key={g.title} style={{ marginBottom: 6 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#9AA0AE', textTransform: 'uppercase', letterSpacing: '0.04em', padding: '10px 12px 4px' }}>{g.title}</div>
+                  {g.items.map(item => (
+                    <button key={item.key} onClick={() => handleTabChange(item.key)} style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', padding: '9px 12px', borderRadius: 9, border: 'none', background: activeTab === item.key ? '#EEF0FE' : 'transparent', color: activeTab === item.key ? '#4F46E5' : '#3A3F4B', fontSize: 13.5, fontWeight: activeTab === item.key ? 600 : 500, cursor: 'pointer', textAlign: 'left' }}>
+                      <span style={{ display: 'flex', width: 18, flexShrink: 0 }}>{item.icon}</span>{item.label}
+                    </button>
+                  ))}
+                </div>
+              ))
+            })()}
+          </aside>
+          <div className="salon-content" style={{ flex: 1, minWidth: 0 }}>
         {/* İstatistikler */}
         <div className="stats-grid stats-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 28 }}>
           {[
@@ -582,34 +624,6 @@ export default function SalonPaneliPage() {
               <div style={{ fontSize: 28, fontWeight: 800, color: s.color }}>{s.value}</div>
               <div style={{ fontSize: 13, color: '#888' }}>{s.label}</div>
             </div>
-          ))}
-        </div>
-
-        {/* Tabs */}
-        <div className="salon-tabs" style={{ display: 'flex', gap: 4, backgroundColor: '#eee', borderRadius: 16, padding: 4, marginBottom: 24, width: 'fit-content' }}>
-          {(() => {
-            const DROP_IN_SPORTS = ['padel', 'basketbol', 'halı saha', 'halısaha']
-            const venueCategories: string[] = (venue?.sportCategories || []).map((sc: any) => sc.sportCategory?.name?.toLowerCase() || '')
-            const hasDropIn = venueCategories.some((c: string) => DROP_IN_SPORTS.includes(c))
-            const tabs = [
-              { key: 'dersler', label: 'Dersler & Seanslar' },
-              { key: 'hocalar', label: 'Hocalarım' },
-              { key: 'resimler', label: 'Salon Resimleri' },
-              ...(hasDropIn ? [{ key: 'dropin', label: 'Drop-In' }] : []),
-              { key: 'rezervasyonlar', label: 'Rezervasyonlar' },
-              { key: 'istatistikler', label: 'İstatistikler' },
-              { key: 'gelir', label: 'Gelir Raporu' },
-              { key: 'kuponlar', label: 'Kuponlar' },
-              { key: 'yorumlar', label: 'Yorumlar' },
-              { key: 'qr', label: 'QR Kod' },
-              { key: 'odeme', label: 'Ödeme & Onay' },
-              { key: 'profil', label: 'Profil & Şifre' },
-            ]
-            return tabs as { key: typeof activeTab; label: string }[]
-          })().map(tab => (
-            <button key={tab.key} onClick={() => handleTabChange(tab.key)} className="salon-tab-item" style={{ padding: '10px 20px', borderRadius: 12, border: 'none', background: activeTab === tab.key ? '#fff' : 'transparent', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: activeTab === tab.key ? '#1a1a1a' : '#888', boxShadow: activeTab === tab.key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
-              {tab.label}
-            </button>
           ))}
         </div>
 
@@ -1675,6 +1689,8 @@ export default function SalonPaneliPage() {
             </div>
           </div>
         )}
+          </div>{/* /salon-content */}
+        </div>{/* /salon-layout */}
       </div>
     </div>
   )
