@@ -1769,19 +1769,16 @@ function CheckInScanner({ venueId }: { venueId: number }) {
 function QRTab({ venueId, venueName }: { venueId: number; venueName: string }) {
   const SITE_URL = 'https://sipsakspor.com'
   const venueUrl = `${SITE_URL}/venue/${venueId}`
-  const registerUrl = `${SITE_URL}/salon-giris`
   const canvasRef1 = useRef<HTMLCanvasElement>(null)
-  const canvasRef2 = useRef<HTMLCanvasElement>(null)
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
     import('qrcode').then(QRCode => {
       const opts = { width: 280, margin: 2, color: { dark: '#1a1a1a', light: '#ffffff' } }
       if (canvasRef1.current) QRCode.toCanvas(canvasRef1.current, venueUrl, opts)
-      if (canvasRef2.current) QRCode.toCanvas(canvasRef2.current, registerUrl, opts)
       setReady(true)
     })
-  }, [venueUrl, registerUrl])
+  }, [venueUrl])
 
   const downloadQR = (canvasRef: React.RefObject<HTMLCanvasElement | null>, filename: string) => {
     const canvas = canvasRef.current
@@ -1795,14 +1792,14 @@ function QRTab({ venueId, venueName }: { venueId: number; venueName: string }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       <div>
-        <h3 style={{ fontSize: 18, fontWeight: 800, color: '#1a1a1a', marginBottom: 4 }}>QR Kodlarınız</h3>
-        <p style={{ fontSize: 14, color: '#888', margin: 0 }}>QR kodları yazdırıp salonunuza asın — müşteriler okutunca doğrudan salonunuza veya kayıt sayfasına yönlendirilir.</p>
+        <h3 style={{ fontSize: 18, fontWeight: 800, color: '#1a1a1a', marginBottom: 4 }}>Müşteri QR Kodunuz</h3>
+        <p style={{ fontSize: 14, color: '#888', margin: 0 }}>QR kodunu yazdırıp salonunuza asın — müşteriler okutunca doğrudan salon sayfanıza gidip rezervasyon yapar.</p>
       </div>
 
       <CheckInScanner venueId={venueId} />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-        {/* QR 1 — Müşteri için */}
+      <div style={{ maxWidth: 420, width: '100%', margin: '0 auto' }}>
+        {/* Müşteri QR — salon sayfası */}
         <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: 28, boxShadow: '0 2px 12px rgba(0,0,0,0.08)', textAlign: 'center' }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: '#4F46E5', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>Müşteri QR</div>
           <h4 style={{ fontSize: 16, fontWeight: 800, color: '#1a1a1a', margin: '0 0 16px' }}>Salon Sayfanız</h4>
@@ -1815,24 +1812,6 @@ function QRTab({ venueId, venueName }: { venueId: number; venueName: string }) {
             onClick={() => downloadQR(canvasRef1, `${venueName}-musteri-qr.png`)}
             disabled={!ready}
             style={{ width: '100%', padding: '12px', borderRadius: 12, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
-          >
-            PNG İndir
-          </button>
-        </div>
-
-        {/* QR 2 — Salon kaydı için */}
-        <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: 28, boxShadow: '0 2px 12px rgba(0,0,0,0.08)', textAlign: 'center' }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#10B981', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>Salon QR</div>
-          <h4 style={{ fontSize: 16, fontWeight: 800, color: '#1a1a1a', margin: '0 0 16px' }}>Salon Girişi</h4>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-            <canvas ref={canvasRef2} style={{ borderRadius: 12, border: '1px solid #f0f0f0' }} />
-          </div>
-          <p style={{ fontSize: 12, color: '#aaa', marginBottom: 16 }}>Okutunca: <strong style={{ color: '#555' }}>{registerUrl}</strong></p>
-          <p style={{ fontSize: 12, color: '#888', marginBottom: 20, lineHeight: 1.5 }}>Diğer salonları Şipşakspor'a davet etmek için bu QR'ı paylaşın.</p>
-          <button
-            onClick={() => downloadQR(canvasRef2, 'sipsakspor-salon-kayit-qr.png')}
-            disabled={!ready}
-            style={{ width: '100%', padding: '12px', borderRadius: 12, border: 'none', background: '#10B981', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
           >
             PNG İndir
           </button>
