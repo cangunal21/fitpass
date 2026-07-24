@@ -55,6 +55,8 @@ export default function SalonPaneliPage() {
 
   // Instructor form
   const [instructorForm, setInstructorForm] = useState({ fullName: '', specialty: '', bio: '', avatarUrl: '', phone: '', email: '' })
+  const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([])
+  const toggleSpecialty = (s: string) => setSelectedSpecialties(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])
   const [instructorError, setInstructorError] = useState('')
   const [instructorSuccess, setInstructorSuccess] = useState('')
 
@@ -381,16 +383,20 @@ export default function SalonPaneliPage() {
   const handleAddInstructor = async (e: React.FormEvent) => {
     e.preventDefault()
     setInstructorError(''); setInstructorSuccess('')
+    if (selectedSpecialties.length === 0) { setInstructorError('En az bir uzmanlık (branş) seçin.'); return }
     const token = localStorage.getItem('fitpass_venue_token')!
+    // Uzmanlık artık branşlardan çoklu seçim → " · " ile birleştirilip tek string gönderilir (backend değişmez)
+    const payload = { ...instructorForm, specialty: selectedSpecialties.join(' · ') }
     const res = await fetch(`${API_URL}/api/venue/instructors`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify(instructorForm),
+      body: JSON.stringify(payload),
     })
     const data = await res.json()
     if (data.error) { setInstructorError(data.error); return }
     setInstructorSuccess('Hoca başarıyla eklendi!')
     setInstructorForm({ fullName: '', specialty: '', bio: '', avatarUrl: '', phone: '', email: '' })
+    setSelectedSpecialties([])
     setNewInstructorAvatar('')
     fetchInstructors()
     setTimeout(() => setInstructorSuccess(''), 2000)
@@ -992,8 +998,15 @@ export default function SalonPaneliPage() {
                   <input type="text" placeholder="Hoca adı soyadı" value={instructorForm.fullName} onChange={e => setInstructorForm({ ...instructorForm, fullName: e.target.value })} required style={inputStyle} />
                 </div>
                 <div>
-                  <label style={labelStyle}>Uzmanlık Alanı *</label>
-                  <input type="text" placeholder="Yoga, Pilates..." value={instructorForm.specialty} onChange={e => setInstructorForm({ ...instructorForm, specialty: e.target.value })} required style={inputStyle} />
+                  <label style={labelStyle}>Uzmanlık Alanı (branşlar) *</label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
+                    {sportCategories.map(c => c.name).map(sp => (
+                      <button key={sp} type="button" onClick={() => toggleSpecialty(sp)} style={{ padding: '6px 14px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, backgroundColor: selectedSpecialties.includes(sp) ? '#4F46E5' : '#f0f0f0', color: selectedSpecialties.includes(sp) ? '#fff' : '#555' }}>
+                        {sp}
+                      </button>
+                    ))}
+                  </div>
+                  {selectedSpecialties.length === 0 && <p style={{ fontSize: 11, color: '#aaa', marginTop: 6 }}>En az bir branş seçin (birden fazla seçebilirsiniz)</p>}
                 </div>
                 <div>
                   <label style={labelStyle}>Bio</label>
