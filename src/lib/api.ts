@@ -76,6 +76,19 @@ export const api = {
   getMyBookings: (token: string) =>
     request('/api/bookings/my', { headers: authHeaders(token) }),
 
+  // Puanlanmayı bekleyen dersler (katıldı + bitti + puansız) → puanlama modalını besler
+  getPendingReviews: (token: string) =>
+    request('/api/reviews/pending', { headers: authHeaders(token) }),
+
+  // Çift puanlama: salon (zorunlu) + hoca (opsiyonel), iki ayrı yorum
+  createReview: (token: string, data: {
+    bookingId: number
+    venueRating: number; venueComment?: string
+    instructorRating?: number; instructorComment?: string
+    isAnonymous?: boolean
+  }) =>
+    request('/api/reviews', { method: 'POST', headers: jsonHeaders(token), body: JSON.stringify(data) }),
+
   getMyCalendar: (token: string) =>
     request('/api/social/my-calendar', { headers: authHeaders(token) }),
 

@@ -26,12 +26,8 @@ export default function VenuePage() {
   const [activeImage, setActiveImage] = useState<string | null>(null)
   const [reviews, setReviews] = useState<any[]>([])
   const [reviewsLoading, setReviewsLoading] = useState(false)
-  const [showReviewForm, setShowReviewForm] = useState(false)
-  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '', isAnonymous: true })
-  const [reviewSubmitting, setReviewSubmitting] = useState(false)
-  const [reviewError, setReviewError] = useState('')
-  const [reviewSuccess, setReviewSuccess] = useState('')
-  const [userBookings, setUserBookings] = useState<any[]>([])
+  // Not: yorum GÖNDERME artık salon profilinden yapılmıyor — global RatingPrompt (ders sonrası,
+  // check-in'li, salon+hoca çift puan) hallediyor. Burada yalnız yorum LİSTESİ + ortalama gösterilir.
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
@@ -79,49 +75,8 @@ export default function VenuePage() {
         .then(r => r.json())
         .then(d => setReviews(d.reviews || []))
         .finally(() => setReviewsLoading(false))
-
-      const token = localStorage.getItem('fitpass_token')
-      if (token) {
-        fetch(`${API_URL}/api/auth/my-bookings`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }).then(r => r.json()).then(d => {
-          const venueBookings = (d.bookings || []).filter((b: any) =>
-            b.session?.class?.venueId === venue.id && b.status === 'confirmed'
-          )
-          setUserBookings(venueBookings)
-        })
-      }
     }
   }, [activeTab, venue])
-
-  const handleSubmitReview = async (bookingId: number) => {
-    setReviewSubmitting(true)
-    setReviewError('')
-    const token = localStorage.getItem('fitpass_token')
-    if (!token) { setReviewError(t('common.loginRequired')); setReviewSubmitting(false); return }
-
-    const res = await fetch(`${API_URL}/api/reviews`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ bookingId, ...reviewForm })
-    })
-    const data = await res.json()
-    setReviewSubmitting(false)
-    if (data.error) { setReviewError(data.error); return }
-    setReviewSuccess(t('venue.reviewAdded'))
-    setShowReviewForm(false)
-    fetch(`${API_URL}/api/reviews/venue/${venue.id}`)
-      .then(r => r.json())
-      .then(d => {
-        const updatedReviews = d.reviews || []
-        setReviews(updatedReviews)
-        // Update local avgRating
-        if (updatedReviews.length > 0) {
-          const avg = updatedReviews.reduce((sum: number, r: any) => sum + r.rating, 0) / updatedReviews.length
-          setVenue((prev: any) => prev ? { ...prev, avgRating: Math.round(avg * 10) / 10, totalReviews: updatedReviews.length } : prev)
-        }
-      })
-  }
 
   // Loading skeleton
   if (loading) {
@@ -520,47 +475,8 @@ export default function VenuePage() {
               </div>
             </div>
 
-            {/* Review form trigger */}
-            {!venue._isMock && userBookings.length > 0 && !reviewSuccess && (
-              <div style={{ backgroundColor: '#EEF2FF', borderRadius: 16, padding: '16px 20px' }}>
-                {!showReviewForm ? (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 14, color: '#4F46E5', fontWeight: 600 }}>{t('venue.canReview')}</span>
-                    <button onClick={() => setShowReviewForm(true)} style={{ padding: '8px 16px', borderRadius: 10, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>{t('venue.writeReview')}</button>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#444', marginBottom: 8 }}>{t('venue.yourRating')}</div>
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        {[1,2,3,4,5].map(n => (
-                          <button key={n} onClick={() => setReviewForm(f => ({...f, rating: n}))} style={{ width: 36, height: 36, borderRadius: 8, border: 'none', background: reviewForm.rating >= n ? '#F59E0B' : '#e5e5e5', fontSize: 18, cursor: 'pointer' }}>★</button>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#444', marginBottom: 6 }}>{t('venue.yourReview')}</div>
-                      <textarea value={reviewForm.comment} onChange={e => setReviewForm(f => ({...f, comment: e.target.value}))} placeholder={t('venue.reviewPlaceholder')} rows={3} style={{ width: '100%', padding: '10px 14px', borderRadius: 12, border: '1.5px solid #e5e5e5', fontSize: 14, outline: 'none', resize: 'vertical', boxSizing: 'border-box' as const }} />
-                    </div>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#666', cursor: 'pointer' }}>
-                      <input type="checkbox" checked={reviewForm.isAnonymous} onChange={e => setReviewForm(f => ({...f, isAnonymous: e.target.checked}))} />
-                      {t('common.anonShare')}
-                    </label>
-                    {reviewError && <div style={{ color: '#DC2626', fontSize: 13 }}>{reviewError}</div>}
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button onClick={() => setShowReviewForm(false)} style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1.5px solid #eee', background: '#fff', fontSize: 13, cursor: 'pointer' }}>{t('common.cancelBtn')}</button>
-                      <button onClick={() => handleSubmitReview(userBookings[0].id)} disabled={reviewSubmitting} style={{ flex: 2, padding: '10px', borderRadius: 10, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                        {reviewSubmitting ? t('comp.sending') : t('venue.submitReview')}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {reviewSuccess && (
-              <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: '14px 18px', fontSize: 14, color: '#16a34a', fontWeight: 600 }}>✓ {reviewSuccess}</div>
-            )}
+            {/* Yorum gönderme: salon profilinden KALDIRILDI. Puanlama, ders sonrası global
+                RatingPrompt ile (check-in'li + salon+hoca çift puan) yapılır. Burada yalnız liste. */}
 
             {/* Real reviews */}
             {!venue._isMock && (
