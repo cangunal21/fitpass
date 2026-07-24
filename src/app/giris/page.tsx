@@ -98,9 +98,12 @@ function GirisForm() {
           </p>
         </div>
 
-        <div style={{ marginTop: 20, textAlign: 'center' }}>
+        <div style={{ marginTop: 20, textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <Link href="/salon-giris" style={{ fontSize: 13, color: '#aaa', textDecoration: 'none', fontWeight: 500 }}>
             {t('login.venueOwner')}
+          </Link>
+          <Link href="/egitmen-giris" style={{ fontSize: 13, color: '#aaa', textDecoration: 'none', fontWeight: 500 }}>
+            {t('login.instructorLink')}
           </Link>
         </div>
       </div>

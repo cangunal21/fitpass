@@ -415,6 +415,24 @@ export default function SalonPaneliPage() {
     setTimeout(() => setInstructorSuccess(''), 2000)
   }
 
+  // Eğitmene giriş daveti gönder (kendi puan/yorumlarını görüp yanıtlayabilsin; finans göremez)
+  const handleInviteInstructor = async (inst: any) => {
+    const email = inst.email || prompt(`${inst.fullName} için giriş daveti gönderilecek e-posta:`, inst.email || '')
+    if (!email) return
+    setInstructorError(''); setInstructorSuccess('')
+    const token = localStorage.getItem('fitpass_venue_token')!
+    const res = await fetch(`${API_URL}/api/venue/instructors/${inst.id}/invite`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ email }),
+    })
+    const data = await res.json()
+    if (data.error) { setInstructorError(data.error); return }
+    setInstructorSuccess(data.message || 'Davet gönderildi.')
+    fetchInstructors()
+    setTimeout(() => setInstructorSuccess(''), 4000)
+  }
+
   const handleLogout = () => {
     localStorage.removeItem('fitpass_venue_token')
     localStorage.removeItem('fitpass_venue')
@@ -937,17 +955,31 @@ export default function SalonPaneliPage() {
                     <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: 5 }}>{inst.fullName}{inst.verified && <BadgeCheck size={15} color="#2563EB" />}</div>
                     <div style={{ fontSize: 12, color: '#4F46E5', fontWeight: 600 }}>{inst.specialty}</div>
                     {inst.bio && <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{inst.bio}</div>}
-                    <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>{inst._count?.classes || 0} ders</div>
+                    <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>
+                      {inst._count?.classes || 0} ders
+                      {inst.inviteStatus === 'active' && <span style={{ color: '#16a34a', fontWeight: 600 }}> · giriş aktif</span>}
+                      {inst.inviteStatus === 'pending' && <span style={{ color: '#d97706', fontWeight: 600 }}> · davet gönderildi</span>}
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteInstructor(inst)}
-                    title="Hocayı sil"
-                    aria-label={`${inst.fullName} hocasını sil`}
-                    style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626', padding: 8, borderRadius: 8, display: 'flex', alignItems: 'center' }}
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                  <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <button
+                      type="button"
+                      onClick={() => handleInviteInstructor(inst)}
+                      title="Eğitmene giriş daveti gönder"
+                      style={{ background: '#EEF2FF', border: 'none', cursor: 'pointer', color: '#4F46E5', padding: '7px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}
+                    >
+                      {inst.inviteStatus === 'active' ? 'Yeniden davet' : inst.inviteStatus === 'pending' ? 'Tekrar gönder' : 'Giriş daveti'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteInstructor(inst)}
+                      title="Hocayı sil"
+                      aria-label={`${inst.fullName} hocasını sil`}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626', padding: 8, borderRadius: 8, display: 'flex', alignItems: 'center' }}
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
