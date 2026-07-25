@@ -154,11 +154,11 @@ export const api = {
   getFollowStatus: (token: string, username: string) =>
     request(`/api/social/status/${username}`, { headers: authHeaders(token) }),
 
-  getFollowers: (username: string) =>
-    request(`/api/social/followers/${username}`),
+  getFollowers: (username: string, token?: string | null) =>
+    request(`/api/social/followers/${username}`, { headers: jsonHeaders(token) }),
 
-  getFollowing: (username: string) =>
-    request(`/api/social/following/${username}`),
+  getFollowing: (username: string, token?: string | null) =>
+    request(`/api/social/following/${username}`, { headers: jsonHeaders(token) }),
 
   getFollowRequests: (token: string) =>
     request(`/api/social/follow-requests`, { headers: authHeaders(token) }),

@@ -699,8 +699,8 @@ export default function ProfilPage() {
                 }
                 if (tab.key === 'arkadaşlar' && !socialLoaded) {
                   Promise.all([
-                    api.getFollowers(username),
-                    api.getFollowing(username),
+                    api.getFollowers(username, getToken()),
+                    api.getFollowing(username, getToken()),
                   ]).then(([frs, fng]: any[]) => {
                     setFollowers(frs.followers || [])
                     setFollowing(fng.following || [])

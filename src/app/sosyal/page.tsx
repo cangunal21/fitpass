@@ -89,8 +89,9 @@ export default function SosyalPage() {
     setLoading(true)
     try {
       const [followingRes, followersRes, suggestionsRes] = await Promise.all([
-        fetch(`${API_URL}/api/social/following/${currentUser.username}`).then(r => r.json()),
-        fetch(`${API_URL}/api/social/followers/${currentUser.username}`).then(r => r.json()),
+        // token gönder → backend seni tanısın (kendi/gizli listelerini görebilesin; aksi halde anonim sanılıp boş döner)
+        fetch(`${API_URL}/api/social/following/${currentUser.username}`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+        fetch(`${API_URL}/api/social/followers/${currentUser.username}`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
         fetch(`${API_URL}/api/social/suggestions`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
       ])
       setFollowing(followingRes.following || [])
