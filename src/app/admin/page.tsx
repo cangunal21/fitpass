@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Lock, User, Building2, Ticket, Clock, BadgeCheck } from 'lucide-react'
+import { Lock, User, Building2, Ticket, Clock, BadgeCheck, GraduationCap } from 'lucide-react'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 export default function AdminPage() {
@@ -262,6 +262,7 @@ export default function AdminPage() {
             {[
               { label: 'Kullanıcılar', value: stats.userCount, icon: <User size={28} />, color: '#8B5CF6' },
               { label: 'Salonlar', value: stats.venueCount, icon: <Building2 size={28} />, color: '#3B82F6' },
+              { label: 'Eğitmenler', value: stats.instructorCount, icon: <GraduationCap size={28} />, color: '#EC4899' },
               { label: 'Rezervasyonlar', value: stats.bookingCount, icon: <Ticket size={28} />, color: '#10B981' },
               { label: 'Onay Bekleyen', value: stats.pendingVenues, icon: <Clock size={28} />, color: '#F59E0B' },
             ].map((s, i) => (
@@ -300,6 +301,7 @@ export default function AdminPage() {
             {[
               { label: 'Kullanıcılar', value: stats.userCount, icon: <User size={28} />, color: '#8B5CF6' },
               { label: 'Salonlar', value: stats.venueCount, icon: <Building2 size={28} />, color: '#3B82F6' },
+              { label: 'Eğitmenler', value: stats.instructorCount, icon: <GraduationCap size={28} />, color: '#EC4899' },
               { label: 'Rezervasyonlar', value: stats.bookingCount, icon: <Ticket size={28} />, color: '#10B981' },
               { label: 'Onay Bekleyen', value: stats.pendingVenues, icon: <Clock size={28} />, color: '#F59E0B' },
             ].map((s, i) => (
