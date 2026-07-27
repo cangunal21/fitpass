@@ -29,8 +29,11 @@ function GirisForm() {
       saveToken(res.token)
       saveRefreshToken(res.refreshToken)
       saveUser(res.user)
-      const redirect = searchParams.get('redirect')
-      router.push(redirect || '/')
+      // Open-redirect önlemi: yalnızca site-içi mutlak yolu kabul et. '//evil.com' ve '/\evil'
+      // tarayıcıda çapraz-origin çözülür; tek '/' ile başlayıp ardından '/' veya '\' gelmeyen değere izin ver.
+      const raw = searchParams.get('redirect')
+      const safe = raw && /^\/(?![/\\])/.test(raw) ? raw : '/'
+      router.push(safe)
     } catch {
       setError(t('common.connectionError'))
       setLoading(false)
