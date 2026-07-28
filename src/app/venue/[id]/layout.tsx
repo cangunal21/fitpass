@@ -5,7 +5,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   try {
     const { id } = await params
-    const res = await fetch(`${API_URL}/api/public/venues/${id}`, { next: { revalidate: 3600 } })
+    const res = await fetch(`${API_URL}/api/public/venues/${encodeURIComponent(id)}`, { next: { revalidate: 3600 } })
     const data = await res.json()
     const venue = data.venue
     if (!venue) throw new Error()
