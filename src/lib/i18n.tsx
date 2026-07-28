@@ -1014,6 +1014,9 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       if (stored === 'tr' || stored === 'en') { setLangState(stored); return }
       const browser = navigator.language?.toLowerCase().startsWith('en') ? 'en' : 'tr'
       setLangState(browser)
+      // Otomatik algılanan dili de KALICI yaz: dateLocale() gibi yardımcılar yalnızca localStorage
+      // okuyor; yazılmazsa arayüz EN olurken tarihler tr-TR biçiminde kalıyordu (27 çağrı yeri).
+      localStorage.setItem('fitpass_lang', browser)
     } catch { /* yoksay */ }
   }, [])
 

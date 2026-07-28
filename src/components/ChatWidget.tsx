@@ -13,7 +13,7 @@ interface Message {
 }
 
 export default function ChatWidget() {
-  const { t } = useT()
+  const { t, lang } = useT()
   const SUGGESTIONS = [t('chat.q1'), t('chat.q2'), t('chat.q4'), t('chat.q3')]
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
@@ -63,7 +63,8 @@ export default function ChatWidget() {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ messages: newMessages }),
+        // lang: arayüz EN ise asistan da EN yanıtlasın (backend varsayılanı 'tr')
+        body: JSON.stringify({ messages: newMessages, lang }),
       })
       const data = await res.json()
       if (data.error) {
