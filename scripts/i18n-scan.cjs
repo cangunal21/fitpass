@@ -22,7 +22,10 @@ const SKIP_FILES = new Set(['i18n.tsx', 'mockData.ts'])
 // layout.tsx = SEO metadata (SSR, ayrı konu); admin + salon-* = dahili/B2B panel (kasıtlı Türkçe)
 // global-error.tsx = i18n context'ine erişemez (Next tasarımı) → kasıtlı iki dilli statik metin
 const SKIP_FILE_RE = /(^|\/)(layout|sitemap|robots|global-error)\.tsx?$/
-const SKIP_DIR_RE = /(^|\/)(admin|salon-[a-z-]+)\//   // admin + salon-giris/salon-paneli/... : Türkçe-only
+// admin + salon-* + egitmen-* : B2B/dahili yüzeyler, bilerek Türkçe-only.
+// egitmen-* eklenmezse tarayıcı 71 sahte uyarı üretiyordu → kapı sürekli kırmızı kalıp
+// GERÇEK çeviri eksiklerini gizliyordu (uyarı körlüğü).
+const SKIP_DIR_RE = /(^|\/)(admin|salon-[a-z-]+|egitmen-[a-z-]+)\//
 // Marka adı çevrilmez
 const BRAND_RE = /^(©\s*\d{4}\s*)?[\s•·|—-]*şip[şs]akspor[\s•·|—-]*$/i
 
@@ -80,6 +83,9 @@ function scanFile(abs, rel) {
     if (inBlockComment) { if (trimmed.includes('*/')) inBlockComment = false; continue }
     if (trimmed.startsWith('/*')) { if (!trimmed.includes('*/')) inBlockComment = true; continue }
     if (trimmed.startsWith('//') || trimmed.startsWith('*')) continue
+    // JSX YORUMU: {/* ... */} — kullanıcıya render EDİLMEZ, çeviri gerektirmez.
+    // Atlanmazsa açıklama satırları "çevrilmemiş metin" diye raporlanıp kapıyı sahte kırmızıya çekiyordu.
+    if (trimmed.startsWith('{/*')) { if (!trimmed.includes('*/}')) inBlockComment = true; continue }
     if (/\bconsole\.(log|warn|error|info)\b/.test(raw)) continue
 
     const line = maskSafe(raw)

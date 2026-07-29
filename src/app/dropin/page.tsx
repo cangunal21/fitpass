@@ -88,7 +88,7 @@ export default function DropInListPage() {
       if (data.error) {
         setJoinStatus(prev => ({ ...prev, [slotId]: { loading: false, error: data.error } }))
       } else {
-        setJoinStatus(prev => ({ ...prev, [slotId]: { loading: false, success: t('dropin.joinedToast') } }))
+        setJoinStatus(prev => ({ ...prev, [slotId]: { loading: false, success: t('dropin.joined') } }))
         fetchSlots()
       }
     } catch {

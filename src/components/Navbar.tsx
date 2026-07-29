@@ -54,13 +54,15 @@ export default function Navbar() {
     }
   }
 
+  // Sözlükte time.* anahtarları ZATEN var ve sosyal/profil sayfalarında kullanılıyor; burada sabit
+  // Türkçe kalmıştı → EN arayüzde bildirim menüsü Türkçe zaman gösteriyordu.
   const timeAgo = (date: string) => {
     const diff = Date.now() - new Date(date).getTime()
     const mins = Math.floor(diff / 60000)
-    if (mins < 60) return `${mins} dakika önce`
+    if (mins < 60) return t('time.minsAgo').replace('{n}', String(mins))
     const hours = Math.floor(mins / 60)
-    if (hours < 24) return `${hours} saat önce`
-    return `${Math.floor(hours / 24)} gün önce`
+    if (hours < 24) return t('time.hoursAgo').replace('{n}', String(hours))
+    return t('time.daysAgo').replace('{n}', String(Math.floor(hours / 24)))
   }
 
   const handleLogout = () => {

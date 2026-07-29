@@ -19,11 +19,13 @@ type Pending = {
   instructorName?: string | null
 }
 
-function Stars({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+// starLabel: ekran okuyucuya giden etiket de çevrilmeli (modalin görünen tüm metinleri t() ile çevriliyken
+// bu sabit Türkçe kalmıştı → EN kullanıcıya erişilebilirlik katmanında Türkçe okunuyordu).
+function Stars({ value, onChange, starLabel }: { value: number; onChange: (n: number) => void; starLabel: string }) {
   return (
     <div style={{ display: 'flex', gap: 6 }}>
       {[1, 2, 3, 4, 5].map(n => (
-        <button key={n} type="button" onClick={() => onChange(n)} aria-label={`${n} yıldız`}
+        <button key={n} type="button" onClick={() => onChange(n)} aria-label={`${n} ${starLabel}`}
           style={{ width: 40, height: 40, borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 22, lineHeight: 1, background: 'transparent', color: n <= value ? '#F59E0B' : '#d8d8e0' }}>
           ★
         </button>
@@ -137,7 +139,7 @@ export default function RatingPrompt() {
           <>
             {/* SALON */}
             <div style={{ fontSize: 14, fontWeight: 700, color: '#111', margin: '18px 0 8px' }}>{t('rate.venue')}{target.venueName ? ` · ${target.venueName}` : ''}</div>
-            <Stars value={venueRating} onChange={setVenueRating} />
+            <Stars value={venueRating} onChange={setVenueRating} starLabel={t('rate.star')} />
             <textarea value={venueComment} onChange={e => setVenueComment(e.target.value)} placeholder={t('rate.venuePh')} rows={2}
               style={commentBox} />
 
@@ -145,7 +147,7 @@ export default function RatingPrompt() {
             {hasInstructor && (
               <>
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#111', margin: '18px 0 8px' }}>{t('rate.instructor')}{target.instructorName ? ` · ${target.instructorName}` : ''}</div>
-                <Stars value={instructorRating} onChange={setInstructorRating} />
+                <Stars value={instructorRating} onChange={setInstructorRating} starLabel={t('rate.star')} />
                 <textarea value={instructorComment} onChange={e => setInstructorComment(e.target.value)} placeholder={t('rate.instructorPh')} rows={2}
                   style={commentBox} />
               </>

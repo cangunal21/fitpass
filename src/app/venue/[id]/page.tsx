@@ -342,7 +342,7 @@ export default function VenuePage() {
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
                       <div style={{ fontSize: 18, fontWeight: 800, color: '#111', marginBottom: 4 }}>₺{cls.basePrice}</div>
                       <div style={{ fontSize: 12, fontWeight: 600, color: cls.spots <= 3 ? '#EF4444' : '#10B981', backgroundColor: cls.spots <= 3 ? '#FEF2F2' : '#F0FDF4', padding: '3px 10px', borderRadius: 100 }}>
-                        {cls.spots <= 3 ? <><Flame size={12} /> Son {cls.spots} yer</> : `${cls.spots} yer kaldı`}
+                        {cls.spots <= 3 ? <><Flame size={12} /> {t('card.lastSpots').replace('{n}', String(cls.spots))}</> : t('card.spotsLeft').replace('{n}', String(cls.spots))}
                       </div>
                     </div>
                   </div>
@@ -387,7 +387,7 @@ export default function VenuePage() {
                       <div style={{ fontSize: 18, fontWeight: 800, color: '#111', marginBottom: 4 }}>₺{cls.basePrice}</div>
                       {availableSpots !== null && (
                         <div style={{ fontSize: 12, fontWeight: 600, color: availableSpots <= 3 ? '#EF4444' : '#10B981', backgroundColor: availableSpots <= 3 ? '#FEF2F2' : '#F0FDF4', padding: '3px 10px', borderRadius: 100 }}>
-                          {availableSpots <= 3 ? <><Flame size={12} /> Son {availableSpots} yer</> : `${availableSpots} yer kaldı`}
+                          {availableSpots <= 3 ? <><Flame size={12} /> {t('card.lastSpots').replace('{n}', String(availableSpots))}</> : t('card.spotsLeft').replace('{n}', String(availableSpots))}
                         </div>
                       )}
                     </div>
