@@ -76,17 +76,31 @@ export default function AdminPage() {
     setPendingImages(data.venues || [])
   }
 
-  const handleReviewImages = async (venueId: number, approve: boolean) => {
-    const res = await fetch(`${API_URL}/api/admin/venue-images/${venueId}/review`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify({ approve }),
-    })
-    if (res.ok) {
-      setPendingImages(prev => prev.filter(v => v.id !== venueId))
-    } else {
-      alert('İşlem başarısız.')
+  // TEK NOKTADAN admin istegi: HTTP durumunu VE govdedeki hata mesajini kontrol eder.
+  // Onceden her handler fetch'i await edip sonucu HIC incelemeden yerel state'i guncelliyordu ->
+  // sunucu 400/401/409/500 donse bile arayuz islemi BASARILI gosteriyordu (gercekte olmayan durum).
+  // Ornek: kullanimda olan kategoriyi silmeye calisirken backend aciklamali 400 donuyor, arayuz
+  // kategoriyi listeden siliyordu; ya da resim onayinda 409 gelse bile satir kaybolup admin
+  // "yayinlandi" saniyordu.
+  const adminAction = async (url: string, init: RequestInit): Promise<boolean> => {
+    try {
+      const res = await fetch(url, init)
+      let msg = ''
+      try { const d = await res.json(); msg = d?.error || '' } catch { /* govde JSON degil */ }
+      if (!res.ok) { alert(msg || `Islem basarisiz (HTTP ${res.status}).`); return false }
+      if (msg) { alert(msg); return false }
+      return true
+    } catch {
+      alert('Baglanti hatasi. Islem yapilamadi.')
+      return false
     }
+  }
+
+  const handleReviewImages = async (venueId: number, approve: boolean) => {
+    const ok = await adminAction(`${API_URL}/api/admin/venue-images/${venueId}/review`, {
+      method: 'PUT', headers: getHeaders(), body: JSON.stringify({ approve }),
+    })
+    if (ok) setPendingImages(prev => prev.filter(v => v.id !== venueId))
   }
 
   const fetchReports = async () => {
@@ -127,7 +141,9 @@ export default function AdminPage() {
 
   const handleDeleteCategory = async (id: number, name: string) => {
     if (!confirm(`"${name}" kategorisini silmek istediğinize emin misiniz?`)) return
-    await fetch(`${API_URL}/api/admin/categories/${id}`, { method: 'DELETE', headers: getHeaders() })
+    // Kategori kullanimdaysa backend aciklamali 400 donuyor; adminAction bunu gosterir ve
+    // liste GERCEKTE silinmediyse degismez.
+    if (!await adminAction(`${API_URL}/api/admin/categories/${id}`, { method: 'DELETE', headers: getHeaders() })) return
     setCategories(prev => prev.filter(c => c.id !== id))
   }
 
@@ -165,41 +181,39 @@ export default function AdminPage() {
   }
 
   const handleApprove = async (id: number, approve: boolean) => {
-    await fetch(`${API_URL}/api/admin/venues/${id}/approve`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify({ approve }),
-    })
+    if (!await adminAction(`${API_URL}/api/admin/venues/${id}/approve`, {
+      method: 'PUT', headers: getHeaders(), body: JSON.stringify({ approve }),
+    })) return
     setVenues(prev => prev.map(v => v.id === id ? { ...v, isApproved: approve } : v))
   }
 
   const handleSuspend = async (id: number, suspend: boolean) => {
-    await fetch(`${API_URL}/api/admin/venues/${id}/suspend`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify({ suspend }),
-    })
-    setVenues(prev => prev.map(v => v.id === id ? { ...v, isSuspended: suspend } : v))
+    if (!await adminAction(`${API_URL}/api/admin/venues/${id}/suspend`, {
+      method: 'PUT', headers: getHeaders(), body: JSON.stringify({ suspend }),
+    })) return
+    setVenues(prev => prev.map(v => v.id === id ? { ...v, isSuspended: suspend, isActive: !suspend } : v))
   }
 
   const handleDeleteVenue = async (id: number, name: string) => {
     if (!confirm(`"${name}" salonunu kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`)) return
-    await fetch(`${API_URL}/api/admin/venues/${id}`, { method: 'DELETE', headers: getHeaders() })
+    if (!await adminAction(`${API_URL}/api/admin/venues/${id}`, { method: 'DELETE', headers: getHeaders() })) return
     setVenues(prev => prev.filter(v => v.id !== id))
   }
 
   const handleBanUser = async (id: number, ban: boolean) => {
-    await fetch(`${API_URL}/api/admin/users/${id}/ban`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify({ ban }),
-    })
+    // ONAY ZORUNLU: ban yalnizca erisimi kesmiyor -> kullanicinin YAZDIGI TUM yorumlari (Review) ve
+    // feed yorumlarini (ActivityComment) KALICI SILIYOR ve salon/egitmen puanlarini yeniden hesapliyor.
+    // Ban kaldirilsa bile o icerik GERI GELMEZ; yani yanlis tiklama geri alinamaz veri kaybi.
+    if (ban && !confirm('Bu kullaniciyi banlamak, yazdigi TUM yorumlari ve feed yorumlarini KALICI olarak siler (ban kaldirilsa bile geri gelmez) ve salon puanlarini yeniden hesaplar.\n\nDevam edilsin mi?')) return
+    if (!await adminAction(`${API_URL}/api/admin/users/${id}/ban`, {
+      method: 'PUT', headers: getHeaders(), body: JSON.stringify({ ban }),
+    })) return
     setUsers(prev => prev.map(u => u.id === id ? { ...u, banned: ban } : u))
   }
 
   const handleDeleteCoupon = async (id: number) => {
     if (!confirm('Bu kuponu silmek istediğinize emin misiniz?')) return
-    await fetch(`${API_URL}/api/admin/coupons/${id}`, { method: 'DELETE', headers: getHeaders() })
+    if (!await adminAction(`${API_URL}/api/admin/coupons/${id}`, { method: 'DELETE', headers: getHeaders() })) return
     setCoupons(prev => prev.filter(c => c.id !== id))
   }
 
@@ -210,11 +224,9 @@ export default function AdminPage() {
   }
 
   const handleVerifyInstructor = async (id: number, verified: boolean) => {
-    await fetch(`${API_URL}/api/admin/instructors/${id}/verify`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify({ verified }),
-    })
+    if (!await adminAction(`${API_URL}/api/admin/instructors/${id}/verify`, {
+      method: 'PUT', headers: getHeaders(), body: JSON.stringify({ verified }),
+    })) return
     setInstructors(prev => prev.map(i => i.id === id ? { ...i, verified } : i))
   }
 
@@ -225,7 +237,7 @@ export default function AdminPage() {
   }
 
   const handleResolveComplaint = async (id: number) => {
-    await fetch(`${API_URL}/api/admin/complaints/${id}/resolve`, { method: 'PUT', headers: getHeaders() })
+    if (!await adminAction(`${API_URL}/api/admin/complaints/${id}/resolve`, { method: 'PUT', headers: getHeaders() })) return
     setComplaints(prev => prev.map(c => c.id === id ? { ...c, status: 'resolved' } : c))
   }
 
