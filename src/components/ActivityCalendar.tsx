@@ -5,11 +5,10 @@ import { ChevronLeft, ChevronRight, Flame, CalendarCheck, Share2 } from 'lucide-
 import { api } from '@/lib/api'
 import { useT } from '@/lib/i18n'
 import { SportIcon, getColorForCategory } from '@/lib/sportIcons'
+import { trToday } from '@/lib/trTime'
 
 type Activity = { date: string; category: string | null; title: string }
 
-// İstanbul saatine göre YYYY-MM-DD (backend tarihleriyle eşleşsin diye)
-const istanbulYmd = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: 'Europe/Istanbul' })
 const pad = (n: number) => String(n).padStart(2, '0')
 
 export default function ActivityCalendar({ token }: { token: string }) {
@@ -17,7 +16,9 @@ export default function ActivityCalendar({ token }: { token: string }) {
   const [activities, setActivities] = useState<Activity[]>([])
   const [streaks, setStreaks] = useState({ daily: 0, weekly: 0 })
   const [loading, setLoading] = useState(true)
-  const [cursor, setCursor] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() } })
+  // Ay görünümü de İstanbul'a göre açılmalı: cihaz yerelinde ayın 1'i 00:30 iken İstanbul hâlâ
+  // önceki aydadır (ya da tersi) — takvim yanlış ayla açılıyordu.
+  const [cursor, setCursor] = useState(() => { const [y, m] = trToday().split('-').map(Number); return { y, m: m - 1 } })
 
   useEffect(() => {
     let alive = true
@@ -45,7 +46,7 @@ export default function ActivityCalendar({ token }: { token: string }) {
   const monthPrefix = `${y}-${pad(m + 1)}`
   const daysInMonth = new Date(y, m + 1, 0).getDate()
   const startOffset = (new Date(y, m, 1).getDay() + 6) % 7 // Pazartesi=0
-  const todayYmd = istanbulYmd(new Date())
+  const todayYmd = trToday()
 
   const locale = lang === 'en' ? 'en-US' : 'tr-TR'
   const monthLabel = new Date(y, m, 1).toLocaleDateString(locale, { month: 'long', year: 'numeric' })

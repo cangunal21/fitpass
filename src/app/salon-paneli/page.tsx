@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Building2, Clock, BookOpen, Calendar, Ticket, AlertCircle, User, Check, ChevronDown, ChevronUp, Plus, Trash2, BadgeCheck, Users, ClipboardList, Zap, QrCode, BarChart3, TrendingUp, Star, Image as ImageIcon, Settings, CreditCard } from 'lucide-react'
 import AvatarUpload from '@/components/AvatarUpload'
 import { getInitialsAvatar, uploadToCloudinary } from '@/lib/cloudinary'
+import { trYmd, trTime } from '@/lib/trTime'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
@@ -865,9 +866,13 @@ export default function SalonPaneliPage() {
                                 </span>
                                 <button onClick={e => {
                                   e.stopPropagation()
-                                  const d = new Date(s.startsAt)
-                                  const dateStr = d.toISOString().slice(0, 10)
-                                  const timeStr = d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }).replace('.', ':')
+                                  // Tarih UTC gününden (toISOString), saat cihaz yerelinden alınıyordu:
+                                  // iki yarı farklı referansta olduğu için gece seansı formda bir gün
+                                  // geride açılıyor, salon sadece kontenjanı değiştirip kaydetse bile
+                                  // seans 24 saat geriye kayıyordu (backend date+time'ı TR duvar-saati
+                                  // sayar). İkisi de artık İstanbul'dan.
+                                  const dateStr = trYmd(s.startsAt)
+                                  const timeStr = trTime(s.startsAt).replace('.', ':')
                                   setEditingSession(s.id)
                                   setEditSessionForm({ date: dateStr, time: timeStr, capacity: String(s.availableSpots) })
                                   setEditSessionError('')

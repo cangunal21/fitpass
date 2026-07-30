@@ -10,6 +10,7 @@ import { Search, LayoutGrid, Map, Flame, Clock, Timer, X } from 'lucide-react'
 import { SportIcon, SportIconBox, getIconKeyForCategory, getColorForCategory } from '@/lib/sportIcons'
 import { SkeletonCardGrid } from '@/components/Skeleton'
 import { useT, translateCategory, localizeText } from '@/lib/i18n'
+import { trToday, trAddDays, trInstant, trWeekday } from '@/lib/trTime'
 
 const dateLocale = () => (typeof window !== 'undefined' && localStorage.getItem('fitpass_lang') === 'en') ? 'en-US' : 'tr-TR'
 
@@ -127,18 +128,19 @@ export default function Home() {
     }).catch(() => {})
   }, [])
 
+  // Gün sınırları İSTANBUL'a göre kurulur. Eskiden new Date(y, m, d) ile CİHAZIN yerel gece
+  // yarısı alınıyordu: kullanıcı yurt dışındayken "Bugün" filtresi yanlış günü gösteriyordu
+  // (Toronto'da 20:00 = İstanbul'da ertesi gün 03:00 → tüm gün kayıyor).
   const getDateRange = (filter: string) => {
-    const now = new Date()
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1)
-    const nextWeek = new Date(today); nextWeek.setDate(today.getDate() + 7)
-    const dayOfWeek = today.getDay()
-    const daysUntilSat = (6 - dayOfWeek + 7) % 7 || 7
-    const saturday = new Date(today); saturday.setDate(today.getDate() + daysUntilSat)
-    const monday = new Date(saturday); monday.setDate(saturday.getDate() + 2)
-    if (filter === 'today') return { dateFrom: today.toISOString(), dateTo: tomorrow.toISOString() }
-    if (filter === 'week') return { dateFrom: today.toISOString(), dateTo: nextWeek.toISOString() }
-    if (filter === 'weekend') return { dateFrom: saturday.toISOString(), dateTo: monday.toISOString() }
+    const today = trToday()
+    const dayStart = (ymd: string) => trInstant(ymd).toISOString()
+    if (filter === 'today') return { dateFrom: dayStart(today), dateTo: dayStart(trAddDays(today, 1)) }
+    if (filter === 'week') return { dateFrom: dayStart(today), dateTo: dayStart(trAddDays(today, 7)) }
+    if (filter === 'weekend') {
+      const daysUntilSat = (6 - trWeekday(new Date()) + 7) % 7 || 7
+      const sat = trAddDays(today, daysUntilSat)
+      return { dateFrom: dayStart(sat), dateTo: dayStart(trAddDays(sat, 2)) }
+    }
     return {}
   }
 
