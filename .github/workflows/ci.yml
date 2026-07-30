@@ -1,0 +1,41 @@
+name: CI
+
+# Neden: Vercel main'i otomatik deploy ediyor. `next build` zaten tip hatasında patlar ama i18n
+# taraması (çevrilmemiş Türkçe + TR/EN anahtar paritesi) HİÇ otomatik koşmuyordu — bu yüzden
+# EN arayüzde ham anahtar basan bir hata canlıya çıkabilmişti. Artık her push'ta koşuyor.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-web-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: tip kontrolü + i18n + build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: bağımlılıklar
+        run: npm ci
+
+      - name: TypeScript tip kontrolü
+        run: npx tsc --noEmit
+
+      - name: i18n taraması (çevrilmemiş metin + anahtar paritesi)
+        run: npm run i18n:check
+
+      - name: production build
+        # NEXT_PUBLIC_API_URL kodda fallback'li; build için gerçek backend gerekmiyor.
+        run: npm run build
