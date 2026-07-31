@@ -14,6 +14,9 @@ function GirisForm() {
   const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  // Zorla-çıkışta api.ts /giris?expired=1'e atıyor ama sayfa bunu okumuyordu → kullanıcı neden
+  // atıldığını bilmiyordu. Oturum süresi dolmuşsa açıklayıcı uyarı göster.
+  const expired = searchParams.get('expired') === '1'
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -83,7 +86,10 @@ function GirisForm() {
             </div>
           </div>
 
-          {error && (
+          {expired && !error && (
+        <div style={{ background: '#FEF3C7', color: '#92400E', padding: '10px 14px', borderRadius: 10, fontSize: 14, marginBottom: 12, textAlign: 'center' }}>{t('login.expired')}</div>
+      )}
+      {error && (
             <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 12, padding: '12px 16px', fontSize: 13, color: '#DC2626', display: 'flex', alignItems: 'center', gap: 8 }}>
               <AlertCircle size={14} /> {error}
             </div>

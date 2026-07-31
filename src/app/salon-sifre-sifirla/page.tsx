@@ -21,8 +21,8 @@ function SalonSifreSifirlaForm() {
     e.preventDefault()
     setError('')
 
-    if (password.length < 6) {
-      setError('Şifre en az 6 karakter olmalı.')
+    if (password.length < 8) {
+      setError('Şifre en az 8 karakter olmalı.')
       return
     }
     if (password !== confirmPassword) {

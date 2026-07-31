@@ -33,6 +33,7 @@ export default function SalonPaneliPage() {
   const [smError, setSmError] = useState('')
   const [smSuccess, setSmSuccess] = useState('')
   const [smSubmitting, setSmSubmitting] = useState(false)
+  const [saving, setSaving] = useState(false) // create formlarinda cift-submit korumasi (#17 UX)
   const [bookings, setBookings] = useState<any[]>([])
   const [instructors, setInstructors] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -136,6 +137,14 @@ export default function SalonPaneliPage() {
       .catch(() => {})
   }, [])
 
+  // Oturum-sonu yardimcisi: eskiden yalniz ILK yukleme (fetchVenue) 401'de yonlendiriyordu; sekme
+  // fetch'leri (bookings/instructors/coupons...) 401'de sessizce bos listeye dusuyordu → salon "verim
+  // kayboldu" saniyordu. Bu yardimci token'i temizleyip giris'e atar; her sekme fetch'i res.status 401'de cagirir.
+  const venueSessionExpired = () => {
+    localStorage.removeItem('fitpass_venue_token')
+    router.push('/salon-giris')
+  }
+
   const fetchVenue = async (token: string) => {
     try {
       const res = await fetch(`${API_URL}/api/venue/me`, { headers: { Authorization: `Bearer ${token}` } })
@@ -165,6 +174,7 @@ export default function SalonPaneliPage() {
   const fetchBookings = async () => {
     const token = localStorage.getItem('fitpass_venue_token')!
     const res = await fetch(`${API_URL}/api/venue/bookings`, { headers: { Authorization: `Bearer ${token}` } })
+    if (res.status === 401) return venueSessionExpired()
     const data = await res.json()
     setBookings(data.bookings || [])
   }
@@ -172,6 +182,7 @@ export default function SalonPaneliPage() {
   const fetchInstructors = async () => {
     const token = localStorage.getItem('fitpass_venue_token')!
     const res = await fetch(`${API_URL}/api/venue/instructors`, { headers: { Authorization: `Bearer ${token}` } })
+    if (res.status === 401) return venueSessionExpired()
     const data = await res.json()
     setInstructors(data.instructors || [])
   }
@@ -179,6 +190,7 @@ export default function SalonPaneliPage() {
   const fetchDropInSlots = async () => {
     const token = localStorage.getItem('fitpass_venue_token')!
     const res = await fetch(`${API_URL}/api/venue/dropin`, { headers: { Authorization: `Bearer ${token}` } })
+    if (res.status === 401) return venueSessionExpired()
     const data = await res.json()
     setDropInSlots(data.slots || [])
   }
@@ -188,6 +200,7 @@ export default function SalonPaneliPage() {
     try {
       const token = localStorage.getItem('fitpass_venue_token')!
       const res = await fetch(`${API_URL}/api/venue/stats`, { headers: { Authorization: `Bearer ${token}` } })
+    if (res.status === 401) return venueSessionExpired()
       const data = await res.json()
       setStats(data)
     } catch {
@@ -202,6 +215,7 @@ export default function SalonPaneliPage() {
     try {
       const token = localStorage.getItem('fitpass_venue_token')!
       const res = await fetch(`${API_URL}/api/venue/revenue`, { headers: { Authorization: `Bearer ${token}` } })
+    if (res.status === 401) return venueSessionExpired()
       const data = await res.json()
       setRevenue(data)
     } catch { setRevenue(null) }
@@ -211,6 +225,7 @@ export default function SalonPaneliPage() {
   const fetchCoupons = async () => {
     const token = localStorage.getItem('fitpass_venue_token')!
     const res = await fetch(`${API_URL}/api/venue/coupons`, { headers: { Authorization: `Bearer ${token}` } })
+    if (res.status === 401) return venueSessionExpired()
     const data = await res.json()
     setCoupons(data.coupons || [])
   }
@@ -220,6 +235,7 @@ export default function SalonPaneliPage() {
     setReviewsLoading(true)
     const token = localStorage.getItem('fitpass_venue_token')!
     const res = await fetch(`${API_URL}/api/reviews/venue/${venue.id}`, { headers: { Authorization: `Bearer ${token}` } })
+    if (res.status === 401) return venueSessionExpired()
     const data = await res.json()
     setReviews(data.reviews || [])
     setReviewsLoading(false)
@@ -296,17 +312,21 @@ export default function SalonPaneliPage() {
     if (couponForm.maxUses) body.maxUses = Number(couponForm.maxUses)
     body.perUserLimit = couponForm.perUserLimit === 'unlimited' ? null : Number(couponForm.perUserLimit || 1)
     if (couponForm.expiresAt) body.expiresAt = couponForm.expiresAt
-    const res = await fetch(`${API_URL}/api/venue/coupons`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify(body),
-    })
-    const data = await res.json()
-    if (data.error) { setCouponError(data.error); return }
-    setCouponSuccess('Kupon oluşturuldu!')
-    setCouponForm({ code: '', discountType: 'percent', discountValue: '', maxUses: '', perUserLimit: '1', expiresAt: '' })
-    fetchCoupons()
-    setTimeout(() => setCouponSuccess(''), 3000)
+    if (saving) return
+    setSaving(true)
+    try {
+      const res = await fetch(`${API_URL}/api/venue/coupons`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(body),
+      })
+      const data = await res.json()
+      if (data.error) { setCouponError(data.error); return }
+      setCouponSuccess('Kupon oluşturuldu!')
+      setCouponForm({ code: '', discountType: 'percent', discountValue: '', maxUses: '', perUserLimit: '1', expiresAt: '' })
+      fetchCoupons()
+      setTimeout(() => setCouponSuccess(''), 3000)
+    } catch { setCouponError('Bağlantı hatası, tekrar deneyin.') } finally { setSaving(false) }
   }
 
   const handleDeleteCoupon = async (couponId: number) => {
@@ -388,19 +408,23 @@ export default function SalonPaneliPage() {
     const token = localStorage.getItem('fitpass_venue_token')!
     // Uzmanlık artık branşlardan çoklu seçim → " · " ile birleştirilip tek string gönderilir (backend değişmez)
     const payload = { ...instructorForm, specialty: selectedSpecialties.join(' · ') }
-    const res = await fetch(`${API_URL}/api/venue/instructors`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify(payload),
-    })
-    const data = await res.json()
-    if (data.error) { setInstructorError(data.error); return }
-    setInstructorSuccess('Hoca başarıyla eklendi!')
-    setInstructorForm({ fullName: '', specialty: '', bio: '', avatarUrl: '', phone: '', email: '' })
-    setSelectedSpecialties([])
-    setNewInstructorAvatar('')
-    fetchInstructors()
-    setTimeout(() => setInstructorSuccess(''), 2000)
+    if (saving) return
+    setSaving(true)
+    try {
+      const res = await fetch(`${API_URL}/api/venue/instructors`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(payload),
+      })
+      const data = await res.json()
+      if (data.error) { setInstructorError(data.error); return }
+      setInstructorSuccess('Hoca başarıyla eklendi!')
+      setInstructorForm({ fullName: '', specialty: '', bio: '', avatarUrl: '', phone: '', email: '' })
+      setSelectedSpecialties([])
+      setNewInstructorAvatar('')
+      fetchInstructors()
+      setTimeout(() => setInstructorSuccess(''), 2000)
+    } catch { setInstructorError('Bağlantı hatası, tekrar deneyin.') } finally { setSaving(false) }
   }
 
   const handleDeleteInstructor = async (inst: any) => {
@@ -449,19 +473,23 @@ export default function SalonPaneliPage() {
   const handleAddClass = async (e: React.FormEvent) => {
     e.preventDefault()
     setClassError(''); setClassSuccess('')
-    const token = localStorage.getItem('fitpass_venue_token')!
-    const res = await fetch(`${API_URL}/api/venue/classes`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify(classForm),
-    })
-    const data = await res.json()
-    if (data.error) { setClassError(data.error); return }
-    setClassSuccess('Ders başarıyla eklendi!')
-    setClassForm({ title: '', category: '', basePrice: '', duration: '60', capacity: '', instructorId: '' })
-    setShowClassForm(false)
-    fetchVenue(token)
-    setTimeout(() => setClassSuccess(''), 2500)
+    if (saving) return // cift-submit: buton disable + guard
+    setSaving(true)
+    try {
+      const token = localStorage.getItem('fitpass_venue_token')!
+      const res = await fetch(`${API_URL}/api/venue/classes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(classForm),
+      })
+      const data = await res.json()
+      if (data.error) { setClassError(data.error); return }
+      setClassSuccess('Ders başarıyla eklendi!')
+      setClassForm({ title: '', category: '', basePrice: '', duration: '60', capacity: '', instructorId: '' })
+      setShowClassForm(false)
+      fetchVenue(token)
+      setTimeout(() => setClassSuccess(''), 2500)
+    } catch { setClassError('Bağlantı hatası, tekrar deneyin.') } finally { setSaving(false) }
   }
 
   const handleAddSession = async (classId: number) => {
@@ -559,17 +587,21 @@ export default function SalonPaneliPage() {
     e.preventDefault()
     setDropInError(''); setDropInSuccess('')
     const token = localStorage.getItem('fitpass_venue_token')!
-    const res = await fetch(`${API_URL}/api/venue/dropin`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify(dropInForm),
-    })
-    const data = await res.json()
-    if (data.error) { setDropInError(data.error); return }
-    setDropInSuccess('Drop-in slot oluşturuldu!')
-    setDropInForm({ sport: '', format: '', date: '', time: '', totalPlayers: '', pricePerPerson: '', visibility: 'open', privateCode: '' })
-    fetchDropInSlots()
-    setTimeout(() => setDropInSuccess(''), 3000)
+    if (saving) return
+    setSaving(true)
+    try {
+      const res = await fetch(`${API_URL}/api/venue/dropin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(dropInForm),
+      })
+      const data = await res.json()
+      if (data.error) { setDropInError(data.error); return }
+      setDropInSuccess('Drop-in slot oluşturuldu!')
+      setDropInForm({ sport: '', format: '', date: '', time: '', totalPlayers: '', pricePerPerson: '', visibility: 'open', privateCode: '' })
+      fetchDropInSlots()
+      setTimeout(() => setDropInSuccess(''), 3000)
+    } catch { setDropInError('Bağlantı hatası, tekrar deneyin.') } finally { setSaving(false) }
   }
 
   if (loading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: '#888' }}>Yükleniyor...</div>
@@ -674,7 +706,7 @@ export default function SalonPaneliPage() {
                   <div className="form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                     <div>
                       <label style={labelStyle}>Ders Adı *</label>
-                      <input type="text" placeholder="Ders adı" value={classForm.title} onChange={e => setClassForm({ ...classForm, title: e.target.value })} required style={inputStyle} />
+                      <input type="text" placeholder="Ders adı" maxLength={120} value={classForm.title} onChange={e => setClassForm({ ...classForm, title: e.target.value })} required style={inputStyle} />
                     </div>
                     <div>
                       <label style={labelStyle}>Kategori *</label>
@@ -707,7 +739,7 @@ export default function SalonPaneliPage() {
                   {classSuccess && <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#16a34a' }}>✓ {classSuccess}</div>}
                   <div style={{ display: 'flex', gap: 10 }}>
                     <button type="button" onClick={() => setShowClassForm(false)} style={{ flex: 1, padding: '12px', borderRadius: 12, border: '1.5px solid #eee', background: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: '#555' }}>İptal</button>
-                    <button type="submit" style={{ flex: 2, padding: '12px', borderRadius: 12, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Dersi Kaydet</button>
+                    <button type="submit" disabled={saving} style={{ flex: 2, padding: '12px', borderRadius: 12, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 700, cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.7 : 1 }}>{saving ? 'Kaydediliyor...' : 'Dersi Kaydet'}</button>
                   </div>
                 </form>
               </div>
@@ -1015,7 +1047,7 @@ export default function SalonPaneliPage() {
                 </div>
                 <div>
                   <label style={labelStyle}>Bio</label>
-                  <textarea placeholder="Hoca hakkında kısa bilgi..." value={instructorForm.bio} onChange={e => setInstructorForm({ ...instructorForm, bio: e.target.value })} rows={2} style={{ ...inputStyle, resize: 'vertical' as const }} />
+                  <textarea placeholder="Hoca hakkında kısa bilgi..." maxLength={500} value={instructorForm.bio} onChange={e => setInstructorForm({ ...instructorForm, bio: e.target.value })} rows={2} style={{ ...inputStyle, resize: 'vertical' as const }} />
                 </div>
                 <div>
                   <label style={labelStyle}>Telefon</label>
@@ -1040,7 +1072,7 @@ export default function SalonPaneliPage() {
                 </div>
                 {instructorError && <div style={{ ...errorStyle, display: 'flex', alignItems: 'center', gap: 8 }}><AlertCircle size={14} /> {instructorError}</div>}
                 {instructorSuccess && <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#16a34a' }}>✓ {instructorSuccess}</div>}
-                <button type="submit" style={{ padding: '12px', borderRadius: 12, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Hoca Ekle</button>
+                <button type="submit" disabled={saving} style={{ padding: '12px', borderRadius: 12, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 700, cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.7 : 1 }}>{saving ? 'Ekleniyor...' : 'Hoca Ekle'}</button>
               </form>
             </div>
           </div>
@@ -1159,7 +1191,7 @@ export default function SalonPaneliPage() {
                 </div>
                 {dropInError && <div style={{ ...errorStyle, display: 'flex', alignItems: 'center', gap: 8 }}><AlertCircle size={14} /> {dropInError}</div>}
                 {dropInSuccess && <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#16a34a' }}>✓ {dropInSuccess}</div>}
-                <button type="submit" style={{ padding: '13px', borderRadius: 12, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Slot Oluştur</button>
+                <button type="submit" disabled={saving} style={{ padding: '13px', borderRadius: 12, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 700, cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.7 : 1 }}>{saving ? 'Oluşturuluyor...' : 'Slot Oluştur'}</button>
               </form>
             </div>
 
@@ -1356,7 +1388,7 @@ export default function SalonPaneliPage() {
                 </div>
                 {couponError && <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#DC2626', display: 'flex', alignItems: 'center', gap: 8 }}><AlertCircle size={14} /> {couponError}</div>}
                 {couponSuccess && <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#16a34a' }}>✓ {couponSuccess}</div>}
-                <button type="submit" style={{ padding: '13px', borderRadius: 12, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Kupon Oluştur</button>
+                <button type="submit" disabled={saving} style={{ padding: '13px', borderRadius: 12, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 700, cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.7 : 1 }}>{saving ? 'Oluşturuluyor...' : 'Kupon Oluştur'}</button>
               </form>
             </div>
 
@@ -1570,6 +1602,7 @@ export default function SalonPaneliPage() {
                       value={replyTexts[r.id] || ''}
                       onChange={e => setReplyTexts(t => ({ ...t, [r.id]: e.target.value }))}
                       placeholder="Bu yoruma yanıt yaz..."
+                      maxLength={1000}
                       rows={2}
                       style={{ flex: 1, padding: '10px 14px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', resize: 'vertical', fontFamily: 'inherit' }}
                     />

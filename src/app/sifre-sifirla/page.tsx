@@ -22,7 +22,7 @@ function SifreSifirlaForm() {
     e.preventDefault()
     setError('')
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       setError(t('register.passwordShort'))
       return
     }

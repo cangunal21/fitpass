@@ -84,6 +84,8 @@ export default function SalonGirisPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
+    // Backend MIN_PASSWORD=8; istemci kontrolu yoktu → kullanıcı kısa parolayla submit edip 400 alıyordu.
+    if (form.password.length < 8) { setError('Şifre en az 8 karakter olmalı.'); return }
     if (selectedSports.length === 0) { setError('En az bir spor branşı seçmelisiniz.'); return }
     if (!form.neighborhoodId) { setError('Lütfen salonun bulunduğu ilçeyi seçin.'); return }
     setLoading(true)
@@ -208,7 +210,7 @@ export default function SalonGirisPage() {
               </div>
               <div>
                 <label style={labelStyle}>Şifre</label>
-                <input name="password" type="password" placeholder="En az 6 karakter" value={form.password} onChange={handleChange} required style={inputStyle} />
+                <input name="password" type="password" placeholder="En az 8 karakter" value={form.password} onChange={handleChange} required style={inputStyle} />
               </div>
 
               {/* Spor Branşları */}

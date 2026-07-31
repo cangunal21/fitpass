@@ -182,6 +182,16 @@ export const removeRefreshToken = () => { if (typeof window !== 'undefined') loc
 // Çıkış: refresh token'ı sunucuda iptal et + yerel oturumu tamamen temizle
 export const apiLogout = async () => {
   const rt = typeof window !== 'undefined' ? localStorage.getItem('fitpass_refresh') : null
-  if (rt) { try { await fetch(`${API_URL}/api/auth/logout`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) }) } catch { /* yoksay */ } }
+  // Yerel oturumu ÖNCE temizle: eskiden sunucu logout POST'u await ediliyordu ve timeout yoktu →
+  // sunucu takılırsa yerel token/user/refresh HİÇ silinmez, kullanıcı "çıktım" sanıp içeride kalırdı.
   removeToken(); removeUser(); removeRefreshToken()
+  // Sonra best-effort: refresh token'ı sunucuda iptal et (5sn timeout; başarısızsa yoksay).
+  if (rt) {
+    try {
+      const ctrl = new AbortController()
+      const timer = setTimeout(() => ctrl.abort(), 5000)
+      await fetch(`${API_URL}/api/auth/logout`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }), signal: ctrl.signal })
+      clearTimeout(timer)
+    } catch { /* yoksay — yerel zaten temizlendi */ }
+  }
 }

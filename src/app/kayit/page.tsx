@@ -41,7 +41,7 @@ function KayitForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (form.password !== form.passwordConfirm) { setError(t('register.passwordMismatch')); return }
-    if (form.password.length < 6) { setError(t('register.passwordShort')); return }
+    if (form.password.length < 8) { setError(t('register.passwordShort')); return }
 
     setLoading(true)
     try {
