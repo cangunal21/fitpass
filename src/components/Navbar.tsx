@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { getUser, getToken, apiLogout } from '@/lib/api'
 import { useRouter } from 'next/navigation'
 import { User, LogOut, Bell } from 'lucide-react'
-import { useT } from '@/lib/i18n'
+import { useT, notifText } from '@/lib/i18n'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
@@ -134,7 +134,7 @@ export default function Navbar() {
                 ) : (
                   notifications.map(n => (
                     <div key={n.id} style={{ padding: '12px 16px', borderBottom: '1px solid #FAFAFA', backgroundColor: n.isRead ? '#fff' : '#EEF2FF' }}>
-                      <div style={{ fontSize: 13, color: '#222' }}>{n.message}</div>
+                      <div style={{ fontSize: 13, color: '#222' }}>{notifText(n, t)}</div>
                       <div style={{ fontSize: 11, color: '#999', marginTop: 3 }}>{timeAgo(n.createdAt)}</div>
                     </div>
                   ))

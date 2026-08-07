@@ -135,6 +135,22 @@ const dict: Record<Lang, Record<string, string>> = {
     'inst.classesGiven': 'Verdiği Dersler',
     'inst.reviewsHeader': 'Değerlendirmeler',
     'prof.notifPrefs': '🔔 Bildirim Tercihleri',
+    // Bildirim metinleri — backend notifyText.ts kataloğundan üretildi (anahtar+parametre)
+    'notif.follow': '@{username} seni takip etmeye başladı',
+    'notif.follow_request': '@{username} seni takip etmek istiyor',
+    'notif.follow_accept': '@{username} takip isteğini kabul etti',
+    'notif.like': '{name} aktiviteni beğendi.',
+    'notif.comment': '{name} aktivitene yorum yaptı: "{excerpt}"',
+    'notif.comment_reply': '{name} yorumuna cevap verdi: "{excerpt}"',
+    'notif.group_invite': '{name} sizi {category} sporuna davet etti.',
+    'notif.booking_cancelled_class_removed': '{classTitle} dersi salon tarafından kaldırıldı. Ödemen iade edilecektir.',
+    'notif.booking_cancelled_venue_closed': '{venue} kapatıldığı için ilgili rezervasyon(lar)ınız iptal edildi. Ödemeniz iade edilecektir.',
+    'notif.session_rescheduled': '"{classTitle}" dersinin saati değişti: yeni tarih {date} {time}.',
+    'notif.waitlist_open': '{classTitle} ({date} {time}) dersinde yer açıldı, hemen kaydol!',
+    'notif.rating_prompt': '{classTitle} dersin nasıldı? Salonu ve hocanı puanla ⭐',
+    'notif.badge_one': '"{badge}" rozetini kazandın! 🎉',
+    'notif.badge_many': '{count} yeni rozet kazandın! 🎉',
+    'notif.season_champion': '{season} sezonunda {count} şampiyonluk rozeti kazandın! 🏆',
     'prof.emailReminders': 'E-posta hatırlatmaları',
     'prof.emailRemindersSub': 'Ders öncesi hatırlatma maili al',
     'prof.report1': 'Uygunsuz veya müstehcen profil fotoğrafı',
@@ -595,6 +611,22 @@ const dict: Record<Lang, Record<string, string>> = {
     'inst.classesGiven': 'Classes',
     'inst.reviewsHeader': 'Reviews',
     'prof.notifPrefs': '🔔 Notification Preferences',
+    // Bildirim metinleri — backend notifyText.ts kataloğundan üretildi (anahtar+parametre)
+    'notif.follow': '@{username} started following you',
+    'notif.follow_request': '@{username} wants to follow you',
+    'notif.follow_accept': '@{username} accepted your follow request',
+    'notif.like': '{name} liked your activity.',
+    'notif.comment': '{name} commented on your activity: "{excerpt}"',
+    'notif.comment_reply': '{name} replied to your comment: "{excerpt}"',
+    'notif.group_invite': '{name} invited you to {category}.',
+    'notif.booking_cancelled_class_removed': '{classTitle} was removed by the venue. Your payment will be refunded.',
+    'notif.booking_cancelled_venue_closed': '{venue} has closed, so your booking(s) were cancelled. Your payment will be refunded.',
+    'notif.session_rescheduled': '"{classTitle}" has been rescheduled: new date {date} {time}.',
+    'notif.waitlist_open': 'A spot just opened in {classTitle} ({date} {time}) — book it now!',
+    'notif.rating_prompt': 'How was your {classTitle} class? Rate the venue and instructor ⭐',
+    'notif.badge_one': 'You earned the "{badge}" badge! 🎉',
+    'notif.badge_many': 'You earned {count} new badges! 🎉',
+    'notif.season_champion': 'You earned {count} champion badges in the {season} season! 🏆',
     'prof.emailReminders': 'Email reminders',
     'prof.emailRemindersSub': 'Get a reminder email before class',
     'prof.report1': 'Inappropriate or obscene profile photo',
@@ -1034,3 +1066,20 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 }
 
 export const useT = () => useContext(LanguageContext)
+
+// Bildirim metni. Backend artık bildirimi METİN olarak değil `messageKey` + `messageParams` olarak
+// saklıyor → çeviri BURADA yapılır, böylece kullanıcı dilini değiştirince GEÇMİŞ bildirimler de çevrilir.
+// FALLBACK ZİNCİRİ: (1) anahtar yoksa (eski satır) saklanan düz `message`, (2) anahtar sözlükte
+// bulunamazsa (backend yeni bir tür ekledi, istemci henüz güncellenmedi) yine `message` —
+// kullanıcıya asla ham anahtar ('notif.foo') gösterilmez.
+export function notifText(
+  n: { messageKey?: string | null; messageParams?: Record<string, unknown> | null; message?: string | null },
+  t: (key: string) => string,
+): string {
+  if (!n?.messageKey) return n?.message || ''
+  const full = 'notif.' + n.messageKey
+  const tpl = t(full)
+  if (tpl === full) return n.message || ''
+  const p = (n.messageParams || {}) as Record<string, unknown>
+  return tpl.replace(/\{(\w+)\}/g, (m, k) => (k in p ? String(p[k]) : m))
+}

@@ -21,11 +21,31 @@ async function doRefresh(): Promise<string | null> {
   } catch { return null }
 }
 
+// Arayüz dilini backend'e bildir. Backend (authMiddleware.syncLocale) bunu kullanıcının kayıtlı
+// diliyle karşılaştırır ve DEĞİŞTİYSE günceller → e-posta/push kullanıcının o anki diliyle gider.
+// Ayrı bir "dili kaydet" çağrısı yok: dil değişimi kendiliğinden ilk istekte senkronlanır.
+//
+// YALNIZCA ZATEN PREFLIGHT YAPAN İSTEKLERE eklenir (Authorization veya Content-Type taşıyanlar).
+// Sebep: X-Locale CORS-safelisted DEĞİL; anonim public GET'lere (ana sayfa, ders/salon listesi)
+// eklemek onları "basit istek" olmaktan çıkarıp her birine OPTIONS preflight ekler → public
+// sayfalarda her çağrı 2 tura çıkardı. Auth'lu istekler ve JSON POST'lar zaten preflight'lı,
+// orada ek maliyet YOK. Dil senkronu zaten yalnız girişli kullanıcı için anlamlı (User'a yazılır).
+function localeHeader(existing?: HeadersInit): Record<string, string> {
+  if (typeof window === 'undefined') return {}
+  const h = (existing || {}) as Record<string, string>
+  const preflighted = !!(h.Authorization || h['Content-Type'] || h['content-type'])
+  if (!preflighted) return {}
+  try {
+    const l = localStorage.getItem('fitpass_lang')
+    return l ? { 'X-Locale': l } : {}
+  } catch { return {} }
+}
+
 export async function request(path: string, opts: RequestInit = {}, timeoutMs = DEFAULT_TIMEOUT, _retried = false): Promise<any> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
   try {
-    const res = await fetch(`${API_URL}${path}`, { ...opts, signal: controller.signal })
+    const res = await fetch(`${API_URL}${path}`, { ...opts, headers: { ...localeHeader(opts.headers), ...(opts.headers as object) }, signal: controller.signal })
     const hasAuth = !!(opts.headers as Record<string, string> | undefined)?.Authorization
     // Access token süresi dolmuş → sessizce yenile + isteği bir kez tekrar dene.
     if (res.status === 401 && hasAuth && !_retried && typeof window !== 'undefined' && !path.includes('/api/auth/refresh')) {
