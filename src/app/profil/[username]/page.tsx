@@ -202,7 +202,6 @@ export default function ProfilPage() {
 
   // Bildirim tercihleri
   const [emailReminders, setEmailReminders] = useState(true)
-  const [smsReminders, setSmsReminders] = useState(false)
   const [notifSaved, setNotifSaved] = useState(false)
 
   // Profile edit
@@ -269,7 +268,6 @@ export default function ProfilPage() {
         setPrivacy(data.user.activityPrivacy || 'public')
         setProfilePriv(data.user.profilePrivacy || 'public')
         setEmailReminders(data.user.emailReminders !== false)
-        setSmsReminders(data.user.smsReminders === true)
         setEditForm({
           fullName: data.user.fullName || '',
           bio: data.user.bio || '',
@@ -1258,7 +1256,6 @@ export default function ProfilPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {[
                   { label: t('prof.emailReminders'), desc: t('prof.emailRemindersSub'), value: emailReminders, set: setEmailReminders },
-                  { label: t('prof.smsReminders'), desc: t('prof.smsRemindersSub'), value: smsReminders, set: setSmsReminders },
                 ].map(item => (
                   <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', backgroundColor: '#F8F8F8', borderRadius: 12 }}>
                     <div>
@@ -1272,7 +1269,7 @@ export default function ProfilPage() {
                       await fetch(`${API_URL}/api/auth/notifications`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                        body: JSON.stringify({ emailReminders: item.label.includes('E-posta') ? newVal : emailReminders, smsReminders: item.label.includes('SMS') ? newVal : smsReminders })
+                        body: JSON.stringify({ emailReminders: newVal })
                       })
                       setNotifSaved(true)
                       setTimeout(() => setNotifSaved(false), 2000)
