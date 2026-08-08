@@ -93,7 +93,9 @@ export default function SalonGirisPage() {
       const body: any = {
         name: form.name, email: form.email, password: form.password,
         phone: form.phone, address: form.address, description: form.description,
-        neighborhoodId: parseInt(form.neighborhoodId), cityId: 1,
+        // cityId GÖNDERİLMEZ: sunucu mahalleden türetiyor (istemci türetilmiş veriyi dikte etmemeli;
+        // sabit 1 çoklu-şehirde mahalle-şehir tutarsızlığı üretiyordu).
+        neighborhoodId: parseInt(form.neighborhoodId),
         sportCategories: selectedSports,
       }
       if (instructor.fullName.trim()) {
