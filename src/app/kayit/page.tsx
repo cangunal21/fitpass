@@ -25,7 +25,7 @@ function KayitForm() {
   const [selectedNeighborhoods, setSelectedNeighborhoods] = useState<number[]>([])
 
   useEffect(() => {
-    const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+    const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
     fetch(`${API}/api/public/categories`).then(r => r.json()).then(d => setCategories(d.categories || [])).catch(() => {})
     fetch(`${API}/api/public/neighborhoods`).then(r => r.json()).then(d => setNeighborhoods(d.neighborhoods || [])).catch(() => {})
   }, [])

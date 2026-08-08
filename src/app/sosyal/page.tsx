@@ -19,7 +19,7 @@ function FeedBadgeIcon({ icon, sportName, size = 16, color = '#4F46E5' }: { icon
   return <Ic size={size} color={color} />
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
 // Kategoriler API'dan yüklenir
 

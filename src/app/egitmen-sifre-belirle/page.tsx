@@ -14,7 +14,7 @@ function SetPasswordInner() {
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()

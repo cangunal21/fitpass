@@ -29,7 +29,7 @@ export default function VenuePage() {
   // Not: yorum GÖNDERME artık salon profilinden yapılmıyor — global RatingPrompt (ders sonrası,
   // check-in'li, salon+hoca çift puan) hallediyor. Burada yalnız yorum LİSTESİ + ortalama gösterilir.
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
   useEffect(() => {
     api.getVenueById(id).then((data: any) => {

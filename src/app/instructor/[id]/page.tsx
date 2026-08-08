@@ -11,7 +11,7 @@ import { MapPin, Calendar, Star, User, ChevronLeft, BadgeCheck } from 'lucide-re
 import { SportIconBox, getIconKeyForCategory, getColorForCategory } from '@/lib/sportIcons'
 import { getInitialsAvatar } from '@/lib/cloudinary'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
 export default function InstructorPage() {
   const { t } = useT()

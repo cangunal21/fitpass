@@ -329,7 +329,7 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
     if (!code || !venueId) return
     setCouponStatus({ checking: true })
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/public/validate-coupon`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/public/validate-coupon`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code, venueId }),
@@ -354,7 +354,7 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
   const searchUsers = async (idx: number, q: string) => {
     const clean = q.replace(/^@/, '').trim()
     if (clean.length < 2) { setTagSuggestions(s => ({ ...s, [idx]: [] })); return }
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/public/users-search?q=${encodeURIComponent(clean)}`)
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/public/users-search?q=${encodeURIComponent(clean)}`)
     const data = await res.json()
     setTagSuggestions(s => ({ ...s, [idx]: data.users || [] }))
   }
@@ -374,7 +374,7 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
     try {
       if (sessionId) {
         // Real API booking
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/bookings`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/bookings`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({ sessionId, bookingType: 'class', groupSize, taggedUsernames: tagInputs.filter(Boolean), couponCode: couponStatus.valid ? couponCode.trim() : undefined }),

@@ -9,7 +9,7 @@ type Tab = 'profil' | 'dersler' | 'checkin' | 'yorumlar'
 
 export default function EgitmenPortalPage() {
   const router = useRouter()
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
   const token = typeof window !== 'undefined' ? localStorage.getItem('fitpass_instructor_token') : null
   const authHeaders = { Authorization: `Bearer ${token}` }
   const jsonAuth = { 'Content-Type': 'application/json', ...authHeaders }

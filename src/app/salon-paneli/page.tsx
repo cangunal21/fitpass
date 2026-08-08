@@ -8,7 +8,7 @@ import AvatarUpload from '@/components/AvatarUpload'
 import { getInitialsAvatar, uploadToCloudinary } from '@/lib/cloudinary'
 import { trYmd, trTime } from '@/lib/trTime'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
 const NO_INSTRUCTOR_CATEGORIES = ['Padel', 'Halı Saha', 'Basketbol']
 const DROP_IN_SPORTS = ['Basketbol', 'Padel', 'Halı Saha']

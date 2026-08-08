@@ -14,7 +14,7 @@ export default function EgitmenGirisPage() {
   const [forgotEmail, setForgotEmail] = useState('')
   const [forgotSent, setForgotSent] = useState(false)
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()

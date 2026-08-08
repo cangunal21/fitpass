@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import { User, LogOut, Bell } from 'lucide-react'
 import { useT, notifText } from '@/lib/i18n'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
 export default function Navbar() {
   const router = useRouter()

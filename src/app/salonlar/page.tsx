@@ -7,7 +7,7 @@ import { useT, translateCategory } from '@/lib/i18n'
 import { SportIconBox, resolveCategoryColor, resolveCategoryIcon } from '@/lib/sportIcons'
 import { mockSocialVenues as MOCK_VENUES } from '@/lib/mockData'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 const selStyle = { padding: '11px 12px', borderRadius: 12, border: '1.5px solid #e5e5e5', fontSize: 14, outline: 'none', background: '#fff', color: '#333', cursor: 'pointer' } as const
 
 export default function SalonlarPage() {

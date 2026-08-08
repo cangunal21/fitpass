@@ -7,7 +7,7 @@ import { mockUsers } from '@/lib/mockData'
 import Navbar from '@/components/Navbar'
 import ActivityCalendar from '@/components/ActivityCalendar'
 import { api, getUser, getToken, removeToken, removeUser } from '@/lib/api'
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
 const BADGE_ICON_MAP: Record<string, any> = { Flag, Target, Flame, Compass, Heart, Users, Trophy, Crown, Speakerphone: Megaphone }
 
@@ -502,7 +502,7 @@ export default function ProfilPage() {
                   onUpload={async (url) => {
                     const token = localStorage.getItem('fitpass_token')
                     if (!token) return
-                    await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/auth/profile`, {
+                    await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/auth/profile`, {
                       method: 'PUT',
                       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                       body: JSON.stringify({ avatarUrl: url }),
@@ -686,12 +686,12 @@ export default function ProfilPage() {
                   if (isOwnProfile) {
                     const token = localStorage.getItem('fitpass_token')
                     if (token) {
-                      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/favorites/my`, {
+                      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/favorites/my`, {
                         headers: { Authorization: `Bearer ${token}` }
                       }).then(r => r.json()).then(d => setFavorites(d.favorites || []))
                     }
                   } else {
-                    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/favorites/user/${username}`)
+                    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/favorites/user/${username}`)
                       .then(r => r.json()).then(d => setFavorites(d.favorites || []))
                   }
                 }
@@ -1579,7 +1579,7 @@ function DeleteAccountSection() {
   )
 }
 
-const API_URL_REF = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+const API_URL_REF = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
 function ReferralTab({ referralInfo, setReferralInfo, copied, setCopied }: any) {
   const { t } = useT()

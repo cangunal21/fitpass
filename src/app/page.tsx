@@ -99,7 +99,7 @@ export default function Home() {
   useEffect(() => {
     const token = getToken()
     if (!token) return
-    const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+    const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
     fetch(`${API}/api/public/for-you`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
       .then(d => {
@@ -564,7 +564,7 @@ export default function Home() {
                               e.preventDefault()
                               const token = localStorage.getItem('fitpass_token')
                               if (!token) { router.push(`/giris?redirect=/`); return }
-                              const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+                              const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
                               const res = await fetch(`${API_URL}/api/waitlist/sessions/${item.sessionId || item.id}`, {
                                 method: 'POST',
                                 headers: { Authorization: `Bearer ${token}` }

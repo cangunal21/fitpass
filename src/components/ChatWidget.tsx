@@ -5,7 +5,7 @@ import { X, Send, MessageCircle } from 'lucide-react'
 import { getToken } from '@/lib/api'
 import { useT } from '@/lib/i18n'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
 interface Message {
   role: 'user' | 'assistant'
