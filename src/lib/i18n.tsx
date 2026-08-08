@@ -261,7 +261,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'cls.total': 'Toplam',
     'cls.bookNow': 'Rezervasyon Yap',
     'cls.sessionFull': 'Seans Dolu',
-    'cls.freeCancel': '12 saat öncesine kadar ücretsiz iptal',
+    'cls.freeCancel': '24s+ tam iade · 12-24s yarım iade · son 12s iptal yok',
     'cls.lastSpotsWarn': 'Son {n} yer kaldı!',
     // Rezervasyon modal
     'booking.confirmTitle': 'Rezervasyonu Onayla',
@@ -276,7 +276,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'booking.processing': 'İşleniyor...',
     'booking.successTitle': 'Rezervasyon Tamam!',
     'booking.successText': 'dersine başarıyla kayıt oldun. Seni bekliyoruz!',
-    'booking.cashback': '🎁 {n} puan kazandın! Puanların seviyeni ve liderlik sıralamanı yükseltir.',
+    'booking.cashback': '🎁 Derse katıldığında {n} puan kazanacaksın! Puanların seviyeni ve liderlik sıralamanı yükseltir.',
     'booking.great': 'Harika! 🚀',
     'booking.invalidCoupon': 'Geçersiz kupon kodu.',
     'booking.tagPlaceholder': '@kullanıcıadı',
@@ -405,7 +405,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'ref.copied': '✓ Link kopyalandı!',
     'ref.completed': '✓ +100 puan kazandın',
     'ref.pending': '⏳ Bekliyor',
-    'prof.cashbackAdvantage': '{tier} avantajı: her rezervasyonda %{pct} puan',
+    'prof.cashbackAdvantage': '{tier} avantajı: katıldığın her derste %{pct} puan',
 
     'dropin.title': 'Drop-In Maçlar',
     'dropin.subtitle': 'Takım bul, hemen katıl!',
@@ -737,7 +737,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'cls.total': 'Total',
     'cls.bookNow': 'Book Now',
     'cls.sessionFull': 'Session Full',
-    'cls.freeCancel': 'Free cancellation up to 12 hours before',
+    'cls.freeCancel': 'Full refund 24h+ · half refund 12-24h · no cancellation in last 12h',
     'cls.lastSpotsWarn': 'Only {n} spots left!',
     // Booking modal
     'booking.confirmTitle': 'Confirm Booking',
@@ -752,7 +752,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'booking.processing': 'Processing...',
     'booking.successTitle': 'Booking Complete!',
     'booking.successText': 'class. See you there!',
-    'booking.cashback': '🎁 You earned {n} points! They boost your tier and leaderboard ranking.',
+    'booking.cashback': "🎁 You'll earn {n} points when you attend! They boost your tier and leaderboard ranking.",
     'booking.great': 'Great! 🚀',
     'booking.invalidCoupon': 'Invalid coupon code.',
     'booking.tagPlaceholder': '@username',
@@ -881,7 +881,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'ref.copied': '✓ Link copied!',
     'ref.completed': '✓ +100 points earned',
     'ref.pending': '⏳ Pending',
-    'prof.cashbackAdvantage': '{tier} perk: {pct}% points on every booking',
+    'prof.cashbackAdvantage': '{tier} perk: {pct}% points on every class you attend',
 
     'dropin.title': 'Drop-In Matches',
     'dropin.subtitle': 'Find a team, join now!',
