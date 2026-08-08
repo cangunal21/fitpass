@@ -161,6 +161,9 @@ export const api = {
   deleteAccount: (token: string, password: string) =>
     request('/api/auth/account', { method: 'DELETE', headers: jsonHeaders(token), body: JSON.stringify({ password }) }),
 
+  changePassword: (token: string, data: { currentPassword: string; newPassword: string }) =>
+    request('/api/auth/change-password', { method: 'PUT', headers: jsonHeaders(token), body: JSON.stringify(data) }),
+
   cancelBooking: (token: string, bookingId: number) =>
     request(`/api/bookings/${bookingId}/cancel`, { method: 'PUT', headers: authHeaders(token) }),
 

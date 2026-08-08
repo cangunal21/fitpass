@@ -1285,6 +1285,7 @@ export default function ProfilPage() {
         )}
 
         {/* Tehlikeli bölge — Hesabı Sil (hesap sekmesi) */}
+        {activeTab === 'hesap' && isOwnProfile && <ChangePasswordSection />}
         {activeTab === 'hesap' && isOwnProfile && <DeleteAccountSection />}
 
         {/* Ödeme Bilgilerim — own profile only */}
@@ -1483,6 +1484,59 @@ function CheckInQR({ code }: { code: string }) {
           <canvas ref={canvasRef} style={{ borderRadius: 8, display: 'block', margin: '0 auto 10px' }} />
           <div style={{ fontSize: 20, fontWeight: 900, color: '#1a1a1a', letterSpacing: 4, fontFamily: 'monospace' }}>{code}</div>
           <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>{t('prof.showQR')}</div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Girişli kullanıcı için uygulama-içi şifre değiştirme. Backend ucu (PUT /api/auth/change-password)
+// hazır ve sertleştirilmişti ama HİÇBİR istemciye bağlanmamıştı → kullanıcı şifresini değiştirmek için
+// çıkış yapıp "şifremi unuttum" akışına düşmek zorundaydı (salon panelinde aynı uç zaten tam bağlı).
+function ChangePasswordSection() {
+  const { t } = useT()
+  const [open, setOpen] = useState(false)
+  const [cur, setCur] = useState('')
+  const [nw, setNw] = useState('')
+  const [nw2, setNw2] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [done, setDone] = useState(false)
+
+  const reset = () => { setOpen(false); setCur(''); setNw(''); setNw2(''); setError('') }
+
+  const submit = async () => {
+    setError('')
+    if (nw.length < 8) { setError(t('register.passwordShort')); return }
+    if (nw !== nw2) { setError(t('register.passwordMismatch')); return }
+    setLoading(true)
+    const r = await api.changePassword(getToken() || '', { currentPassword: cur, newPassword: nw })
+    setLoading(false)
+    if (r?.error) { setError(r.error); return }
+    // Backend bu işlemde TÜM refresh oturumlarını iptal eder → kullanıcıya bunu söylüyoruz (acc.changePwSub).
+    setDone(true); reset()
+    setTimeout(() => setDone(false), 4000)
+  }
+
+  const inputStyle = { padding: '11px 14px', borderRadius: 12, border: '1.5px solid #E5E5E5', fontSize: 14, outline: 'none' } as const
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 20, padding: '28px 32px', border: '1px solid #F0F0F0', marginTop: 16 }}>
+      <h4 style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>🔑 {t('acc.changePassword')}</h4>
+      <p style={{ fontSize: 13, color: '#888', marginBottom: 16, lineHeight: 1.6 }}>{t('acc.changePwSub')}</p>
+      {done && <div style={{ fontSize: 13, color: '#10B981', fontWeight: 600, marginBottom: 12 }}>{t('acc.changePwDone')}</div>}
+      {!open ? (
+        <button onClick={() => setOpen(true)} style={{ padding: '10px 20px', borderRadius: 12, border: '1.5px solid #E5E5E5', background: '#fff', color: '#4F46E5', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>{t('acc.changePassword')}</button>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 360 }}>
+          <input type="password" autoComplete="current-password" value={cur} onChange={e => { setCur(e.target.value); setError('') }} placeholder={t('acc.currentPassword')} style={inputStyle} />
+          <input type="password" autoComplete="new-password" value={nw} onChange={e => { setNw(e.target.value); setError('') }} placeholder={t('acc.newPassword')} style={inputStyle} />
+          <input type="password" autoComplete="new-password" value={nw2} onChange={e => { setNw2(e.target.value); setError('') }} placeholder={t('acc.newPasswordAgain')} style={inputStyle} />
+          {error && <div style={{ fontSize: 13, color: '#DC2626' }}>{error}</div>}
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={reset} style={{ flex: 1, padding: '11px', borderRadius: 12, border: '1.5px solid #eee', background: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: '#555' }}>{t('common.cancelBtn')}</button>
+            <button onClick={submit} disabled={loading || !cur || !nw || !nw2} style={{ flex: 1, padding: '11px', borderRadius: 12, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 600, cursor: loading || !cur || !nw || !nw2 ? 'default' : 'pointer', opacity: loading || !cur || !nw || !nw2 ? 0.6 : 1 }}>{loading ? t('acc.changePwSaving') : t('acc.changePwSave')}</button>
+          </div>
         </div>
       )}
     </div>
