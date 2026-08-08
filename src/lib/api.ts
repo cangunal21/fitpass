@@ -41,29 +41,75 @@ function localeHeader(existing?: HeadersInit): Record<string, string> {
   } catch { return {} }
 }
 
-export async function request(path: string, opts: RequestInit = {}, timeoutMs = DEFAULT_TIMEOUT, _retried = false): Promise<any> {
+// Oturum gerçekten bittiğinde: yerel oturumu temizle + girişe yönlendir.
+function endSession() {
+  if (typeof window === 'undefined') return
+  const p = window.location.pathname
+  if (p.startsWith('/giris') || p.startsWith('/kayit') || p.startsWith('/salon') || p.startsWith('/admin')) return
+  localStorage.removeItem('fitpass_token')
+  localStorage.removeItem('fitpass_user')
+  localStorage.removeItem('fitpass_refresh')
+  window.location.href = '/giris?expired=1'
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GLOBAL AUTH-FETCH YAMASI — sessiz token yenilemenin TEK ve KAPSAYICI yeri.
+//
+// SORUN: Kullanıcı access token'ı 1 saat (kısa tutuluyor çünkü JWT iptal edilemez). Sessiz yenileme
+// yalnız `request()` helper'ının içindeydi; oysa web'de yetkili çağrıların ÇOĞU (rezervasyon POST'u
+// dahil, ~56 nokta) doğrudan `fetch(...)` ile yazılmış ve helper'ı atlıyordu. Sonuç: kullanıcı 1 saat
+// sonra hiçbir uyarı almadan işlem yapamıyor, istekler sessizce 401 alıyordu.
+//
+// NEDEN 56 ÇAĞRIYI TEK TEK TAŞIMADIM: o yaklaşım (a) 56 dosyada riskli değişiklik, (b) bir tanesini
+// atlarsan sessizce bozuk kalır, (c) YARIN yazılacak yeni bir ham fetch yine kapsam dışı kalır.
+// Yama tek noktada, geriye ve İLERİYE dönük kapsıyor — doğru derinlik burası.
+//
+// Yalnız KENDİ API'mize giden ve Authorization taşıyan istekleri ele alır; başka origin'lere
+// (Cloudinary vb.) ve anonim isteklere DOKUNMAZ.
+// ─────────────────────────────────────────────────────────────────────────────
+let installed = false
+export function installAuthFetch() {
+  if (installed || typeof window === 'undefined') return
+  installed = true
+  const native = window.fetch.bind(window)
+
+  window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : (input as Request).url
+    const headers = (init?.headers || {}) as Record<string, string>
+    const isOurApi = typeof url === 'string' && url.startsWith(API_URL)
+    const hasAuth = !!(headers.Authorization || headers.authorization)
+    const isRefresh = typeof url === 'string' && url.includes('/api/auth/refresh')
+    // Request nesnesiyle çağrılan (nadir) istekleri ellemeyiz: header'ını güvenle yeniden yazamayız.
+    const plain = typeof input === 'string' || input instanceof URL
+
+    if (!isOurApi || !hasAuth || isRefresh || !plain) {
+      return native(input as any, init)
+    }
+
+    const res = await native(input as any, init)
+    if (res.status !== 401) return res
+
+    // Access token süresi dolmuş olabilir → tek bir paylaşılan yenileme, sonra TEK tekrar deneme.
+    if (!refreshPromise) refreshPromise = doRefresh().finally(() => { refreshPromise = null })
+    const newToken = await refreshPromise
+    if (!newToken) { endSession(); return res }
+
+    // Tekrar deneme YAMALI fetch'i değil `native`'i çağırır → yama hiç yeniden girilmez,
+    // sonsuz döngü imkânsız (işaretçi başlığa gerek yok, sunucuya çöp başlık gitmez).
+    return native(input as any, {
+      ...init,
+      headers: { ...headers, Authorization: `Bearer ${newToken}` },
+    })
+  }
+}
+
+export async function request(path: string, opts: RequestInit = {}, timeoutMs = DEFAULT_TIMEOUT): Promise<any> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
   try {
+    // 401 → yenile → tekrar dene mantığı ARTIK BURADA DEĞİL: global yama (installAuthFetch) yapıyor.
+    // Böylece helper'ı kullanan da kullanmayan da aynı korumaya sahip, mantık tek yerde.
     const res = await fetch(`${API_URL}${path}`, { ...opts, headers: { ...localeHeader(opts.headers), ...(opts.headers as object) }, signal: controller.signal })
-    const hasAuth = !!(opts.headers as Record<string, string> | undefined)?.Authorization
-    // Access token süresi dolmuş → sessizce yenile + isteği bir kez tekrar dene.
-    if (res.status === 401 && hasAuth && !_retried && typeof window !== 'undefined' && !path.includes('/api/auth/refresh')) {
-      if (!refreshPromise) refreshPromise = doRefresh().finally(() => { refreshPromise = null })
-      const newToken = await refreshPromise
-      if (newToken) {
-        clearTimeout(timer)
-        return request(path, { ...opts, headers: { ...(opts.headers as object), Authorization: `Bearer ${newToken}` } }, timeoutMs, true)
-      }
-      // Yenileme de başarısız → oturum gerçekten bitti → temizle + girişe yönlendir
-      const p = window.location.pathname
-      if (!p.startsWith('/giris') && !p.startsWith('/kayit') && !p.startsWith('/salon') && !p.startsWith('/admin')) {
-        localStorage.removeItem('fitpass_token')
-        localStorage.removeItem('fitpass_user')
-        localStorage.removeItem('fitpass_refresh')
-        window.location.href = '/giris?expired=1'
-      }
-    }
     const text = await res.text()
     let body: any = null
     if (text) { try { body = JSON.parse(text) } catch { body = null } }

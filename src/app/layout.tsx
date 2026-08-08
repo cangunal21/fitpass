@@ -4,6 +4,7 @@ import "./globals.css";
 import ChatWidget from "@/components/ChatWidget";
 import Footer from "@/components/Footer";
 import RatingPrompt from "@/components/RatingPrompt";
+import AuthFetchInstaller from "@/components/AuthFetchInstaller";
 import { LanguageProvider } from "@/lib/i18n";
 
 const geistSans = Geist({
@@ -70,6 +71,9 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <LanguageProvider>
+          {/* Sessiz token yenileme yamasını kurar (ham fetch kullanan sayfalar dahil TÜM yetkili
+              çağrıları kapsar). İçeriğin ÜSTÜNDE: modül yüklenir yüklenmez kurulsun. */}
+          <AuthFetchInstaller />
           {children}
           <Footer />
           <ChatWidget />
