@@ -499,12 +499,27 @@ export default function Home() {
               const isFull = item.spots === 0
               const isLowSpots = !isFull && item.spots <= 3
               return (
-                <Link key={item.id + (item.isDropIn ? '-drop' : '')} href={href} style={{ textDecoration: 'none' }}>
+                <div key={item.id + (item.isDropIn ? '-drop' : '')}>
+                  {/* "STRETCHED LINK" KALIBI — kart eskiden tümüyle <Link> ile sarılıydı ve İÇİNDE
+                      başka bir <Link> (salon) + İKİ <button> (favori, rezervasyon) vardı. HTML'de
+                      <a> içine <a> ya da <button> koymak GEÇERSİZ: React hidrasyon hatası veriyordu
+                      ("<a> cannot be a descendant of <a>") ve iç içe interaktif öğeler klavye
+                      gezinmesini bozuyordu. Çözüm: kart artık düz bir <div>; ders bağlantısı kartı
+                      kaplayan MUTLAK KONUMLU tek bir <a>. Böylece hâlâ GERÇEK bir link (sağ tık →
+                      yeni sekme, orta tık, SEO, prefetch korunur) ama hiçbir şeyi sarmıyor.
+                      Salon linki ve butonlar üstte (zIndex 2) kalıp normal çalışır. */}
                   <div
-                    style={{ backgroundColor: '#fff', borderRadius: 20, overflow: 'hidden', border: '1px solid #F0F0F0', cursor: 'pointer', transition: 'all 0.2s', opacity: isFull ? 0.75 : 1 }}
+                    style={{ position: 'relative', backgroundColor: '#fff', borderRadius: 20, overflow: 'hidden', border: '1px solid #F0F0F0', cursor: 'pointer', transition: 'all 0.2s', opacity: isFull ? 0.75 : 1 }}
                     onMouseEnter={e => { if (!isFull) { const el = e.currentTarget as HTMLDivElement; el.style.transform = 'translateY(-4px)'; el.style.boxShadow = '0 16px 40px rgba(0,0,0,0.12)'; el.style.borderColor = '#E0E0E0' } }}
                     onMouseLeave={e => { const el = e.currentTarget as HTMLDivElement; el.style.transform = 'translateY(0)'; el.style.boxShadow = 'none'; el.style.borderColor = '#F0F0F0' }}
                   >
+                    {/* Kartı kaplayan asıl bağlantı (görünmez, tüm yüzeyi tıklanabilir yapar) */}
+                    <Link
+                      href={href}
+                      aria-label={lang === 'en' && item.titleEn ? String(item.titleEn) : item.title}
+                      style={{ position: 'absolute', inset: 0, zIndex: 1, textDecoration: 'none' }}
+                    />
+
                     {/* Kart header - solid color */}
                     <div style={{ background: item.color, padding: '22px 20px 18px', position: 'relative', minHeight: 100 }}>
                       {item.isDropIn && (
@@ -528,7 +543,7 @@ export default function Home() {
                       <h3 style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 3, lineHeight: 1.3 }}>{lang === 'en' && item.titleEn ? String(item.titleEn) : item.title}</h3>
                       <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', fontWeight: 500 }}>
                         {'venueId' in item && item.venueId ? (
-                          <Link href={`/venue/${item.venueId}`} onClick={e => e.stopPropagation()} style={{ color: 'rgba(255,255,255,0.9)', textDecoration: 'underline', fontWeight: 600 }}>
+                          <Link href={`/venue/${item.venueId}`} onClick={e => e.stopPropagation()} style={{ position: 'relative', zIndex: 2, color: 'rgba(255,255,255,0.9)', textDecoration: 'underline', fontWeight: 600 }}>
                             {'venue' in item && typeof item.venue === 'string' ? item.venue : ''}
                           </Link>
                         ) : (
@@ -573,14 +588,14 @@ export default function Home() {
                               if (data.error) { alert(data.error); return }
                               alert(t('home.waitlistAdded'))
                             }}
-                            style={{ padding: '9px 18px', borderRadius: 12, border: '1.5px solid #F59E0B', background: '#FFFBEB', color: '#D97706', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                            style={{ position: 'relative', zIndex: 2, padding: '9px 18px', borderRadius: 12, border: '1.5px solid #F59E0B', background: '#FFFBEB', color: '#D97706', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
                           >
                             🔔 {t('card.waitlist').replace('🔔 ','')}
                           </button>
                         ) : (
                           <button
                             onClick={e => handleCardBookingClick(e, item)}
-                            style={{ padding: '9px 18px', borderRadius: 12, border: 'none', background: '#111', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                            style={{ position: 'relative', zIndex: 2, padding: '9px 18px', borderRadius: 12, border: 'none', background: '#111', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
                           >
                             {item.isDropIn ? t('card.join') : t('card.book')}
                           </button>
@@ -588,7 +603,7 @@ export default function Home() {
                       </div>
                     </div>
                   </div>
-                </Link>
+                </div>
               )
             })}
           </div>
