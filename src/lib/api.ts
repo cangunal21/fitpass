@@ -161,6 +161,9 @@ export const api = {
   deleteAccount: (token: string, password: string) =>
     request('/api/auth/account', { method: 'DELETE', headers: jsonHeaders(token), body: JSON.stringify({ password }) }),
 
+  resendVerification: (token: string) =>
+    request('/api/auth/resend-verification', { method: 'POST', headers: jsonHeaders(token) }),
+
   changePassword: (token: string, data: { currentPassword: string; newPassword: string }) =>
     request('/api/auth/change-password', { method: 'PUT', headers: jsonHeaders(token), body: JSON.stringify(data) }),
 

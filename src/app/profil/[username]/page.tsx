@@ -1285,6 +1285,7 @@ export default function ProfilPage() {
         )}
 
         {/* Tehlikeli bölge — Hesabı Sil (hesap sekmesi) */}
+        {activeTab === 'hesap' && isOwnProfile && <EmailVerificationSection />}
         {activeTab === 'hesap' && isOwnProfile && <ChangePasswordSection />}
         {activeTab === 'hesap' && isOwnProfile && <DeleteAccountSection />}
 
@@ -1493,6 +1494,55 @@ function CheckInQR({ code }: { code: string }) {
 // Girişli kullanıcı için uygulama-içi şifre değiştirme. Backend ucu (PUT /api/auth/change-password)
 // hazır ve sertleştirilmişti ama HİÇBİR istemciye bağlanmamıştı → kullanıcı şifresini değiştirmek için
 // çıkış yapıp "şifremi unuttum" akışına düşmek zorundaydı (salon panelinde aynı uç zaten tam bağlı).
+// E-posta doğrulama durumu + tekrar gönder. Backend ucu (POST /api/auth/resend-verification,
+// 2dk cooldown + authLimiter) ve mobil arayüzü VARDI; WEB'de hiç yoktu → kullanıcı kayıtta e-postasını
+// yanlış yazdıysa/mail kaybolduysa webden KURTARAMIYORDU. Ayrıca #30'daki "doğrulanmamış hesap
+// rezervasyon yapamasın" kapısı, kullanıcıya webden kurtulma yolu sunulmadan açılamaz.
+// Doğrulanmışsa hiçbir şey göstermez (gürültü yapmaz).
+function EmailVerificationSection() {
+  const { t } = useT()
+  const [verified, setVerified] = useState<boolean | null>(null)
+  const [sending, setSending] = useState(false)
+  const [msg, setMsg] = useState('')
+  const [err, setErr] = useState('')
+
+  useEffect(() => {
+    const token = getToken()
+    if (!token) return
+    api.getMe(token).then(d => {
+      if (d?.user) setVerified(d.user.isEmailVerified !== false)
+    }).catch(() => {})
+  }, [])
+
+  const resend = async () => {
+    setSending(true); setErr(''); setMsg('')
+    const r = await api.resendVerification(getToken() || '')
+    setSending(false)
+    // Backend cooldown/limit durumunda da 200 + mesaj dönebiliyor → error yoksa başarı say.
+    if (r?.error) { setErr(r.error); return }
+    setMsg(t('set.verifySent'))
+  }
+
+  if (verified !== false) return null // yükleniyor ya da doğrulanmış → gösterme
+
+  return (
+    <div style={{ background: '#FFFBEB', borderRadius: 20, padding: '20px 24px', border: '1px solid #FDE68A', marginTop: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 20, lineHeight: 1 }}>✉️</span>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#92400E' }}>{t('set.emailNotVerified')}</div>
+          <div style={{ fontSize: 13, color: '#A16207', marginTop: 3 }}>{t('set.checkInbox')}</div>
+          {msg && <div style={{ fontSize: 13, color: '#10B981', fontWeight: 600, marginTop: 8 }}>{msg}</div>}
+          {err && <div style={{ fontSize: 13, color: '#DC2626', marginTop: 8 }}>{err}</div>}
+        </div>
+        <button onClick={resend} disabled={sending} style={{ padding: '9px 18px', borderRadius: 12, border: '1.5px solid #FDE68A', background: '#fff', color: '#92400E', fontSize: 14, fontWeight: 600, cursor: sending ? 'default' : 'pointer', opacity: sending ? 0.6 : 1 }}>
+          {sending ? '...' : t('set.resend')}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function ChangePasswordSection() {
   const { t } = useT()
   const [open, setOpen] = useState(false)
