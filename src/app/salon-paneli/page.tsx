@@ -95,6 +95,7 @@ export default function SalonPaneliPage() {
   const [couponSuccess, setCouponSuccess] = useState('')
   const [deletingCoupon, setDeletingCoupon] = useState<number | null>(null)
   const [reviews, setReviews] = useState<any[]>([])
+  const [replyPrivate, setReplyPrivate] = useState<Record<number, boolean>>({})
   const [reviewsLoading, setReviewsLoading] = useState(false)
   const [replyTexts, setReplyTexts] = useState<Record<number, string>>({})
   const [replyLoading, setReplyLoading] = useState<number | null>(null)
@@ -234,7 +235,9 @@ export default function SalonPaneliPage() {
     if (!venue?.id) return
     setReviewsLoading(true)
     const token = localStorage.getItem('fitpass_venue_token')!
-    const res = await fetch(`${API_URL}/api/reviews/venue/${venue.id}`, { headers: { Authorization: `Bearer ${token}` } })
+    // SAHİP ucu (/api/venue/reviews) — public uç (/api/reviews/venue/:id) `hidePrivateReply`
+    // uyguladığı için salon KENDİ yazdığı ÖZEL yanıtı bile göremiyordu (yanıt yazınca kaybolurdu).
+    const res = await fetch(`${API_URL}/api/venue/reviews`, { headers: { Authorization: `Bearer ${token}` } })
     if (res.status === 401) return venueSessionExpired()
     const data = await res.json()
     setReviews(data.reviews || [])
@@ -246,13 +249,16 @@ export default function SalonPaneliPage() {
     if (!reply) return
     setReplyLoading(reviewId)
     const token = localStorage.getItem('fitpass_venue_token')!
+    // GÖRÜNÜRLÜK: backend `visibility` alanını zaten kabul ediyordu (reviewController) ama panel
+    // hiç GÖNDERMİYORDU → her yanıt zorunlu olarak herkese açık oluyordu. Varsayılan yine 'public'.
     const res = await fetch(`${API_URL}/api/reviews/${reviewId}/reply`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ reply }),
+      body: JSON.stringify({ reply, visibility: replyPrivate[reviewId] ? 'private' : 'public' }),
     })
     if (res.ok) {
       setReplyTexts(t => ({ ...t, [reviewId]: '' }))
+      setReplyPrivate(p => ({ ...p, [reviewId]: false }))
       fetchReviews()
     }
     setReplyLoading(null)
@@ -1605,27 +1611,47 @@ export default function SalonPaneliPage() {
                 {r.comment && <p style={{ fontSize: 14, color: '#444', lineHeight: 1.6, margin: '0 0 14px' }}>{r.comment}</p>}
                 {r.venueReply ? (
                   <div style={{ backgroundColor: '#F5F3FF', borderRadius: 10, padding: '12px 16px', borderLeft: '3px solid #4F46E5', marginBottom: 10 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#4F46E5', marginBottom: 4 }}>Yanıtınız</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#4F46E5', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      Yanıtınız
+                      {r.replyVisibility === 'private' && (
+                        <span title="Yalnızca yorumu yazan kişi görür" style={{ fontSize: 10, fontWeight: 700, color: '#92400E', background: '#FEF3C7', padding: '2px 7px', borderRadius: 20 }}>
+                          🔒 ÖZEL
+                        </span>
+                      )}
+                    </div>
                     <p style={{ fontSize: 13, color: '#444', lineHeight: 1.6, margin: 0 }}>{r.venueReply}</p>
                     <button onClick={() => handleDeleteReply(r.id)} style={{ marginTop: 8, background: 'none', border: 'none', color: '#EF4444', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>Yanıtı Sil</button>
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <textarea
-                      value={replyTexts[r.id] || ''}
-                      onChange={e => setReplyTexts(t => ({ ...t, [r.id]: e.target.value }))}
-                      placeholder="Bu yoruma yanıt yaz..."
-                      maxLength={1000}
-                      rows={2}
-                      style={{ flex: 1, padding: '10px 14px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', resize: 'vertical', fontFamily: 'inherit' }}
-                    />
-                    <button
-                      onClick={() => handleReply(r.id)}
-                      disabled={replyLoading === r.id || !replyTexts[r.id]?.trim()}
-                      style={{ padding: '0 18px', borderRadius: 10, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: replyLoading === r.id ? 0.6 : 1 }}
-                    >
-                      {replyLoading === r.id ? '...' : 'Yanıtla'}
-                    </button>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <textarea
+                        value={replyTexts[r.id] || ''}
+                        onChange={e => setReplyTexts(t => ({ ...t, [r.id]: e.target.value }))}
+                        placeholder="Bu yoruma yanıt yaz..."
+                        maxLength={1000}
+                        rows={2}
+                        style={{ flex: 1, padding: '10px 14px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', resize: 'vertical', fontFamily: 'inherit' }}
+                      />
+                      <button
+                        onClick={() => handleReply(r.id)}
+                        disabled={replyLoading === r.id || !replyTexts[r.id]?.trim()}
+                        style={{ padding: '0 18px', borderRadius: 10, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: replyLoading === r.id ? 0.6 : 1 }}
+                      >
+                        {replyLoading === r.id ? '...' : 'Yanıtla'}
+                      </button>
+                    </div>
+                    {/* Görünürlük: backend `visibility` alanını zaten kabul ediyordu ama panel hiç
+                        göndermiyordu → her yanıt zorunlu herkese açıktı. Varsayılan yine herkese açık. */}
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, color: '#666', cursor: 'pointer', userSelect: 'none' }}>
+                      <input
+                        type="checkbox"
+                        checked={!!replyPrivate[r.id]}
+                        onChange={e => setReplyPrivate(pv => ({ ...pv, [r.id]: e.target.checked }))}
+                        style={{ width: 15, height: 15, cursor: 'pointer' }}
+                      />
+                      🔒 Özel yanıt — yalnızca yorumu yazan kişi görsün (herkese açık listede görünmez)
+                    </label>
                   </div>
                 )}
               </div>
