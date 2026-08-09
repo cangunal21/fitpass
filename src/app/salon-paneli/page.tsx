@@ -40,7 +40,7 @@ export default function SalonPaneliPage() {
 
   // Inline class form state
   const [showClassForm, setShowClassForm] = useState(false)
-  const [classForm, setClassForm] = useState({ title: '', category: '', basePrice: '', duration: '60', capacity: '', instructorId: '' })
+  const [classForm, setClassForm] = useState({ title: '', description: '', category: '', basePrice: '', duration: '60', capacity: '', instructorId: '' })
   const [classError, setClassError] = useState('')
   const [classSuccess, setClassSuccess] = useState('')
 
@@ -485,7 +485,7 @@ export default function SalonPaneliPage() {
       const data = await res.json()
       if (data.error) { setClassError(data.error); return }
       setClassSuccess('Ders başarıyla eklendi!')
-      setClassForm({ title: '', category: '', basePrice: '', duration: '60', capacity: '', instructorId: '' })
+      setClassForm({ title: '', description: '', category: '', basePrice: '', duration: '60', capacity: '', instructorId: '' })
       setShowClassForm(false)
       fetchVenue(token)
       setTimeout(() => setClassSuccess(''), 2500)
@@ -703,6 +703,8 @@ export default function SalonPaneliPage() {
               <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '28px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', border: '2px solid #4F46E5' }}>
                 <h3 style={{ fontSize: 16, fontWeight: 800, color: '#1a1a1a', marginBottom: 20 }}>Yeni Ders</h3>
                 <form onSubmit={handleAddClass} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  {/* Açıklama alanı web salon panelinde YOKTU (mobil salon panelinde vardı, backend
+                      addClass zaten kabul ediyordu) → web'den eklenen dersler hep açıklamasız kalıyordu. */}
                   <div className="form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                     <div>
                       <label style={labelStyle}>Ders Adı *</label>
@@ -714,6 +716,17 @@ export default function SalonPaneliPage() {
                         <option value="">Seçin</option>
                         {sportCategories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                       </select>
+                    </div>
+                    <div style={{ gridColumn: '1 / -1' }}>
+                      <label style={labelStyle}>Açıklama</label>
+                      <textarea
+                        placeholder="Ders hakkında kısa bilgi (kimler için, ne getirmeli, seviye...)"
+                        maxLength={2000}
+                        rows={3}
+                        value={classForm.description}
+                        onChange={e => setClassForm({ ...classForm, description: e.target.value })}
+                        style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}
+                      />
                     </div>
                     <div>
                       <label style={labelStyle}>Fiyat (₺) *</label>

@@ -81,7 +81,13 @@ function scanFile(abs, rel) {
     const trimmed = raw.trim()
     // yorum satırları / dev log'ları kullanıcıya gitmez
     if (inBlockComment) { if (trimmed.includes('*/')) inBlockComment = false; continue }
-    if (trimmed.startsWith('/*')) { if (!trimmed.includes('*/')) inBlockComment = true; continue }
+    // JSX yorumu `{/* ... */}` da atlanmalı: eskiden yalnız `/*` ile BAŞLAYAN satır tanınıyordu,
+    // `{/*` ile başlayan çok satırlı JSX yorumunun DEVAM satırları "çevrilmemiş metin" sanılıyordu
+    // (yanlış pozitif → CI uyarısı gerçek bir sorun değilken kırmızı yanıyordu).
+    if (trimmed.startsWith('/*') || trimmed.startsWith('{/*')) {
+      if (!trimmed.includes('*/')) inBlockComment = true
+      continue
+    }
     if (trimmed.startsWith('//') || trimmed.startsWith('*')) continue
     // JSX YORUMU: {/* ... */} — kullanıcıya render EDİLMEZ, çeviri gerektirmez.
     // Atlanmazsa açıklama satırları "çevrilmemiş metin" diye raporlanıp kapıyı sahte kırmızıya çekiyordu.

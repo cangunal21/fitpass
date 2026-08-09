@@ -47,8 +47,13 @@ function mapSessionToDisplay(session: any) {
     sessionId: session.id,
     instructorName: session.instructorName || '',
     instructorId: session.instructorId,
-    // fields not available from API — provide defaults so card still renders
-    description: '',
+    // description API'DEN GELİYOR (getSessionById → session.description). Burada '' yazılıyordu ve
+    // üstündeki "API'de yok" yorumu yalnız amenities için doğruydu → salonların yazdığı ders
+    // açıklaması hiçbir istemcide GÖRÜNMÜYORDU (veri var, ekran atıyordu).
+    // NOT: şemada descriptionEn YOK → EN kullanıcı da salonun yazdığı (Türkçe) açıklamayı görür;
+    // titleEn gibi AI çevirisi eklenirse burası da onu kullanmalı.
+    description: session.description || '',
+    // amenities gerçekten API'de yok (yalnız mock veride) — kart yine de render olsun diye boş dizi.
     amenities: [] as string[],
     isRealSession: true,
   }
