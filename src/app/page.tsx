@@ -30,7 +30,10 @@ function mapSessionToItem(session: any) {
     icon: getIconKeyForCategory(session.category),
     color: session.categoryColor || getColorForCategory(session.category),
     basePrice: session.basePrice,
-    spots: session.availableSpots,
+    // KALAN yer (sunucu hesaplıyor). availableSpots eskiden TOPLAM KAPASİTE dönüyordu ve
+    // burada kalan yer sanılıyordu → dolu ders "10 yer kaldı" görünüyordu. Fallback yalnızca
+    // eski backend'e karşı geçiş güvencesi; backend deploy olunca spotsLeft her zaman gelir.
+    spots: session.spotsLeft ?? session.availableSpots,
     rating: session.rating || 4.5,
     totalReviews: session.totalReviews || 0,
     time: new Date(session.startsAt).toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }),
@@ -529,7 +532,7 @@ export default function Home() {
                       )}
                       {isFull && (
                         <span style={{ position: 'absolute', top: 12, left: 12, fontSize: 11, fontWeight: 700, color: '#fff', background: 'rgba(0,0,0,0.5)', padding: '3px 9px', borderRadius: 20 }}>
-                          DOLU
+                          {t('card.full')}
                         </span>
                       )}
                       {isLowSpots && (

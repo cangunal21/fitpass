@@ -38,7 +38,10 @@ function mapSessionToDisplay(session: any) {
     icon: categoryIconMap[session.category] || 'hiit',
     color: session.categoryColor || categoryColorMap[session.category] || '#4F46E5',
     basePrice: session.basePrice,
-    spots: session.availableSpots,
+    // spots = KALAN yer, capacity = seansın toplam kapasitesi. Eskiden ikisi de
+    // availableSpots'tan geliyordu ve "Kapasite" kutusunda kalan yer yazıyordu.
+    spots: session.spotsLeft ?? session.availableSpots,
+    capacity: session.capacity ?? null,
     rating: session.rating || 4.5,
     totalReviews: session.totalReviews || 0,
     time: new Date(session.startsAt).toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }),
@@ -156,7 +159,7 @@ export default function DersDetay() {
                   { icon: <Calendar size={18} />, label: t('cls.date'), value: localizeText(cls.date, lang) },
                   { icon: <Clock size={18} />, label: t('cls.time'), value: localizeText(cls.time, lang) },
                   { icon: <Timer size={18} />, label: t('cls.duration'), value: localizeText(cls.duration, lang) },
-                  { icon: <Users size={18} />, label: t('cls.capacity'), value: t('card.spotsLeft').replace('{n}', String(cls.spots)) },
+                  { icon: <Users size={18} />, label: t('cls.capacity'), value: cls.capacity != null ? t('cls.capacityValue').replace('{n}', String(cls.capacity)) : t('card.spotsLeft').replace('{n}', String(cls.spots)) },
                 ].map((item, i) => (
                   <div key={i} style={{ padding: '12px 14px', backgroundColor: '#FAFAFA', borderRadius: 12 }}>
                     <div style={{ marginBottom: 6 }}>{item.icon}</div>
@@ -297,7 +300,9 @@ export default function DersDetay() {
 
               <p style={{ textAlign: 'center', fontSize: 12, color: '#bbb', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><ShieldCheck size={14} /> {t('cls.freeCancel')}</p>
 
-              {cls.spots <= 3 && (
+              {/* Dolu seansta "0 yer kaldı!" uyarısı anlamsız — buton zaten "Seans Dolu".
+                  spots artık gerçekten 0 olabildiği için alt sınır gerekli. */}
+              {cls.spots > 0 && cls.spots <= 3 && (
                 <div style={{ marginTop: 14, padding: '12px 14px', backgroundColor: '#FFF7ED', borderRadius: 12, border: '1px solid #FED7AA' }}>
                   <p style={{ fontSize: 12, color: '#92400E', textAlign: 'center', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><Flame size={12} /> {t('cls.lastSpotsWarn').replace('{n}', String(cls.spots))}</p>
                 </div>

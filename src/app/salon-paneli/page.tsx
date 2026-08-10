@@ -913,7 +913,7 @@ export default function SalonPaneliPage() {
                               </span>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                 <span style={{ color: (s.bookings?.length || 0) > 0 ? '#4F46E5' : '#888', fontWeight: (s.bookings?.length || 0) > 0 ? 700 : 400 }}>
-                                  {s.bookings?.length || 0}/{s.availableSpots} kişi {(s.bookings?.length || 0) > 0 ? '▾' : ''}
+                                  {s.bookings?.length || 0}/{s.capacity} kişi {(s.bookings?.length || 0) > 0 ? '▾' : ''}
                                 </span>
                                 <button onClick={e => {
                                   e.stopPropagation()
@@ -925,7 +925,7 @@ export default function SalonPaneliPage() {
                                   const dateStr = trYmd(s.startsAt)
                                   const timeStr = trTime(s.startsAt).replace('.', ':')
                                   setEditingSession(s.id)
-                                  setEditSessionForm({ date: dateStr, time: timeStr, capacity: String(s.availableSpots) })
+                                  setEditSessionForm({ date: dateStr, time: timeStr, capacity: String(s.capacity) })
                                   setEditSessionError('')
                                 }} style={{ padding: '3px 10px', borderRadius: 8, border: '1px solid #BFDBFE', background: '#EFF6FF', color: '#2563EB', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
                                   Düzenle

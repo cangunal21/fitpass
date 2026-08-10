@@ -230,7 +230,7 @@ export default function EgitmenPortalPage() {
                   <div style={{ marginTop: 10, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                     {c.sessions.map((s: any) => (
                       <span key={s.id} style={{ fontSize: 12, background: '#f5f5f7', borderRadius: 8, padding: '4px 10px', color: '#555' }}>
-                        {new Date(s.startsAt).toLocaleString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · {s.availableSpots} yer
+                        {new Date(s.startsAt).toLocaleString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · {s.capacity} kişilik
                       </span>
                     ))}
                   </div>

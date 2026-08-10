@@ -16,9 +16,12 @@ export default function ChatWidget() {
   const { t, lang } = useT()
   const SUGGESTIONS = [t('chat.q1'), t('chat.q2'), t('chat.q4'), t('chat.q3')]
   const [open, setOpen] = useState(false)
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: t('chat.greeting') }
-  ])
+  // useState başlangıç değeri YALNIZ ilk render'da hesaplanır; LanguageProvider ilk render'da
+  // daima 'tr' (dil mount sonrası effect'te geliyor) → EN kullanıcı Türkçe karşılama görüyordu.
+  // Karşılamayı state'te dondurmak yerine render sırasında türet.
+  const [messages, setMessages] = useState<Message[]>([])
+  const greeting: Message = { role: 'assistant', content: t('chat.greeting') }
+  const shownMessages = messages.length ? messages : [greeting]
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -51,7 +54,7 @@ export default function ChatWidget() {
     setInput('')
     setError('')
 
-    const newMessages: Message[] = [...messages, { role: 'user', content }]
+    const newMessages: Message[] = [...shownMessages, { role: 'user', content }]
     setMessages(newMessages)
     setLoading(true)
 
@@ -78,7 +81,7 @@ export default function ChatWidget() {
     setLoading(false)
   }
 
-  const showSuggestions = messages.length === 1
+  const showSuggestions = shownMessages.length === 1
 
   return (
     <>
@@ -120,7 +123,7 @@ export default function ChatWidget() {
 
           {/* Messages */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '14px 14px 0', display: 'flex', flexDirection: 'column', gap: 10, minHeight: 0 }}>
-            {messages.map((m, i) => (
+            {shownMessages.map((m, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
                 <div style={{
                   maxWidth: '82%', padding: '9px 13px', borderRadius: m.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',

@@ -41,6 +41,13 @@ const TR_WORDS = new RegExp(
     'sifre', 'giris', 'cikis', 'kayit', 'hesap', 'profil', 'bildirim', 'mesaj',
     'arkadas', 'takipci', 'puan', 'seri', 'rozet', 'seviye', 'toplam', 'hafta',
     'bugun', 'yarin', 'hos', 'geldin', 'lutfen', 'evet', 'hayir', 'tesekkur',
+    // 2026-08 denetimi: aşağıdakiler listede YOKTU ve Türkçe özel karakter de içermedikleri için
+    // üç metin ('DOLU', '← Ana sayfa', '{n} aktivite') tarayıcıdan geçip EN arayüzde Türkçe kaldı.
+    // Liste doğası gereği eksik kalır; yeni sabit metin eklerken t() kullan, buraya güvenme.
+    'dolu', 'bos', 'sayfa', 'aktivite', 'yer', 'kalan', 'kaldi', 'sonraki', 'onceki',
+    'kapasite', 'kontenjan', 'rezervasyon', 'fiyat', 'ucret', 'indirim', 'kupon',
+    'davet', 'paylas', 'kopyala', 'katil', 'liste', 'harita', 'kategori', 'sirala',
+    'filtre', 'temizle', 'tamam', 'vazgec', 'devam', 'basla', 'yeni', 'eski',
   ].join('|') + ')\\b', 'i'
 )
 

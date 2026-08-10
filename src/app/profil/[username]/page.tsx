@@ -484,7 +484,7 @@ export default function ProfilPage() {
 
       <div className="page-container" style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px' }}>
         <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#666', fontSize: 14, textDecoration: 'none', fontWeight: 500, marginBottom: 28 }}>
-          ← Ana sayfa
+          {t('common.backHome')}
         </Link>
 
         {/* Profil kartı */}
@@ -659,7 +659,7 @@ export default function ProfilPage() {
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{cat}</span>
-                        <span style={{ fontSize: 12, color: '#999' }}>{count} aktivite</span>
+                        <span style={{ fontSize: 12, color: '#999' }}>{t('profile.activityCount').replace('{n}', String(count))}</span>
                       </div>
                       <div style={{ height: 5, backgroundColor: '#F0F0F0', borderRadius: 100 }}>
                         <div style={{ height: '100%', backgroundColor: getColorForCategory(cat), borderRadius: 100, width: `${(count / max) * 100}%` }} />

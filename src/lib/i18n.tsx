@@ -248,6 +248,9 @@ const dict: Record<Lang, Record<string, string>> = {
     'card.full': 'DOLU',
     'card.lastSpots': 'Son {n} yer',
     'card.spotsLeft': '{n} yer kaldı',
+    'card.nextSession': 'Sonraki: {d}',
+    'common.backHome': '← Ana sayfa',
+    'profile.activityCount': '{n} aktivite',
     'card.waitlist': '🔔 Bekleme Listesi',
     'card.join': 'Katıl',
     'card.book': 'Rezervasyon',
@@ -264,6 +267,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'cls.time': 'Saat',
     'cls.duration': 'Süre',
     'cls.capacity': 'Kontenjan',
+    'cls.capacityValue': '{n} kişi',
     'cls.about': 'Ders Hakkında',
     'cls.included': 'Dahil Olanlar',
     'cls.instructor': 'Eğitmen',
@@ -736,6 +740,9 @@ const dict: Record<Lang, Record<string, string>> = {
     'card.full': 'FULL',
     'card.lastSpots': 'Only {n} left',
     'card.spotsLeft': '{n} spots left',
+    'card.nextSession': 'Next: {d}',
+    'common.backHome': '← Home',
+    'profile.activityCount': '{n} activities',
     'card.waitlist': '🔔 Waitlist',
     'card.join': 'Join',
     'card.book': 'Book',
@@ -752,6 +759,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'cls.time': 'Time',
     'cls.duration': 'Duration',
     'cls.capacity': 'Capacity',
+    'cls.capacityValue': '{n} people',
     'cls.about': 'About the Class',
     'cls.included': "What's Included",
     'cls.instructor': 'Instructor',
@@ -1078,6 +1086,14 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('fitpass_lang', browser)
     } catch { /* yoksay */ }
   }, [])
+
+  // <html lang> layout'ta "tr" olarak SABİT: RootLayout sunucu bileşeni, kullanıcının dilini
+  // (localStorage/navigator) bilemez. Güncellenmezse tarayıcı İngilizce metne TÜRKÇE büyük-harf
+  // kuralı uygular → text-transform:uppercase "Time/Duration/Capacity"yi "TİME/DURATİON/CAPACİTY"
+  // yapar; ekran okuyucular da metni Türkçe telaffuz eder. Dili buradan senkronla.
+  useEffect(() => {
+    try { document.documentElement.lang = lang } catch { /* yoksay */ }
+  }, [lang])
 
   const setLang = (l: Lang) => {
     setLangState(l)

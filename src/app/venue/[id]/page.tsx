@@ -99,7 +99,10 @@ export default function VenuePage() {
   const avgRating = venue.avgRating ?? 0
   const totalReviews = venue.totalReviews ?? 0
   const neighborhoodName = isMock ? venue.neighborhood : (venue.neighborhood?.name ?? '')
-  const isVerified = isMock ? venue.isVerified : (venue.isApproved ?? false)
+  // isApproved DEĞİL: getVenueById zaten yalnız isApproved=true salonları döndürüyor, yani o alan
+  // yanıtta HER ZAMAN true — rozet hiçbir salonu ayırt etmiyor, doğrulanmamış salona da "✓ Onaylı"
+  // diyordu. /salonlar listesi zaten isVerified okuyor; iki sayfa aynı salon için çelişiyordu.
+  const isVerified = isMock ? venue.isVerified : (venue.isVerified ?? false)
   const description = isMock && lang === 'en' && (venue as any).descriptionEn ? (venue as any).descriptionEn : (venue.description ?? '')
   const amenities: string[] = isMock ? (venue.amenities ?? []) : []
 
@@ -357,9 +360,12 @@ export default function VenuePage() {
                 const nextSession = cls.sessions?.[0]
                 const nextSessionDate = nextSession?.startsAt ? new Date(nextSession.startsAt) : null
                 const nextSessionStr = nextSessionDate
-                  ? nextSessionDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' }) + ' ' + nextSessionDate.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+                  // Sabit 'tr-TR' idi → EN arayüzde "12 Ağustos" yazıyordu.
+                  // NOT: saat dilimi ayrı bir denetim bulgusu (cihaz TZ'i kullanılıyor), o düzeltme bu değil.
+                  ? nextSessionDate.toLocaleDateString(lang === 'en' ? 'en-US' : 'tr-TR', { day: 'numeric', month: 'long' }) + ' ' + nextSessionDate.toLocaleTimeString(lang === 'en' ? 'en-US' : 'tr-TR', { hour: '2-digit', minute: '2-digit' })
                   : null
-                const availableSpots = nextSession?.availableSpots ?? null
+                // KALAN yer (sunucu hesaplıyor); eskiden seans kapasitesi okunuyordu
+                const availableSpots = nextSession?.spotsLeft ?? nextSession?.availableSpots ?? null
 
                 return (
                   <div
@@ -378,7 +384,7 @@ export default function VenuePage() {
                         </div>
                         {nextSessionStr && (
                           <div style={{ fontSize: 12, color: '#4F46E5', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <Calendar size={12} /> Sonraki: {nextSessionStr}
+                            <Calendar size={12} /> {t('card.nextSession').replace('{d}', nextSessionStr)}
                           </div>
                         )}
                       </div>
@@ -387,7 +393,11 @@ export default function VenuePage() {
                       <div style={{ fontSize: 18, fontWeight: 800, color: '#111', marginBottom: 4 }}>₺{cls.basePrice}</div>
                       {availableSpots !== null && (
                         <div style={{ fontSize: 12, fontWeight: 600, color: availableSpots <= 3 ? '#EF4444' : '#10B981', backgroundColor: availableSpots <= 3 ? '#FEF2F2' : '#F0FDF4', padding: '3px 10px', borderRadius: 100 }}>
-                          {availableSpots <= 3 ? <><Flame size={12} /> {t('card.lastSpots').replace('{n}', String(availableSpots))}</> : t('card.spotsLeft').replace('{n}', String(availableSpots))}
+                          {availableSpots <= 0
+                            ? t('card.full')
+                            : availableSpots <= 3
+                              ? <><Flame size={12} /> {t('card.lastSpots').replace('{n}', String(availableSpots))}</>
+                              : t('card.spotsLeft').replace('{n}', String(availableSpots))}
                         </div>
                       )}
                     </div>

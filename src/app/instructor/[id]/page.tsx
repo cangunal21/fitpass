@@ -138,7 +138,7 @@ export default function InstructorPage() {
                         <div style={{ fontSize: 16, fontWeight: 800, color: '#111' }}>₺{cls.basePrice}</div>
                         {nextSession && (
                           <div style={{ fontSize: 11, color: '#10B981', fontWeight: 600 }}>
-                            {t('card.spotsLeft').replace('{n}', String(nextSession.availableSpots))}
+                            {t('card.spotsLeft').replace('{n}', String(nextSession.spotsLeft ?? nextSession.availableSpots))}
                           </div>
                         )}
                       </div>
