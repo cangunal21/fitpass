@@ -190,6 +190,7 @@ export default function ProfilPage() {
   const [reviewComment, setReviewComment] = useState('')
   const [reviewAnonymous, setReviewAnonymous] = useState(true)
   const [submittingReview, setSubmittingReview] = useState(false)
+  const [reviewError, setReviewError] = useState('')
   const [favorites, setFavorites] = useState<any[]>([])
 
   // Public profile data
@@ -365,6 +366,7 @@ export default function ProfilPage() {
     setReviewRating(5)
     setReviewComment('')
     setReviewAnonymous(true)
+    setReviewError('')
     setReviewModal({ bookingId })
   }
 
@@ -382,8 +384,16 @@ export default function ProfilPage() {
       if (!data.error) {
         setBookings(prev => prev.map(b => b.id === reviewModal.bookingId ? { ...b, review: data.review || { rating: reviewRating, comment: reviewComment } } : b))
         setReviewModal(null)
+        setReviewError('')
+      } else {
+        // Sunucunun {error} gövdesi HİÇ okunmuyordu: puanlama reddedilince (check-in yok,
+        // ders bitmedi, zaten puanlanmış) modal sessizce açık kalıyor, kullanıcı neden
+        // olmadığını anlamıyordu.
+        setReviewError(String(data.error))
       }
-    } catch {}
+    } catch {
+      setReviewError(t('common.error'))
+    }
     setSubmittingReview(false)
   }
 
@@ -1015,7 +1025,11 @@ export default function ProfilPage() {
                         const dateStr = startsAt ? trDateLong(startsAt, dateLocale()) : ''
                         const timeStr = startsAt ? trTime(startsAt, dateLocale()) : ''
                         const isCancelled = b.status === 'cancelled'
-                        const canReview = b.status === 'confirmed' && !b.review
+                        // SUNUCU KAPISIYLA HİZALI: reviewController "yalnızca derse KATILAN
+                        // (check-in yapılmış) rezervasyon puanlanabilir" diyor. İstemci bunu
+                        // yok sayıp butonu gösteriyordu → kullanıcı tıklıyor, 403 dönüyor ve
+                        // hata gövdesi de gösterilmediği için modal sessizce kilitleniyordu.
+                        const canReview = b.status === 'confirmed' && !b.review && !!b.checkedIn
                         const catName = classObj?.category || ''
                         const icon = getIconKeyForCategory(catName)
                         const color = getColorForCategory(catName)
@@ -1096,6 +1110,11 @@ export default function ProfilPage() {
                 <input type="checkbox" checked={reviewAnonymous} onChange={e => setReviewAnonymous(e.target.checked)} />
                 {t('common.anonShare')}
               </label>
+              {/* Sunucunun reddetme gerekçesi (check-in yok, ders bitmedi, zaten puanlanmış)
+                  kullanıcıya GÖSTERİLİR — eskiden yutuluyordu ve modal sessizce kilitleniyordu. */}
+              {reviewError && (
+                <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 10, backgroundColor: '#FEF2F2', color: '#DC2626', fontSize: 13, lineHeight: 1.5 }}>{reviewError}</div>
+              )}
               <button onClick={submitReview} disabled={submittingReview} style={{ width: '100%', padding: 14, borderRadius: 12, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', marginTop: 16 }}>
                 {submittingReview ? t('prof.submitting') : t('common.send')}
               </button>

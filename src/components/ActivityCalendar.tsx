@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, Flame, CalendarCheck, Share2 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useT } from '@/lib/i18n'
-import { SportIcon, getColorForCategory } from '@/lib/sportIcons'
+import { SportIcon, getColorForCategory, getIconKeyForCategory} from '@/lib/sportIcons'
 import { trToday } from '@/lib/trTime'
 
 type Activity = { date: string; category: string | null; title: string }
@@ -137,8 +137,11 @@ export default function ActivityCalendar({ token }: { token: string }) {
               <span style={{ fontSize: 10, color: has ? '#4F46E5' : '#bbb', fontWeight: isToday ? 700 : 500, position: 'absolute', top: 4, left: 6 }}>{day}</span>
               {has && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 1, marginTop: 6 }}>
+                  {/* SportIcon İKON ANAHTARI bekliyor ('yoga'), buraya KATEGORİ ADI ('Yoga')
+                      geçiliyordu → eşleşme olmadığı için her gün genel yıldız çiziliyordu.
+                      Renk zaten kategori adından türetiliyordu, ikon da öyle olmalı. */}
                   {cats.slice(0, 2).map((c, idx) => (
-                    <SportIcon key={idx} name={c} size={16} color={getColorForCategory(c)} />
+                    <SportIcon key={idx} name={getIconKeyForCategory(c)} size={16} color={getColorForCategory(c)} />
                   ))}
                   {cats.length > 2 && <span style={{ fontSize: 9, color: '#4F46E5', fontWeight: 700 }}>+{cats.length - 2}</span>}
                 </div>

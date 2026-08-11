@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { mockClasses, mockDropInSlots } from '@/lib/mockData'
 import Navbar from '@/components/Navbar'
-import { api, getToken, getUser } from '@/lib/api'
+import { api, getToken, getUser, saveUser } from '@/lib/api'
 import { Search, LayoutGrid, Map, Flame, Clock, Timer, X } from 'lucide-react'
 import { SportIcon, SportIconBox, getIconKeyForCategory, getColorForCategory } from '@/lib/sportIcons'
 import { SkeletonCardGrid } from '@/components/Skeleton'
@@ -159,7 +159,24 @@ export default function Home() {
       const sortParam = activeSortParam ?? sort
       if (sortParam && sortParam !== 'latest') params.sort = sortParam
       if (sortParam === 'nearby') {
-        const u = getUser()
+        // "Bana yakın" HİÇ ÇALIŞMIYORDU: login yanıtında neighborhoodId yoktu, saklanan
+        // kullanıcıda da bulunmuyordu → parametre gitmiyor, sunucu mesafe sıralamasını
+        // sessizce atlayıp normal sıralama uyguluyordu. Backend artık login'de gönderiyor;
+        // ZATEN GİRİŞ YAPMIŞ kullanıcıların saklı kaydı eski olduğu için /me'den bir kez
+        // tamamlayıp geri yazıyoruz (bir sonraki aramada localStorage'dan gelir).
+        let u = getUser()
+        if (u && u.neighborhoodId == null) {
+          const t = getToken()
+          if (t) {
+            try {
+              const me: any = await api.getMe(t)
+              if (me?.user?.neighborhoodId != null) {
+                u = { ...u, neighborhoodId: me.user.neighborhoodId }
+                saveUser(u)
+              }
+            } catch { /* sıralama yine de çalışsın */ }
+          }
+        }
         if (u?.neighborhoodId) params.userNeighborhoodId = String(u.neighborhoodId)
       }
       const tf = activeTimeFilter ?? timeFilter
