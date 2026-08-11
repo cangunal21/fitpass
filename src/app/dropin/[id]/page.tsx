@@ -5,8 +5,7 @@ import { useT, localizeText } from '@/lib/i18n'
 import { trTime, trDateFull } from '@/lib/trTime'
 const dateLocale = () => (typeof window !== 'undefined' && localStorage.getItem('fitpass_lang') === 'en') ? 'en-US' : 'tr-TR'
 import Link from 'next/link'
-import { useParams, useRouter } from 'next/navigation'
-import { mockDropInSlots, mockVenues } from '@/lib/mockData'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import { Calendar, Clock, Timer, MapPin, User, CreditCard, ShieldCheck, AlertCircle } from 'lucide-react'
 import { SportIconBox } from '@/lib/sportIcons'
@@ -54,51 +53,35 @@ export default function DropInPage() {
   const [joining, setJoining] = useState(false)
   const [joinError, setJoinError] = useState('')
   const [joined, setJoined] = useState(false)
+  const searchParams = useSearchParams()
+  const [code, setCode] = useState(searchParams.get('code') || '')
+  const [codeInput, setCodeInput] = useState('')
+  const [needsCode, setNeedsCode] = useState(false)
 
   useEffect(() => {
     async function fetchSlot() {
       const id = Number(params.id)
       try {
-        const result = await api.getDropInSlotById(id)
+        // ÖZEL slot: sunucu ?code= ister (publicController), yoksa 404. Kod URL'de gelir
+        // (paylaşılan davet linki: /dropin/42?code=ABC123) ya da kullanıcı elle girer.
+        const result = await api.getDropInSlotById(id, code || undefined)
         if (result?.slot) {
           setSlot(mapApiSlot(result.slot))
+          setNeedsCode(false)
           return
         }
       } catch {
-        // fall through to mock
+        // aşağıda kod ekranına düşer
       }
-      // fallback mock
-      const mockSlot = mockDropInSlots.find(s => s.id === id) || mockDropInSlots[0]
-      const mockVenue = mockVenues.find(v => v.id === mockSlot.venueId)
-      setSlot({
-        id: mockSlot.id,
-        title: mockSlot.title,
-        color: mockSlot.color,
-        icon: mockSlot.icon,
-        format: mockSlot.format,
-        neighborhood: mockSlot.neighborhood,
-        date: mockSlot.date,
-        time: mockSlot.time,
-        endsAt: mockSlot.endsAt,
-        duration: mockSlot.duration,
-        pricePerPerson: mockSlot.pricePerPerson,
-        totalPrice: mockSlot.totalPrice,
-        currentPlayers: mockSlot.currentPlayers,
-        totalPlayers: mockSlot.totalPlayers,
-        status: 'open',
-        venueId: mockSlot.venueId,
-        venueName: mockVenue?.name || '',
-        venueAddress: mockVenue?.address || '',
-        participantCount: mockSlot.currentPlayers,
-        participants: [
-          ...(mockSlot.teams?.A || []),
-          ...(mockSlot.teams?.B || []),
-        ].map((u: any) => ({ id: u.id, team: null, username: u.username, fullName: u.username, avatarUrl: null })),
-        isReal: false,
-      })
+      // Slot alınamadı: özel olup kodu olmayan/yanlış olan durum EN olası. Eskiden burada
+      // mock verisine düşülüyordu; mockDropInSlots BOŞ olduğu için `mockSlot.venueId`
+      // TypeError atıyor ve sayfa kalıcı gri iskelette kilitleniyordu. Artık kod ekranı.
+      setNeedsCode(true)
+      return
     }
+
     fetchSlot().finally(() => setLoading(false))
-  }, [params.id])
+  }, [params.id, code])
 
   const handleJoin = async () => {
     if (!slot) return
@@ -111,7 +94,7 @@ export default function DropInPage() {
     setJoining(true)
     setJoinError('')
     try {
-      const res = await api.joinDropIn(token, slot.id)
+      const res = await api.joinDropIn(token, slot.id, code || undefined)
       if (res?.error) {
         setJoinError(res.error)
       } else {
@@ -125,12 +108,51 @@ export default function DropInPage() {
     }
   }
 
-  if (loading || !slot) {
+  if (loading) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#f8f8f8' }}>
         <Navbar />
         <div style={{ maxWidth: 1000, margin: '0 auto', padding: '32px 24px' }}>
           <div style={{ background: '#F0F0F0', borderRadius: 20, height: 300 }} />
+        </div>
+      </div>
+    )
+  }
+
+  // ÖZEL MAÇ KAPISI — slot alınamadıysa kullanıcıya davet kodunu sorar.
+  // Eskiden burada sonsuz gri iskelet kalıyordu (mock boş olduğu için çökme sonrası
+  // slot hiç set edilmiyordu) ve özel maç linki hiçbir şekilde açılamıyordu.
+  if (!slot) {
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: '#f8f8f8' }}>
+        <Navbar />
+        <div style={{ maxWidth: 460, margin: '0 auto', padding: '64px 24px' }}>
+          <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: 28, boxShadow: '0 2px 12px rgba(0,0,0,0.07)', textAlign: 'center' }}>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', backgroundColor: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <ShieldCheck size={26} color="#4F46E5" />
+            </div>
+            <h1 style={{ fontSize: 19, fontWeight: 800, color: '#111', marginBottom: 8 }}>{t('dropin.privateTitle')}</h1>
+            <p style={{ fontSize: 14, color: '#666', lineHeight: 1.6, marginBottom: 20 }}>{t('dropin.privateDesc')}</p>
+            <form
+              onSubmit={e => { e.preventDefault(); const c = codeInput.trim(); if (!c) return; setLoading(true); setCode(c) }}
+              style={{ display: 'flex', gap: 8 }}
+            >
+              <input
+                value={codeInput}
+                onChange={e => setCodeInput(e.target.value.toUpperCase())}
+                placeholder={t('dropin.codePlaceholder')}
+                autoFocus
+                style={{ flex: 1, padding: '11px 14px', borderRadius: 12, border: '1.5px solid #e5e5e5', fontSize: 14, outline: 'none', fontFamily: 'inherit', letterSpacing: 1 }}
+              />
+              <button type="submit" disabled={!codeInput.trim()} style={{ padding: '11px 20px', borderRadius: 12, border: 'none', background: codeInput.trim() ? '#4F46E5' : '#D1D5DB', color: '#fff', fontSize: 14, fontWeight: 700, cursor: codeInput.trim() ? 'pointer' : 'not-allowed' }}>
+                {t('dropin.codeSubmit')}
+              </button>
+            </form>
+            {needsCode && code && (
+              <p style={{ fontSize: 13, color: '#DC2626', marginTop: 14 }}>{t('dropin.codeWrong')}</p>
+            )}
+            <Link href="/dropin" style={{ display: 'inline-block', marginTop: 20, fontSize: 13, color: '#4F46E5', textDecoration: 'none', fontWeight: 600 }}>{t('dropin.back')}</Link>
+          </div>
         </div>
       </div>
     )

@@ -188,8 +188,13 @@ export const api = {
   getDropInSlots: () =>
     request('/api/public/dropin'),
 
-  joinDropIn: (token: string, slotId: number) =>
-    request(`/api/bookings/dropin/${slotId}/join`, { method: 'POST', headers: jsonHeaders(token) }),
+  // privateCode: özel slota katılım kapısı (bookingController). Gönderilmezse sunucu 403 verir.
+  joinDropIn: (token: string, slotId: number, code?: string) =>
+    request(`/api/bookings/dropin/${slotId}/join`, {
+      method: 'POST',
+      headers: jsonHeaders(token),
+      ...(code ? { body: JSON.stringify({ privateCode: code }) } : {}),
+    }),
 
   getNeighborhoods: (cityId?: string | number) =>
     request(`/api/public/neighborhoods${cityId ? `?cityId=${cityId}` : ''}`),
@@ -200,8 +205,11 @@ export const api = {
   getVenuesList: () =>
     request('/api/public/venues-list'),
 
-  getDropInSlotById: (id: number) =>
-    request(`/api/public/dropin/${id}`),
+  // ÖZEL (private) slot: sunucu ?code= ister, yoksa 404 döner (id enumerasyonuyla roster sızmasın).
+  // Hiçbir istemci kodu göndermediği için özel slot özelliği hiç çalışmıyordu — davetli linki
+  // açtığında 404 alıp mock yoluna düşüyordu.
+  getDropInSlotById: (id: number, code?: string) =>
+    request(`/api/public/dropin/${id}${code ? `?code=${encodeURIComponent(code)}` : ''}`),
 
   getUserActivities: (username: string) =>
     request(`/api/public/users/${username}`),

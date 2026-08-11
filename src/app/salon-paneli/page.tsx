@@ -103,6 +103,7 @@ export default function SalonPaneliPage() {
   // Drop-in state
   const [dropInSlots, setDropInSlots] = useState<any[]>([])
   const [dropInForm, setDropInForm] = useState({ sport: '', format: '', date: '', time: '', totalPlayers: '', pricePerPerson: '', visibility: 'open', privateCode: '' })
+  const [copiedSlotId, setCopiedSlotId] = useState<number | null>(null)
   const [dropInError, setDropInError] = useState('')
   const [dropInSuccess, setDropInSuccess] = useState('')
 
@@ -1229,6 +1230,26 @@ export default function SalonPaneliPage() {
                       <span><Calendar size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />{trDateNumeric(slot.startsAt)} · {trTime(slot.startsAt)}</span>
                       <span>{slot.currentPlayers}/{slot.totalPlayers} oyuncu</span>
                     </div>
+                    {/* ÖZEL MAÇ DAVET LİNKİ — sunucu özel slotu yalnız ?code= ile açıyor.
+                        Link olmadan salonun kodu ayrıca iletmesi gerekiyordu; davetli düz
+                        /dropin/:id linkini açtığında 404 alıyordu. */}
+                    {slot.visibility === 'private' && slot.privateCode && (
+                      <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 11, backgroundColor: '#FEF3C7', color: '#92400E', padding: '3px 10px', borderRadius: 20, fontWeight: 700 }}>ÖZEL · kod {slot.privateCode}</span>
+                        <button
+                          onClick={() => {
+                            const link = `${window.location.origin}/dropin/${slot.id}?code=${encodeURIComponent(slot.privateCode)}`
+                            navigator.clipboard?.writeText(link)
+                              .then(() => setCopiedSlotId(slot.id))
+                              .catch(() => {})
+                            setTimeout(() => setCopiedSlotId(null), 2000)
+                          }}
+                          style={{ fontSize: 11, padding: '4px 12px', borderRadius: 20, border: '1.5px solid #e5e5e5', background: '#fff', color: '#4F46E5', fontWeight: 700, cursor: 'pointer' }}
+                        >
+                          {copiedSlotId === slot.id ? 'Kopyalandı ✓' : 'Davet linkini kopyala'}
+                        </button>
+                      </div>
+                    )}
                     {slot.participants && slot.participants.length > 0 && (
                       <div style={{ marginTop: 8 }}>
                         <div style={{ fontSize: 11, color: '#888', fontWeight: 700, marginBottom: 4 }}>KATILIMCILAR</div>
