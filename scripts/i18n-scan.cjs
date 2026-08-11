@@ -62,6 +62,22 @@ function isTurkish(text) {
 }
 
 // Bir satırdaki "güvenli" (zaten çevrili/teknik) parçaları maskele ki geriye sadece şüpheli kalsın
+// Satır sonu `//` yorumunu ayıkla — tırnak/şablon içindeki `//` (URL'ler) korunur.
+function stripLineComment(line) {
+  let q = null // aktif tırnak: ' " `
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i]
+    if (q) {
+      if (ch === '\\') { i++; continue }
+      if (ch === q) q = null
+      continue
+    }
+    if (ch === "'" || ch === '"' || ch === '`') { q = ch; continue }
+    if (ch === '/' && line[i + 1] === '/') return line.slice(0, i)
+  }
+  return line
+}
+
 function maskSafe(line) {
   let s = line
   // lang === 'en'|'tr' ? 'A' : 'B'  → her iki dal zaten ele alınmış (tırnak veya backtick)
@@ -101,7 +117,12 @@ function scanFile(abs, rel) {
     if (trimmed.startsWith('{/*')) { if (!trimmed.includes('*/}')) inBlockComment = true; continue }
     if (/\bconsole\.(log|warn|error|info)\b/.test(raw)) continue
 
-    const line = maskSafe(raw)
+    // SATIR SONU YORUMLARINI AT. Yalnız `//` ile BAŞLAYAN satırlar atlanıyordu; kodun
+    // arkasına yazılmış `... // Türkçe açıklama` yorumları metin sanılıp yanlış alarm
+    // veriyordu (gerçek bir olay: bir kod yorumu CI'ı kırmızıya çekti). Tırnak ve şablon
+    // dizgisi İÇİNDEKİ `//` (ör. 'https://...') korunur.
+    const raw2 = stripLineComment(raw)
+    const line = maskSafe(raw2)
 
     // (a) JSX metin düğümleri:  >  metin  <  (ortada {ifade} olabilir: "({n} değerlendirme)")
     for (const m of line.matchAll(/>([^<]*)</g)) {
@@ -122,7 +143,9 @@ function scanFile(abs, rel) {
     //      (örn.  <p>\n  Türkçe metin\n</p>) — bu satırlarda <>{} ve tırnak yoktur.
     {
       // basit {ifade}'leri ({' '}, {name} vb.) çıkar — metin yanlarında olabilir
-      const bare = raw.replace(/\{[^{}]*\}/g, '').trim()
+      // raw2: satır sonu yorumu AYIKLANMIŞ hâli. Eskiden ham `raw` kullanılıyordu, bu yüzden
+      // kodun arkasındaki Türkçe yorum "tek başına duran JSX metni" sanılıyordu.
+      const bare = raw2.replace(/\{[^{}]*\}/g, '').trim()
       if (bare && !/[<>=`'"]/.test(bare) && !/^[0-9.,%₺$+\-*/ ]+$/.test(bare) && isTurkish(bare)) {
         findings.push({ rel, line: i + 1, kind: 'JSX', text: bare })
       }

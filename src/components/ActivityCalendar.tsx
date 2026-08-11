@@ -16,6 +16,7 @@ export default function ActivityCalendar({ token }: { token: string }) {
   const [activities, setActivities] = useState<Activity[]>([])
   const [streaks, setStreaks] = useState({ daily: 0, weekly: 0 })
   const [loading, setLoading] = useState(true)
+  const [paylasiliyor, setPaylasiliyor] = useState(false)
   // Ay görünümü de İstanbul'a göre açılmalı: cihaz yerelinde ayın 1'i 00:30 iken İstanbul hâlâ
   // önceki aydadır (ya da tersi) — takvim yanlış ayla açılıyordu.
   const [cursor, setCursor] = useState(() => { const [y, m] = trToday().split('-').map(Number); return { y, m: m - 1 } })
@@ -69,13 +70,50 @@ export default function ActivityCalendar({ token }: { token: string }) {
     return { y: c.y + Math.floor(nm / 12), m: ((nm % 12) + 12) % 12 }
   })
 
+  // GÖRSEL PAYLAŞIM (#34). Eskiden yalnız METİN+link paylaşılıyordu; Instagram story'ye
+  // atılabilir bir şey yoktu. Artık story ölçüsünde (1080×1920) bir kart çizilip DOSYA
+  // olarak paylaşılıyor. Paylaşım API'si dosya desteklemiyorsa (masaüstü) PNG indirilir;
+  // görsel hiç üretilemezse eski metin paylaşımına düşülür — özellik hiçbir yerde kırılmaz.
   const handleShare = async () => {
     const text = `🔥 ${streaks.daily} ${t('cal.dayStreak')} · ${streaks.weekly} ${t('cal.weekStreak')} — Şipşakspor`
     const url = 'https://sipsakspor.com'
-    if (typeof navigator !== 'undefined' && navigator.share) {
-      try { await navigator.share({ title: 'Şipşakspor', text, url }) } catch { /* kullanıcı iptal etti */ }
-    } else {
-      try { await navigator.clipboard.writeText(`${text} ${url}`); alert(t('cal.copied')) } catch { /* yoksay */ }
+
+    const metinlePaylas = async () => {
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        try { await navigator.share({ title: 'Şipşakspor', text, url }) } catch { /* kullanıcı iptal etti */ }
+      } else {
+        try { await navigator.clipboard.writeText(`${text} ${url}`); alert(t('cal.copied')) } catch { /* yoksay */ }
+      }
+    }
+
+    setPaylasiliyor(true)
+    try {
+      const { paylasimGorseliUret, gorseliPaylas } = await import('@/lib/shareImage')
+      const blob = await paylasimGorseliUret({
+        gunlukSeri: streaks.daily,
+        haftalikSeri: streaks.weekly,
+        ayEtiketi: monthLabel,
+        gunSayisi: daysInMonth,
+        baslangicOfseti: startOffset,
+        aktifGunler: new Set(
+          Object.keys(byDate)
+            .filter(d => d.startsWith(monthPrefix))
+            .map(d => Number(d.slice(-2)))
+        ),
+        ayAktiviteSayisi: monthActivityCount,
+        haftaGunleri: weekDays,
+        metinler: {
+          gunlukSeri: t('cal.dayStreak'),
+          haftalikSeri: t('cal.weekStreak'),
+          ayOzeti: t('cal.monthSummary').replace('{n}', String(monthActivityCount)),
+        },
+      })
+      const sonuc = await gorseliPaylas(blob)
+      if (sonuc === 'indirildi') alert(t('cal.imageDownloaded'))
+    } catch {
+      await metinlePaylas() // canvas yoksa/başarısızsa eski davranış
+    } finally {
+      setPaylasiliyor(false)
     }
   }
 
@@ -157,8 +195,12 @@ export default function ActivityCalendar({ token }: { token: string }) {
           <Flame size={15} color="#EF4444" />
           {loading ? t('common.loading') : t('cal.monthSummary').replace('{n}', String(monthActivityCount))}
         </span>
-        <button onClick={handleShare} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#EEF2FF', color: '#4F46E5', border: 'none', borderRadius: 100, padding: '7px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-          <Share2 size={15} /> {t('cal.share')}
+        <button
+          onClick={handleShare}
+          disabled={paylasiliyor}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#EEF2FF', color: '#4F46E5', border: 'none', borderRadius: 100, padding: '7px 14px', fontSize: 13, fontWeight: 600, cursor: paylasiliyor ? 'default' : 'pointer', opacity: paylasiliyor ? 0.6 : 1 }}
+        >
+          <Share2 size={15} /> {paylasiliyor ? t('cal.preparing') : t('cal.share')}
         </button>
       </div>
     </div>
