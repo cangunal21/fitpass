@@ -29,7 +29,7 @@ test('takvim paylaşımı 1080×1920 gerçek bir PNG üretir ve dosya olarak pay
     const w = window as unknown as { __paylasilan?: { ad: string; tip: string; b64: string } }
     const nav = navigator as Navigator & { canShare?: (d: unknown) => boolean }
     nav.canShare = () => true
-    // @ts-expect-error test amaçlı override
+    // Test amaçlı override — imza gerçek Web Share API'siyle uyumlu.
     nav.share = async (data: { files?: File[] }) => {
       const f = data.files?.[0]
       if (!f) throw new Error('dosya yok')
