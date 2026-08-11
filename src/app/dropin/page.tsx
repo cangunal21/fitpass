@@ -32,9 +32,6 @@ export default function DropInListPage() {
   const [loading, setLoading] = useState(true)
   const [joinStatus, setJoinStatus] = useState<Record<number, { loading: boolean; success?: string; error?: string }>>({})
 
-  useEffect(() => {
-    fetchSlots()
-  }, [])
 
   const fetchSlots = async () => {
     try {
@@ -75,6 +72,12 @@ export default function DropInListPage() {
       setLoading(false)
     }
   }
+
+  // effect, fetchSlots TANIMINDAN SONRA duruyor: eskiden yukarıdaydı ve henüz
+  // tanımlanmamış bir değişkene erişiyordu (React Compiler doğruluk uyarısı).
+  useEffect(() => {
+    fetchSlots()
+  }, [])
 
   const handleJoin = async (slotId: number, isMock: boolean) => {
     if (isMock) return

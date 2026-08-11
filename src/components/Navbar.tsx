@@ -56,8 +56,18 @@ export default function Navbar() {
 
   // Sözlükte time.* anahtarları ZATEN var ve sosyal/profil sayfalarında kullanılıyor; burada sabit
   // Türkçe kalmıştı → EN arayüzde bildirim menüsü Türkçe zaman gösteriyordu.
+  // Date.now() RENDER sırasında çağrılıyordu: React Compiler bunu saf-olmayan çağrı sayıyor
+  // (memoization/eşzamanlı render'ı bozar) ve pratikte göreli zaman bir sonraki render'a kadar
+  // DONUYOR ("2 dakika önce" saatlerce öyle kalır). Dakikada bir tazelenen bir "şimdi" state'i
+  // hem render'ı saflaştırır hem etiketleri kendiliğinden güncel tutar.
+  const [simdi, setSimdi] = useState(() => Date.now())
+  useEffect(() => {
+    const it = setInterval(() => setSimdi(Date.now()), 60000)
+    return () => clearInterval(it)
+  }, [])
+
   const timeAgo = (date: string) => {
-    const diff = Date.now() - new Date(date).getTime()
+    const diff = simdi - new Date(date).getTime()
     const mins = Math.floor(diff / 60000)
     if (mins < 60) return t('time.minsAgo').replace('{n}', String(mins))
     const hours = Math.floor(mins / 60)

@@ -167,8 +167,18 @@ export default function SosyalPage() {
     setSubmittingComment(false)
   }
 
+  // Date.now() RENDER sırasında çağrılıyordu: React Compiler bunu saf-olmayan çağrı sayıyor
+  // (memoization/eşzamanlı render'ı bozar) ve pratikte göreli zaman bir sonraki render'a kadar
+  // DONUYOR ("2 dakika önce" saatlerce öyle kalır). Dakikada bir tazelenen bir "şimdi" state'i
+  // hem render'ı saflaştırır hem etiketleri kendiliğinden güncel tutar.
+  const [simdi, setSimdi] = useState(() => Date.now())
+  useEffect(() => {
+    const it = setInterval(() => setSimdi(Date.now()), 60000)
+    return () => clearInterval(it)
+  }, [])
+
   const timeAgo = (date: string) => {
-    const diff = Date.now() - new Date(date).getTime()
+    const diff = simdi - new Date(date).getTime()
     const mins = Math.floor(diff / 60000)
     if (mins < 60) return t('time.minsAgo').replace('{n}', String(mins))
     const hours = Math.floor(mins / 60)
@@ -328,7 +338,7 @@ export default function SosyalPage() {
                         <>
                           <div style={{ fontSize: 14, color: '#333', lineHeight: 1.5 }}>
                             <Link href={`/profil/${item.user.username}`} style={{ fontWeight: 700, color: '#111', textDecoration: 'none' }}>{item.user.fullName}</Link>
-                            {' '}<strong style={{ color: '#4F46E5' }}>"{translateBadge({ key: item.badgeKey, badgeName: item.badgeName, sportName: item.sportName }, lang)}"</strong> {lang === 'en' ? 'earned the badge 🎉' : 'rozetini kazandı 🎉'}
+                            {' '}<strong style={{ color: '#4F46E5' }}>&quot;{translateBadge({ key: item.badgeKey, badgeName: item.badgeName, sportName: item.sportName }, lang)}&quot;</strong> {lang === 'en' ? 'earned the badge 🎉' : 'rozetini kazandı 🎉'}
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
                             <span style={{ width: 30, height: 30, borderRadius: '50%', backgroundColor: '#EEF2FF', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>

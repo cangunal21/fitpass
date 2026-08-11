@@ -36,6 +36,13 @@ jobs:
       - name: i18n taraması (çevrilmemiş metin + anahtar paritesi)
         run: npm run i18n:check
 
+      # Lint ARTIK CI'DA (task #75). Uzun süre eklenemiyordu çünkü 232 hata vardı.
+      # Gerçek kusurlar düzeltildi; bilinen borç (any tipleri + React Compiler hazırlık
+      # kuralları) eslint.config.mjs'te bilinçli olarak UYARI seviyesinde — gerekçeleri
+      # orada yazılı. Bu adım HATALARDA kırılır, uyarılar kırmızı yapmaz.
+      - name: lint (hatalarda kırılır, bilinen borç uyarı)
+        run: npx eslint .
+
       - name: production build
         # NEXT_PUBLIC_API_URL kodda fallback'li; build için gerçek backend gerekmiyor.
         run: npm run build

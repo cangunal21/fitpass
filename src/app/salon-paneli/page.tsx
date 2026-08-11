@@ -619,7 +619,7 @@ export default function SalonPaneliPage() {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8f8f8' }}>
       <nav style={{ backgroundColor: '#fff', borderBottom: '1px solid #eee', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 1px 8px rgba(0,0,0,0.06)' }}>
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>{/* eslint-disable-next-line @next/next/no-img-element */}<img src="/sipsakspor-logo.svg" alt="Şipşakspor" style={{ height: 30, width: 'auto', display: 'block' }} /></Link>
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>{ }<img src="/sipsakspor-logo.svg" alt="Şipşakspor" style={{ height: 30, width: 'auto', display: 'block' }} /></Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 14, fontWeight: 600, color: '#333', display: 'flex', alignItems: 'center', gap: 6 }}><Building2 size={16} /> {venue?.name}</span>
           {!venue?.isApproved && <span style={{ fontSize: 12, backgroundColor: '#FEF9C3', color: '#92400e', padding: '4px 10px', borderRadius: 20, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Clock size={14} /> Onay Bekliyor</span>}
@@ -1733,7 +1733,7 @@ export default function SalonPaneliPage() {
               <div style={{ gridColumn: '1 / -1', marginTop: 4 }}>
                 <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 12, color: '#555', cursor: 'pointer' }}>
                   <input type="checkbox" checked={smForm.ibanMatchConsent} onChange={e => setSmForm({ ...smForm, ibanMatchConsent: e.target.checked })} style={{ marginTop: 2 }} />
-                  <span>IBAN'ın işletmeme/yetkiliye ait olduğunu, bilgilerimin ödeme kuruluşuna ve MASAK kapsamında aktarılmasını kabul ediyorum.</span>
+                  <span>IBAN&apos;ın işletmeme/yetkiliye ait olduğunu, bilgilerimin ödeme kuruluşuna ve MASAK kapsamında aktarılmasını kabul ediyorum.</span>
                 </label>
               </div>
 
@@ -1851,7 +1851,7 @@ function CheckInScanner({ venueId }: { venueId: number }) {
     setResult(null)
     const token = localStorage.getItem('fitpass_venue_token')!
     // Önce class check-in dene, hata alırsa drop-in check-in dene
-    let res = await fetch(`${API_URL}/api/bookings/checkin`, {
+    const res = await fetch(`${API_URL}/api/bookings/checkin`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ code: code.trim().toUpperCase() }),
@@ -1950,7 +1950,7 @@ function QRTab({ venueId, venueName }: { venueId: number; venueName: string }) {
             <canvas ref={canvasRef1} style={{ borderRadius: 12, border: '1px solid #f0f0f0' }} />
           </div>
           <p style={{ fontSize: 12, color: '#aaa', marginBottom: 16 }}>Okutunca: <strong style={{ color: '#555' }}>{venueUrl}</strong></p>
-          <p style={{ fontSize: 12, color: '#888', marginBottom: 20, lineHeight: 1.5 }}>Müşterileriniz bu QR'ı okutunca salonunuzun sayfasını görür, derslere kayıt olabilir.</p>
+          <p style={{ fontSize: 12, color: '#888', marginBottom: 20, lineHeight: 1.5 }}>Müşterileriniz bu QR&apos;ı okutunca salonunuzun sayfasını görür, derslere kayıt olabilir.</p>
           <button
             onClick={() => downloadQR(canvasRef1, `${venueName}-musteri-qr.png`)}
             disabled={!ready}
@@ -1962,7 +1962,7 @@ function QRTab({ venueId, venueName }: { venueId: number; venueName: string }) {
       </div>
 
       <div style={{ backgroundColor: '#F5F3FF', borderRadius: 16, padding: '16px 20px', fontSize: 13, color: '#6D28D9', lineHeight: 1.6 }}>
-        <strong>Nasıl kullanılır?</strong> Müşteri QR'ını yazdırıp salonunuzun girişine, resepsiyon masasına veya ders listesinin yanına asın. Müşteriler telefon kameralarıyla okutunca doğrudan salonunuzun sayfasına gidip rezervasyon yapabilir.
+        <strong>Nasıl kullanılır?</strong> Müşteri QR&apos;ını yazdırıp salonunuzun girişine, resepsiyon masasına veya ders listesinin yanına asın. Müşteriler telefon kameralarıyla okutunca doğrudan salonunuzun sayfasına gidip rezervasyon yapabilir.
       </div>
     </div>
   )

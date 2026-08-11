@@ -262,7 +262,7 @@ export default function AdminPage() {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8f8f8' }}>
       <nav style={{ backgroundColor: '#fff', borderBottom: '1px solid #eee', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 1px 8px rgba(0,0,0,0.06)' }}>
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>{/* eslint-disable-next-line @next/next/no-img-element */}<img src="/sipsakspor-logo.svg" alt="Şipşakspor" style={{ height: 30, width: 'auto', display: 'block' }} /></Link>
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>{ }<img src="/sipsakspor-logo.svg" alt="Şipşakspor" style={{ height: 30, width: 'auto', display: 'block' }} /></Link>
         <span style={{ fontSize: 14, fontWeight: 600, color: '#666', display: 'flex', alignItems: 'center', gap: 6 }}><Lock size={16} /> Admin Paneli</span>
       </nav>
 
@@ -424,7 +424,7 @@ export default function AdminPage() {
                       {r.reportedUser?.banned && <span style={{ marginLeft: 8, fontSize: 11, color: '#DC2626', fontWeight: 600 }}>(banlı)</span>}
                     </div>
                     <div style={{ fontSize: 12, color: '#888' }}>Şikayet eden: @{r.reporter?.username} · {new Date(r.createdAt).toLocaleDateString('tr-TR')}</div>
-                    {r.reason && <div style={{ fontSize: 12, color: '#555', marginTop: 4, fontStyle: 'italic' }}>"{r.reason}"</div>}
+                    {r.reason && <div style={{ fontSize: 12, color: '#555', marginTop: 4, fontStyle: 'italic' }}>&quot;{r.reason}&quot;</div>}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
