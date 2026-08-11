@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useT, translateCategory, translateAmenity, localizeText } from '@/lib/i18n'
+import { trTime, trDateShort, trDateLong } from '@/lib/trTime'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
@@ -362,7 +363,7 @@ export default function VenuePage() {
                 const nextSessionStr = nextSessionDate
                   // Sabit 'tr-TR' idi → EN arayüzde "12 Ağustos" yazıyordu.
                   // NOT: saat dilimi ayrı bir denetim bulgusu (cihaz TZ'i kullanılıyor), o düzeltme bu değil.
-                  ? nextSessionDate.toLocaleDateString(lang === 'en' ? 'en-US' : 'tr-TR', { day: 'numeric', month: 'long' }) + ' ' + nextSessionDate.toLocaleTimeString(lang === 'en' ? 'en-US' : 'tr-TR', { hour: '2-digit', minute: '2-digit' })
+                  ? trDateShort(nextSessionDate, lang === 'en' ? 'en-US' : 'tr-TR') + ' ' + trTime(nextSessionDate, lang === 'en' ? 'en-US' : 'tr-TR')
                   : null
                 // KALAN yer (sunucu hesaplıyor); eskiden seans kapasitesi okunuyordu
                 const availableSpots = nextSession?.spotsLeft ?? nextSession?.availableSpots ?? null
@@ -507,7 +508,7 @@ export default function VenuePage() {
                         <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>
                           {r.isAnonymous ? t('venue.anonymous') : (r.reviewer?.fullName || t('venue.anonUser'))}
                         </div>
-                        <div style={{ fontSize: 11, color: '#aaa' }}>{new Date(r.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+                        <div style={{ fontSize: 11, color: '#aaa' }}>{trDateLong(r.createdAt, lang === 'en' ? 'en-US' : 'tr-TR')}</div>
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: 2 }}>

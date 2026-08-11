@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Building2, Clock, BookOpen, Calendar, Ticket, AlertCircle, User, Check, ChevronDown, ChevronUp, Plus, Trash2, BadgeCheck, Users, ClipboardList, Zap, QrCode, BarChart3, TrendingUp, Star, Image as ImageIcon, Settings, CreditCard } from 'lucide-react'
 import AvatarUpload from '@/components/AvatarUpload'
 import { getInitialsAvatar, uploadToCloudinary } from '@/lib/cloudinary'
-import { trYmd, trTime } from '@/lib/trTime'
+import { trYmd, trTime, trDateFull, trDateNumeric, trDateLong } from '@/lib/trTime'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
@@ -117,7 +117,7 @@ export default function SalonPaneliPage() {
 
   const formatSessionDate = (date: string) => {
     if (!date) return ''
-    return new Date(date).toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    return trDateFull(date)
   }
 
   const [sportCategories, setSportCategories] = useState<{ id: number; name: string; hasInstructor: boolean }[]>([])
@@ -909,7 +909,7 @@ export default function SalonPaneliPage() {
                           <div key={s.id} style={{ backgroundColor: '#f5f5f5', borderRadius: 10, overflow: 'hidden', fontSize: 13 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', cursor: 'pointer' }} onClick={() => setExpandedSession(expandedSession === s.id ? null : s.id)}>
                               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                                <Calendar size={13} /> {new Date(s.startsAt).toLocaleDateString('tr-TR')} · <Clock size={13} /> {new Date(s.startsAt).toLocaleTimeString('tr-TR', {hour:'2-digit',minute:'2-digit'})}
+                                <Calendar size={13} /> {trDateNumeric(s.startsAt)} · <Clock size={13} /> {trTime(s.startsAt)}
                               </span>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                 <span style={{ color: (s.bookings?.length || 0) > 0 ? '#4F46E5' : '#888', fontWeight: (s.bookings?.length || 0) > 0 ? 700 : 400 }}>
@@ -1226,7 +1226,7 @@ export default function SalonPaneliPage() {
                   <div>
                     <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 4 }}>{slot.title}</div>
                     <div style={{ fontSize: 12, color: '#888', display: 'flex', gap: 12 }}>
-                      <span><Calendar size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />{new Date(slot.startsAt).toLocaleDateString('tr-TR')} · {new Date(slot.startsAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span><Calendar size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />{trDateNumeric(slot.startsAt)} · {trTime(slot.startsAt)}</span>
                       <span>{slot.currentPlayers}/{slot.totalPlayers} oyuncu</span>
                     </div>
                     {slot.participants && slot.participants.length > 0 && (
@@ -1430,7 +1430,7 @@ export default function SalonPaneliPage() {
                       </div>
                       <div style={{ fontSize: 12, color: '#888', marginTop: 2, display: 'flex', gap: 10 }}>
                         <span>{c.usedCount ?? 0}{c.maxUses ? `/${c.maxUses}` : ''} kullanım</span>
-                        {c.expiresAt && <span>· Son: {new Date(c.expiresAt).toLocaleDateString('tr-TR')}</span>}
+                        {c.expiresAt && <span>· Son: {trDateNumeric(c.expiresAt)}</span>}
                       </div>
                     </div>
                   </div>
@@ -1566,7 +1566,7 @@ export default function SalonPaneliPage() {
                   )})()}
                   <div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>{b.user?.fullName}</div>
-                    <div style={{ fontSize: 12, color: '#888' }}>{b.session?.class?.title} · {b.session?.startsAt ? new Date(b.session.startsAt).toLocaleDateString('tr-TR') : ''}</div>
+                    <div style={{ fontSize: 12, color: '#888' }}>{b.session?.class?.title} · {b.session?.startsAt ? trDateNumeric(b.session.startsAt) : ''}</div>
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
@@ -1601,7 +1601,7 @@ export default function SalonPaneliPage() {
                     </div>
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>{r.isAnonymous ? 'Anonim' : (r.reviewer?.fullName || 'Kullanıcı')}</div>
-                      <div style={{ fontSize: 11, color: '#aaa' }}>{new Date(r.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+                      <div style={{ fontSize: 11, color: '#aaa' }}>{trDateLong(r.createdAt)}</div>
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 2 }}>

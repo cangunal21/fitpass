@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useT } from '@/lib/i18n'
+import { trTime, trDateShort } from '@/lib/trTime'
 
 const dateLocale = () => (typeof window !== 'undefined' && localStorage.getItem('fitpass_lang') === 'en') ? 'en-US' : 'tr-TR'
 import { useRouter } from 'next/navigation'
@@ -144,8 +145,8 @@ export default function DropInListPage() {
                     </div>
 
                     <div style={{ display: 'flex', gap: 20, marginBottom: 14, fontSize: 13, color: '#555' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Calendar size={13} /> {startsAt.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long' })}</span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Clock size={13} /> {startsAt.toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Calendar size={13} /> {trDateShort(startsAt, dateLocale())}</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Clock size={13} /> {trTime(startsAt, dateLocale())}</span>
                       <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Users size={13} /> {slot.currentPlayers}/{slot.totalPlayers} {t('dropin.players')}</span>
                     </div>
 

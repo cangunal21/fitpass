@@ -9,6 +9,7 @@ import { api, getToken, getUser } from '@/lib/api'
 import { MapPin, Calendar, Clock, Timer, Users, User, ShieldCheck, Flame, AlertCircle, X } from 'lucide-react'
 import { SportIconBox } from '@/lib/sportIcons'
 import { useT, translateCategory, localizeText, translateAmenity } from '@/lib/i18n'
+import { trTime, trDateFull } from '@/lib/trTime'
 
 const dateLocale = () => (typeof window !== 'undefined' && localStorage.getItem('fitpass_lang') === 'en') ? 'en-US' : 'tr-TR'
 
@@ -44,8 +45,8 @@ function mapSessionToDisplay(session: any) {
     capacity: session.capacity ?? null,
     rating: session.rating || 4.5,
     totalReviews: session.totalReviews || 0,
-    time: new Date(session.startsAt).toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }),
-    date: new Date(session.startsAt).toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' }),
+    time: trTime(session.startsAt, dateLocale()),
+    date: trDateFull(session.startsAt, dateLocale()),
     duration: `${session.durationMinutes} dk`,
     sessionId: session.id,
     instructorName: session.instructorName || '',

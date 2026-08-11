@@ -153,6 +153,7 @@ import { User, Users, Ticket, Award, ClipboardList, BarChart2, BookOpen, Calenda
 import { SportIcon, SportIconBox, getIconKeyForCategory, getColorForCategory, resolveCategoryColor } from '@/lib/sportIcons'
 import { BADGE_CATALOG } from '@/lib/badgeCatalog'
 import { useT, translateTier, translateBadge, translateCategory } from '@/lib/i18n'
+import { trTime, trDateLong, trDateShort, trDateTimeShort } from '@/lib/trTime'
 
 const dateLocale = () => (typeof window !== 'undefined' && localStorage.getItem('fitpass_lang') === 'en') ? 'en-US' : 'tr-TR'
 import AvatarUpload from '@/components/AvatarUpload'
@@ -408,7 +409,7 @@ export default function ProfilPage() {
     const days = Math.floor(hours / 24)
     if (days === 1) return t('common.yesterday')
     if (days < 7) return t('time.daysAgo').replace('{n}', String(days))
-    return date.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long' })
+    return trDateShort(date, dateLocale())
   }
 
   // Kendi profilinde gerçek aktivite listesi (booking + drop-in birleşik, en yeni önce)
@@ -757,8 +758,8 @@ export default function ProfilPage() {
                         const classObj = session?.class
                         const venue = classObj?.venue
                         const startsAt = session?.startsAt ? new Date(session.startsAt) : null
-                        const dateStr = startsAt ? startsAt.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long', year: 'numeric' }) : ''
-                        const timeStr = startsAt ? startsAt.toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }) : ''
+                        const dateStr = startsAt ? trDateLong(startsAt, dateLocale()) : ''
+                        const timeStr = startsAt ? trTime(startsAt, dateLocale()) : ''
                         const catName = classObj?.category || ''
                         const icon = getIconKeyForCategory(catName)
                         const color = getColorForCategory(catName)
@@ -778,8 +779,8 @@ export default function ProfilPage() {
                         const slot = dp.slot
                         const cat = slot?.sportCategory
                         const slotStartsAt = slot?.startsAt ? new Date(slot.startsAt) : null
-                        const dpDateStr = slotStartsAt ? slotStartsAt.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long', year: 'numeric' }) : ''
-                        const dpTimeStr = slotStartsAt ? slotStartsAt.toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }) : ''
+                        const dpDateStr = slotStartsAt ? trDateLong(slotStartsAt, dateLocale()) : ''
+                        const dpTimeStr = slotStartsAt ? trTime(slotStartsAt, dateLocale()) : ''
                         const iconColor = resolveCategoryColor(cat?.colorHex, cat?.name)
                         return (
                           <div key={`pdp-${dp.id}`} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '18px 22px', border: '1px solid #F0F0F0', display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -866,8 +867,8 @@ export default function ProfilPage() {
                         const classObj = session?.class
                         const venue = classObj?.venue
                         const startsAt = session?.startsAt ? new Date(session.startsAt) : null
-                        const dateStr = startsAt ? startsAt.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long', year: 'numeric' }) : ''
-                        const timeStr = startsAt ? startsAt.toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }) : ''
+                        const dateStr = startsAt ? trDateLong(startsAt, dateLocale()) : ''
+                        const timeStr = startsAt ? trTime(startsAt, dateLocale()) : ''
                         const isFuture = startsAt ? startsAt > new Date() : false
                         const isConfirmed = b.status === 'confirmed'
                         const isCancelled = b.status === 'cancelled'
@@ -928,7 +929,7 @@ export default function ProfilPage() {
                                               {transferOptions.map((o: any) => (
                                                 <button key={o.sessionId} onClick={() => doTransfer(b.id, o.sessionId)} style={{ textAlign: 'left', background: '#fff', border: '1px solid #E0E7FF', borderRadius: 10, padding: '8px 10px', cursor: 'pointer' }}>
                                                   <div style={{ fontSize: 12, fontWeight: 700, color: '#111' }}>{o.title} · ₺{o.basePrice}</div>
-                                                  <div style={{ fontSize: 11, color: '#888' }}>{new Date(o.startsAt).toLocaleString(dateLocale(), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · {o.available} {lang === 'en' ? 'spots free' : 'yer boş'}{o.priceRefund > 0 ? ` · ₺${o.priceRefund} ${lang === 'en' ? 'refund' : 'iade'}` : ''}</div>
+                                                  <div style={{ fontSize: 11, color: '#888' }}>{trDateTimeShort(o.startsAt, dateLocale())} · {o.available} {lang === 'en' ? 'spots free' : 'yer boş'}{o.priceRefund > 0 ? ` · ₺${o.priceRefund} ${lang === 'en' ? 'refund' : 'iade'}` : ''}</div>
                                                 </button>
                                               ))}
                                             </div>
@@ -948,8 +949,8 @@ export default function ProfilPage() {
                         const slot = dp.slot
                         const cat = slot?.sportCategory
                         const slotStartsAt = slot?.startsAt ? new Date(slot.startsAt) : null
-                        const dpDateStr = slotStartsAt ? slotStartsAt.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long', year: 'numeric' }) : ''
-                        const dpTimeStr = slotStartsAt ? slotStartsAt.toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }) : ''
+                        const dpDateStr = slotStartsAt ? trDateLong(slotStartsAt, dateLocale()) : ''
+                        const dpTimeStr = slotStartsAt ? trTime(slotStartsAt, dateLocale()) : ''
                         const dpCancelled = dp.status === 'cancelled' || slot?.status === 'cancelled'
                         const iconColor = resolveCategoryColor(cat?.colorHex, cat?.name)
 
@@ -1011,8 +1012,8 @@ export default function ProfilPage() {
                         const classObj = session?.class
                         const venue = classObj?.venue
                         const startsAt = session?.startsAt ? new Date(session.startsAt) : null
-                        const dateStr = startsAt ? startsAt.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long', year: 'numeric' }) : ''
-                        const timeStr = startsAt ? startsAt.toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }) : ''
+                        const dateStr = startsAt ? trDateLong(startsAt, dateLocale()) : ''
+                        const timeStr = startsAt ? trTime(startsAt, dateLocale()) : ''
                         const isCancelled = b.status === 'cancelled'
                         const canReview = b.status === 'confirmed' && !b.review
                         const catName = classObj?.category || ''
@@ -1044,8 +1045,8 @@ export default function ProfilPage() {
                         const slot = dp.slot
                         const cat = slot?.sportCategory
                         const slotStartsAt = slot?.startsAt ? new Date(slot.startsAt) : null
-                        const dpDateStr = slotStartsAt ? slotStartsAt.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long', year: 'numeric' }) : ''
-                        const dpTimeStr = slotStartsAt ? slotStartsAt.toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }) : ''
+                        const dpDateStr = slotStartsAt ? trDateLong(slotStartsAt, dateLocale()) : ''
+                        const dpTimeStr = slotStartsAt ? trTime(slotStartsAt, dateLocale()) : ''
                         const dpCancelled = dp.status === 'cancelled' || slot?.status === 'cancelled'
                         const iconColor = resolveCategoryColor(cat?.colorHex, cat?.name)
 
@@ -1123,7 +1124,7 @@ export default function ProfilPage() {
               { label: t('auth.fullName'), value: meData?.fullName },
               { label: t('auth.email'), value: meData?.email },
               { label: t('auth.phone'), value: meData?.phone || t('common.notSet') },
-              { label: t('acc.memberSince'), value: meData?.createdAt ? new Date(meData.createdAt).toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long', year: 'numeric' }) : '-' },
+              { label: t('acc.memberSince'), value: meData?.createdAt ? trDateLong(meData.createdAt, dateLocale()) : '-' },
               { label: t('acc.tier'), value: meData?.tier?.name || '-' },
               { label: t('acc.points'), value: meData?.rewardPoints ?? '-' },
             ].map((row, i) => (

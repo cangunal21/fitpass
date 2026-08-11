@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useT } from '@/lib/i18n'
+import { trDateNumeric } from '@/lib/trTime'
 
 const dateLocale = () => (typeof window !== 'undefined' && localStorage.getItem('fitpass_lang') === 'en') ? 'en-US' : 'tr-TR'
 import Link from 'next/link'
@@ -166,7 +167,7 @@ export default function InstructorPage() {
                       </div>
                       <div>
                         <div style={{ fontSize: 13, fontWeight: 600 }}>{r.user?.fullName || t('common.user')}</div>
-                        <div style={{ fontSize: 11, color: '#999' }}>{new Date(r.createdAt).toLocaleDateString(dateLocale())}</div>
+                        <div style={{ fontSize: 11, color: '#999' }}>{trDateNumeric(r.createdAt, dateLocale())}</div>
                       </div>
                     </div>
                     <div style={{ color: '#F59E0B' }}>{'★'.repeat(r.rating)}</div>

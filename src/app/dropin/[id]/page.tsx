@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useT, localizeText } from '@/lib/i18n'
+import { trTime, trDateFull } from '@/lib/trTime'
+const dateLocale = () => (typeof window !== 'undefined' && localStorage.getItem('fitpass_lang') === 'en') ? 'en-US' : 'tr-TR'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { mockDropInSlots, mockVenues } from '@/lib/mockData'
@@ -19,9 +21,9 @@ function mapApiSlot(slot: any) {
     icon: slot.sportCategory?.iconUrl || 'hiit',
     format: slot.format || '',
     neighborhood: slot.venue?.neighborhood?.name || '',
-    date: new Date(slot.startsAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' }),
-    time: new Date(slot.startsAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
-    endsAt: new Date(slot.endsAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+    date: trDateFull(slot.startsAt, dateLocale()),
+    time: trTime(slot.startsAt, dateLocale()),
+    endsAt: trTime(slot.endsAt, dateLocale()),
     duration: slot.durationMinutes ? `${slot.durationMinutes} dk` : '',
     pricePerPerson: slot.pricePerPerson,
     totalPrice: slot.totalPrice || slot.pricePerPerson,

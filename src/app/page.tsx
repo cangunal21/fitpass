@@ -10,7 +10,7 @@ import { Search, LayoutGrid, Map, Flame, Clock, Timer, X } from 'lucide-react'
 import { SportIcon, SportIconBox, getIconKeyForCategory, getColorForCategory } from '@/lib/sportIcons'
 import { SkeletonCardGrid } from '@/components/Skeleton'
 import { useT, translateCategory, localizeText } from '@/lib/i18n'
-import { trToday, trAddDays, trInstant, trWeekday } from '@/lib/trTime'
+import { trToday, trAddDays, trInstant, trWeekday, trTime, trDateFull } from '@/lib/trTime'
 
 const dateLocale = () => (typeof window !== 'undefined' && localStorage.getItem('fitpass_lang') === 'en') ? 'en-US' : 'tr-TR'
 
@@ -36,8 +36,8 @@ function mapSessionToItem(session: any) {
     spots: session.spotsLeft ?? session.availableSpots,
     rating: session.rating || 4.5,
     totalReviews: session.totalReviews || 0,
-    time: new Date(session.startsAt).toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }),
-    date: new Date(session.startsAt).toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' }),
+    time: trTime(session.startsAt, dateLocale()),
+    date: trDateFull(session.startsAt, dateLocale()),
     duration: `${session.durationMinutes} dk`,
     isDropIn: false as const,
     sessionId: session.id,

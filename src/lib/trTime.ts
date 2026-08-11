@@ -33,10 +33,40 @@ export const trWeekday = (d: Date | string | number): number => {
   return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(wd)
 }
 
-/** Kullanıcıya gösterilecek saat — HER ZAMAN İstanbul. */
-export const trTime = (d: Date | string | number): string =>
-  new Date(d).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', timeZone: TR_TZ })
+// ─────────────────────────────────────────────────────────────────────────────
+// GÖSTERİM YARDIMCILARI — ders/seans/slot saatleri EKRANDA da İstanbul olmalı.
+//
+// Yukarıdaki fonksiyonlar filtreleme/hesaplama için kullanılıyordu, ama sayfalardaki
+// GÖSTERİM çağrıları ham `toLocaleTimeString(locale, {...})` ile yazılmış ve timeZone
+// verilmemişti → saat CİHAZIN diliminde basılıyordu. Toronto'daki (UTC-4) bir kullanıcı
+// İstanbul'da 19:00 olan dersi "12:00" görüyordu; İstanbul'da 00:00–02:59 başlayan
+// seanslarda ayrıca TARİH bir gün geriye kayıyordu. Filtre TR gününe göre çalıştığı için
+// liste doğru, saat yanlış oluyordu — yani hata sessizdi.
+//
+// Bundan sonra tarih/saat gösteren HER yer bu fonksiyonları kullanmalı; ham toLocale*
+// çağrısı yazma.
+// ─────────────────────────────────────────────────────────────────────────────
 
-/** Kullanıcıya gösterilecek uzun tarih — HER ZAMAN İstanbul. */
+/** Kullanıcıya gösterilecek saat — HER ZAMAN İstanbul. (ör. "19:00" / "07:00 PM") */
+export const trTime = (d: Date | string | number, locale = 'tr-TR'): string =>
+  new Date(d).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', timeZone: TR_TZ })
+
+/** Uzun tarih — "12 Ağustos 2026" / "August 12, 2026" */
 export const trDateLong = (d: Date | string | number, locale = 'tr-TR'): string =>
   new Date(d).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric', timeZone: TR_TZ })
+
+/** Haftagünlü tam tarih — "12 Ağustos 2026 Çarşamba" / "Wednesday, August 12, 2026" */
+export const trDateFull = (d: Date | string | number, locale = 'tr-TR'): string =>
+  new Date(d).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long', timeZone: TR_TZ })
+
+/** Kısa tarih — "12 Ağustos" / "August 12" */
+export const trDateShort = (d: Date | string | number, locale = 'tr-TR'): string =>
+  new Date(d).toLocaleDateString(locale, { day: 'numeric', month: 'long', timeZone: TR_TZ })
+
+/** Sayısal tarih — "12.08.2026" / "8/12/2026" */
+export const trDateNumeric = (d: Date | string | number, locale = 'tr-TR'): string =>
+  new Date(d).toLocaleDateString(locale, { timeZone: TR_TZ })
+
+/** Kısa tarih + saat — "12 Ağu 19:00" / "Aug 12 07:00 PM" */
+export const trDateTimeShort = (d: Date | string | number, locale = 'tr-TR'): string =>
+  new Date(d).toLocaleString(locale, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: TR_TZ })

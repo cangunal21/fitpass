@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { GraduationCap, Star, LogOut, MessageSquare, Trash2, QrCode, CalendarDays, User as UserIcon, Plus, CheckCircle2, XCircle } from 'lucide-react'
 import AvatarUpload from '@/components/AvatarUpload'
+import { trDateTimeShort, trDateLong } from '@/lib/trTime'
 
 type Tab = 'profil' | 'dersler' | 'checkin' | 'yorumlar'
 
@@ -230,7 +231,7 @@ export default function EgitmenPortalPage() {
                   <div style={{ marginTop: 10, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                     {c.sessions.map((s: any) => (
                       <span key={s.id} style={{ fontSize: 12, background: '#f5f5f7', borderRadius: 8, padding: '4px 10px', color: '#555' }}>
-                        {new Date(s.startsAt).toLocaleString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · {s.capacity} kişilik
+                        {trDateTimeShort(s.startsAt)} · {s.capacity} kişilik
                       </span>
                     ))}
                   </div>
@@ -291,7 +292,7 @@ export default function EgitmenPortalPage() {
                         <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: '#4F46E5' }}>{r.isAnonymous ? '?' : (r.reviewer?.fullName?.[0] || '?')}</div>
                         <div>
                           <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>{r.isAnonymous ? 'Anonim' : (r.reviewer?.fullName || 'Kullanıcı')}</div>
-                          <div style={{ fontSize: 11, color: '#aaa' }}>{new Date(r.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+                          <div style={{ fontSize: 11, color: '#aaa' }}>{trDateLong(r.createdAt)}</div>
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: 1 }}>{[1, 2, 3, 4, 5].map(n => <Star key={n} size={15} color="#F59E0B" fill={n <= r.rating ? '#F59E0B' : 'none'} />)}</div>
