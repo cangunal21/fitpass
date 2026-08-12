@@ -179,7 +179,7 @@ export default function EgitmenPortalPage() {
         {tab === 'profil' && (
           <div style={{ background: '#fff', borderRadius: 18, padding: '24px 28px', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 20 }}>
-              <AvatarUpload currentUrl={me?.avatarUrl} name={me?.fullName || '?'} size={72} editable onUpload={async (url) => { const r = await putMe({ avatarUrl: url }); if (!r.error) setMe((m: any) => ({ ...m, avatarUrl: url })) }} />
+              <AvatarUpload realm="instructor" currentUrl={me?.avatarUrl} name={me?.fullName || '?'} size={72} editable onUpload={async (url) => { const r = await putMe({ avatarUrl: url }); if (!r.error) setMe((m: any) => ({ ...m, avatarUrl: url })) }} />
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, color: '#999' }}>{me?.venue?.name}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>

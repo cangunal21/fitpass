@@ -1012,6 +1012,7 @@ export default function SalonPaneliPage() {
               ) : instructors.map((inst: any) => (
                 <div key={inst.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', gap: 14, alignItems: 'center' }}>
                   <AvatarUpload
+                  realm="venue"
                     currentUrl={inst.avatarUrl}
                     name={inst.fullName}
                     size={48}
@@ -1093,6 +1094,7 @@ export default function SalonPaneliPage() {
                   <label style={labelStyle}>Fotoğraf (opsiyonel)</label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <AvatarUpload
+                  realm="venue"
                       currentUrl={newInstructorAvatar || null}
                       name={instructorForm.fullName || 'Hoca'}
                       size={56}
@@ -1123,7 +1125,7 @@ export default function SalonPaneliPage() {
               <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 4 }}>Kapak Fotoğrafı</h3>
               <p style={{ fontSize: 13, color: '#888', marginBottom: 16 }}>Salonunuzun ana sayfada görünen büyük fotoğrafı</p>
               <div style={{ position: 'relative', width: '100%', height: 200, borderRadius: 14, overflow: 'hidden', backgroundColor: '#f0f0f0', cursor: 'pointer' }}
-                onClick={() => { const inp = document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.onchange = async (e) => { const file = (e.target as HTMLInputElement).files?.[0]; if (!file) return; setUploadingImage(true); try { const url = await uploadToCloudinary(file); setCoverImage(url); await saveVenueImages(venueImages, url); } catch { alert('Yüklenemedi.') } finally { setUploadingImage(false) } }; inp.click() }}>
+                onClick={() => { const inp = document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.onchange = async (e) => { const file = (e.target as HTMLInputElement).files?.[0]; if (!file) return; setUploadingImage(true); try { const url = await uploadToCloudinary(file, localStorage.getItem('fitpass_venue_token')!, 'venue'); setCoverImage(url); await saveVenueImages(venueImages, url); } catch { alert('Yüklenemedi.') } finally { setUploadingImage(false) } }; inp.click() }}>
                 {coverImage ? (
                   <img src={coverImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="kapak" />
                 ) : (
@@ -1154,7 +1156,7 @@ export default function SalonPaneliPage() {
                 ))}
                 {venueImages.length < 10 && (
                   <div
-                    onClick={() => { const inp = document.createElement('input'); inp.type='file'; inp.accept='image/*'; (inp as any).multiple=true; inp.onchange = async (e) => { const files = Array.from((e.target as HTMLInputElement).files || []); setUploadingImage(true); try { const urls = await Promise.all(files.slice(0, 10 - venueImages.length).map((f: File) => uploadToCloudinary(f))); const newImgs = [...venueImages, ...urls]; setVenueImages(newImgs); await saveVenueImages(newImgs); } catch { alert('Yüklenemedi.') } finally { setUploadingImage(false) } }; inp.click() }}
+                    onClick={() => { const inp = document.createElement('input'); inp.type='file'; inp.accept='image/*'; (inp as any).multiple=true; inp.onchange = async (e) => { const files = Array.from((e.target as HTMLInputElement).files || []); setUploadingImage(true); try { const urls = await Promise.all(files.slice(0, 10 - venueImages.length).map((f: File) => uploadToCloudinary(f, localStorage.getItem('fitpass_venue_token')!, 'venue'))); const newImgs = [...venueImages, ...urls]; setVenueImages(newImgs); await saveVenueImages(newImgs); } catch { alert('Yüklenemedi.') } finally { setUploadingImage(false) } }; inp.click() }}
                     style={{ aspectRatio: '1', borderRadius: 12, border: '2px dashed #d0d0d0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', gap: 6, color: '#aaa' }}
                   >
                     <span style={{ fontSize: 28 }}>+</span>

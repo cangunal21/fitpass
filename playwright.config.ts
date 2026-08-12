@@ -33,9 +33,11 @@ export default defineConfig({
   // aynı test tek başına koşunca hep geçiyor). Tekrarsız bırakmak, gerçek bir hatayla
   // tarayıcı çökmesini ayırt edilemez kılıyordu: takım kırmızı yanıyor ama sebep test değil.
   retries: 1,
-  // Yerelde işçi sayısı sınırlı: varsayılan (çekirdek/2) bu makinede backend sunucuları da
-  // koşarken çökmeleri tetikliyor.
-  workers: CI ? 2 : 3,
+  // YERELDE TEK İŞÇİ. Paralel koşuda Next.js dev sunucusu (her rota ilk istekte derleniyor)
+  // bu makinede boğuluyor ve testler `page.goto` zaman aşımıyla düşüyor — kod hatası değil,
+  // kaynak sıkışması. ÖLÇÜLDÜ: seri koşu 2,7 dk; 3 işçi + tekrarlar ~5 dk. Yani tek işçi hem
+  // daha güvenilir hem daha HIZLI. CI (Ubuntu runner) 2 işçiyle sorunsuz.
+  workers: CI ? 2 : 1,
   reporter: CI ? [['github'], ['list']] : [['list']],
 
   use: {

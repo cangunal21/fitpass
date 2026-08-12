@@ -1,12 +1,52 @@
-export const CLOUDINARY_CLOUD = 'duxqsdjpl'
-export const CLOUDINARY_PRESET = 'sipsakspor_uploads'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
-export async function uploadToCloudinary(file: File): Promise<string> {
+/**
+ * İMZALI GÖRSEL YÜKLEME
+ *
+ * ESKİDEN: yükleme "imzasız" (unsigned) yapılıyordu ve gereken tek şey `upload_preset` adıydı.
+ * O ad, hesap adıyla birlikte tam olarak BU DOSYADA, yani herkesin indirebildiği JavaScript
+ * paketinin içindeydi → sayfa kaynağını açan biri, giriş yapmadan hesaba dosya yükleyebiliyordu.
+ * İstek backend'e hiç uğramadığı için koyduğumuz rate limit'lerin de hiçbiri devreye girmiyordu.
+ *
+ * ŞİMDİ: önce kendi sunucumuzdan imza alınıyor (jeton gerekli), sonra yükleme o imzayla
+ * yapılıyor. Klasörü SUNUCU belirliyor, istemci seçemiyor.
+ *
+ * REALM: aynı bileşen üç farklı hesap türünde kullanılıyor (üye avatarı, salon görselleri,
+ * eğitmen fotoğrafı) ve her birinin jetonu farklı bir uçta doğrulanıyor — bu yüzden çağıran
+ * hangi realm'de olduğunu söylüyor.
+ */
+export type YuklemeRealm = 'user' | 'venue' | 'instructor'
+
+const IMZA_UCU: Record<YuklemeRealm, string> = {
+  user: '/api/auth/upload-signature',
+  venue: '/api/venue/upload-signature',
+  instructor: '/api/instructor/upload-signature',
+}
+
+type Imza = { signature: string; timestamp: number; folder: string; apiKey: string; cloudName: string }
+
+async function imzaAl(token: string, realm: YuklemeRealm): Promise<Imza> {
+  const res = await fetch(`${API_URL}${IMZA_UCU[realm]}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!res.ok) throw new Error('Yükleme izni alınamadı.')
+  return res.json()
+}
+
+export async function uploadToCloudinary(file: File, token: string, realm: YuklemeRealm = 'user'): Promise<string> {
+  const imza = await imzaAl(token, realm)
+
   const formData = new FormData()
   formData.append('file', file)
-  formData.append('upload_preset', CLOUDINARY_PRESET)
+  // Bu dördü İMZANIN KAPSAMINDA. Biri değiştirilirse Cloudinary yüklemeyi reddeder —
+  // istemcinin başka bir klasöre yazmasını engelleyen şey de tam olarak bu.
+  formData.append('api_key', imza.apiKey)
+  formData.append('timestamp', String(imza.timestamp))
+  formData.append('folder', imza.folder)
+  formData.append('signature', imza.signature)
 
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${imza.cloudName}/image/upload`, {
     method: 'POST',
     body: formData,
   })

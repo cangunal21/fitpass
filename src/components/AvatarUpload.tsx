@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef } from 'react'
-import { uploadToCloudinary, getInitialsAvatar } from '@/lib/cloudinary'
+import { uploadToCloudinary, getInitialsAvatar, type YuklemeRealm } from '@/lib/cloudinary'
+import { getRealmToken } from '@/lib/api'
 
 interface AvatarUploadProps {
   currentUrl?: string | null
@@ -8,11 +9,16 @@ interface AvatarUploadProps {
   size?: number
   onUpload: (url: string) => void
   editable?: boolean
+  /**
+   * Hangi hesap türü yüklüyor? Görsel yükleme artık İMZALI: imzayı o realm'in kendi ucundan
+   * kendi jetonuyla almak gerekiyor (bkz. lib/cloudinary.ts). Varsayılan üye hesabı.
+   */
+  realm?: YuklemeRealm
 }
 
 import { useT } from '@/lib/i18n'
 
-export default function AvatarUpload({ currentUrl, name, size = 80, onUpload, editable = true }: AvatarUploadProps) {
+export default function AvatarUpload({ currentUrl, name, size = 80, onUpload, editable = true, realm = 'user' }: AvatarUploadProps) {
   const { t } = useT()
   const [uploading, setUploading] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentUrl || null)
@@ -28,7 +34,10 @@ export default function AvatarUpload({ currentUrl, name, size = 80, onUpload, ed
       const localUrl = URL.createObjectURL(file)
       setPreviewUrl(localUrl)
       // Upload to Cloudinary
-      const url = await uploadToCloudinary(file)
+      const token = getRealmToken(realm)
+      // Kullanıcıya GÖSTERİLMEZ: aşağıdaki catch bunu t('avatar.uploadError') ile değiştiriyor.
+      if (!token) throw new Error('missing session token')
+      const url = await uploadToCloudinary(file, token, realm)
       setPreviewUrl(url)
       onUpload(url)
     } catch {

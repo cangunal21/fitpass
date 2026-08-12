@@ -317,6 +317,12 @@ export const api = {
 
 export const saveToken = (token: string) => { if (typeof window !== 'undefined') localStorage.setItem('fitpass_token', token) }
 export const getToken = () => typeof window !== 'undefined' ? localStorage.getItem('fitpass_token') : null
+
+// Realm'e göre access jetonu. Anahtar adları REALM_AYAR'da tek yerde tanımlı — görsel yükleme
+// gibi üç realm'de birden çalışan yerler adları kopyalamasın diye buradan veriliyor.
+export type Realm2 = Realm
+export const getRealmToken = (realm: Realm = 'user'): string | null =>
+  typeof window !== 'undefined' ? localStorage.getItem(REALM_AYAR[realm].access) : null
 export const removeToken = () => { if (typeof window !== 'undefined') localStorage.removeItem('fitpass_token') }
 export const saveUser = (user: object) => { if (typeof window !== 'undefined') localStorage.setItem('fitpass_user', JSON.stringify(user)) }
 export const getUser = () => { if (typeof window === 'undefined') return null; const u = localStorage.getItem('fitpass_user'); return u ? JSON.parse(u) : null }
