@@ -28,8 +28,14 @@ export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
   forbidOnly: CI,
-  retries: CI ? 1 : 0,
-  workers: CI ? 2 : undefined,
+  // YERELDE DE 1 TEKRAR: tam takım paralel koşarken Chrome zaman zaman
+  // "Protocol error … session closed" ile ÇÖKÜYOR (test hatası değil, kaynak sıkışması —
+  // aynı test tek başına koşunca hep geçiyor). Tekrarsız bırakmak, gerçek bir hatayla
+  // tarayıcı çökmesini ayırt edilemez kılıyordu: takım kırmızı yanıyor ama sebep test değil.
+  retries: 1,
+  // Yerelde işçi sayısı sınırlı: varsayılan (çekirdek/2) bu makinede backend sunucuları da
+  // koşarken çökmeleri tetikliyor.
+  workers: CI ? 2 : 3,
   reporter: CI ? [['github'], ['list']] : [['list']],
 
   use: {

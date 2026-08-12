@@ -166,15 +166,25 @@ export default function ProfilPage() {
   const { t, lang } = useT()
   const params = useParams()
   const username = params.username as string
-  const loggedInUser = getUser()
-  const isOwnProfile = loggedInUser?.username === username
+  // HİDRASYON: getUser() localStorage okur. Doğrudan render sırasında çağrılınca sunucuda
+  // null, istemcide dolu döner → isOwnProfile sunucuda false, istemcide true olur ve React
+  // "server rendered HTML didn't match the client" hatasıyla TÜM ağacı atıp yeniden çizer
+  // (kendi profilinde göz kırpma + konsolda hata). Bu yüzden oturum bilgisi ancak MONTAJDAN
+  // SONRA okunur; ilk render sunucuyla birebir aynı (nötr iskelet) olur.
+  const [loggedInUser, setLoggedInUser] = useState<any>(null)
+  const [hazir, setHazir] = useState(false)
+  useEffect(() => {
+    setLoggedInUser(getUser())
+    setHazir(true)
+  }, [])
+  const isOwnProfile = hazir && loggedInUser?.username === username
 
   // Real user data for own profile
   const [meData, setMeData] = useState<any>(null)
   const [bookings, setBookings] = useState<any[]>([])
   const [dropIns, setDropIns] = useState<any[]>([])
-  const [loadingMe, setLoadingMe] = useState(isOwnProfile)
-  const [loadingBookings, setLoadingBookings] = useState(isOwnProfile)
+  const [loadingMe, setLoadingMe] = useState(true)      // ilk render sunucu/istemci aynı olsun diye sabit
+  const [loadingBookings, setLoadingBookings] = useState(true)
   const [cancelConfirm, setCancelConfirm] = useState<number | null>(null)
   const [cancelError, setCancelError] = useState<string | null>(null)
   const [transferFor, setTransferFor] = useState<number | null>(null)
@@ -195,7 +205,7 @@ export default function ProfilPage() {
 
   // Public profile data
   const [publicData, setPublicData] = useState<any>(null)
-  const [loadingPublic, setLoadingPublic] = useState(!isOwnProfile)
+  const [loadingPublic, setLoadingPublic] = useState(true) // bkz. loadingMe
 
   // Privacy toggle
   const [privacy, setPrivacy] = useState<'public' | 'private'>('public')
@@ -449,8 +459,9 @@ export default function ProfilPage() {
 
   const tabs = isOwnProfile ? ownTabs : publicTabs
 
-  // Loading skeleton for own profile
-  if (isOwnProfile && loadingMe) {
+  // Montaj tamamlanana kadar (hazir=false) HERKESE aynı iskelet: sunucunun ürettiği HTML ile
+  // istemcinin ilk render'ı birebir eşleşsin. Sonra kendi profilinde veri gelene kadar sürer.
+  if (!hazir || (isOwnProfile && loadingMe)) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#FAFAFA', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
         <Navbar />

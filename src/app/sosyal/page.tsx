@@ -49,7 +49,12 @@ export default function SosyalPage() {
   const [commentInput, setCommentInput] = useState('')
   const [replyTo, setReplyTo] = useState<{ id: number; name: string } | null>(null)
   const [submittingComment, setSubmittingComment] = useState(false)
-  const currentUser = getUser()
+  // HİDRASYON: getUser() localStorage okur; render sırasında çağrılırsa sunucuda null,
+  // istemcide dolu döner ve "giriş yap" bloğuyla içerik bloğu arasında sunucu/istemci
+  // uyuşmazlığı çıkar (React tüm ağacı atıp yeniden çizer). Montajdan SONRA okunur.
+  // Aynı düzeltme profil sayfasında da yapıldı.
+  const [currentUser, setCurrentUser] = useState<any>(null)
+  useEffect(() => { setCurrentUser(getUser()) }, [])
 
   useEffect(() => {
     fetch(`${API_URL}/api/public/neighborhoods`).then(r => r.json()).then(d => setNeighborhoods(d.neighborhoods || []))
@@ -65,7 +70,10 @@ export default function SosyalPage() {
   useEffect(() => {
     if (activeTab === 'arkadaslar' && currentUser) fetchFriends()
     if (activeTab === 'feed' && currentUser) fetchFeed()
-  }, [activeTab])
+    // currentUser BAĞIMLILIKTA olmalı: artık montajdan sonra doluyor. Sadece activeTab'e
+    // bağlı kalsaydı, kullanıcı doğrudan arkadaşlar/feed sekmesine düştüğünde efekt bir kez
+    // currentUser=null ile koşar ve liste HİÇ yüklenmezdi.
+  }, [activeTab, currentUser])
 
   const fetchLeaderboard = async () => {
     setLoading(true)
