@@ -39,7 +39,14 @@ async function doRefresh(realm: Realm = 'user'): Promise<string | null> {
     const res = await fetch(`${API_URL}${a.uc}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) })
     if (!res.ok) return null
     const data = await res.json()
-    if (data?.token) { localStorage.setItem(a.access, data.token); return data.token }
+    if (data?.token) {
+      localStorage.setItem(a.access, data.token)
+      // DÖNDÜRME (#30): sunucu her yenilemede YENİ bir refresh jetonu verir ve eskisini iptal eder.
+      // Bunu saklamazsak bir sonraki yenilemede eski jetonu göndeririz; sunucu bunu ÇALINMIŞ
+      // jeton replay'i sayar ve o oturum zincirini tamamen kapatır → kullanıcı dışarı atılır.
+      if (data.refreshToken) localStorage.setItem(a.refresh, data.refreshToken)
+      return data.token
+    }
     return null
   } catch { return null }
 }
