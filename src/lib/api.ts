@@ -21,7 +21,32 @@ const REALM_AYAR: Record<Realm, { access: string; refresh: string; uc: string; g
   instructor: { access: 'fitpass_instructor_token', refresh: 'fitpass_instructor_refresh', uc: '/api/instructor/refresh', giris: '/egitmen-giris' },
 }
 
-/** İsteğin hangi realm'e ait olduğunu URL yolundan çıkar. */
+/**
+ * İsteğin hangi realm'e ait olduğunu ÖNCE JETONDAN, olmazsa URL'den çıkar.
+ *
+ * URL TEK BAŞINA YETMİYOR: salon paneli check-in'i `/api/bookings/checkin`, yorum yanıtını
+ * `/api/reviews/:id/reply` uçlarına SALON jetonuyla atıyor. Yalnız yola bakan bir tespit
+ * bunları "kullanıcı" sayıyor, yanlış anahtarla yenilemeye çalışıyor ve başarısız olunca
+ * salon görevlisini üye giriş sayfasına atıyordu (üstelik salonun kendi oturumu sağlamken).
+ * Jetonun kendi payload'ı bu soruyu kesin yanıtlıyor — imza doğrulaması gerekmez, yalnızca
+ * "hangi anahtarla yenileyeyim" sorusuna cevap arıyoruz; jetonu zaten sunucu doğruluyor.
+ */
+function realmOfToken(auth?: string): Realm | null {
+  const t = auth?.replace(/^Bearer\s+/i, '').trim()
+  if (!t) return null
+  try {
+    const g = t.split('.')[1]
+    if (!g) return null
+    const json = atob(g.replace(/-/g, '+').replace(/_/g, '/'))
+    const p = JSON.parse(json)
+    if (p?.venueId) return 'venue'
+    if (p?.instructorId) return 'instructor'
+    if (p?.userId) return 'user'
+  } catch { /* bozuk/atipik jeton → URL'ye düş */ }
+  return null
+}
+
+/** Son çare: yol tabanlı tahmin (jeton okunamadığında). */
 function realmOf(url: string): Realm {
   if (url.includes('/api/venue/')) return 'venue'
   if (url.includes('/api/instructor/')) return 'instructor'
@@ -123,7 +148,7 @@ export function installAuthFetch() {
     if (res.status !== 401) return res
 
     // Access token süresi dolmuş olabilir → o REALM için tek bir paylaşılan yenileme, sonra TEK tekrar deneme.
-    const realm = realmOf(url)
+    const realm = realmOfToken(headers.Authorization || headers.authorization) ?? realmOf(url)
     if (!refreshPromises[realm]) refreshPromises[realm] = doRefresh(realm).finally(() => { refreshPromises[realm] = null })
     const newToken = await refreshPromises[realm]
     if (!newToken) { endSession(realm); return res }
