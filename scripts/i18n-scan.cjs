@@ -146,7 +146,13 @@ function scanFile(abs, rel) {
       // raw2: satır sonu yorumu AYIKLANMIŞ hâli. Eskiden ham `raw` kullanılıyordu, bu yüzden
       // kodun arkasındaki Türkçe yorum "tek başına duran JSX metni" sanılıyordu.
       const bare = raw2.replace(/\{[^{}]*\}/g, '').trim()
-      if (bare && !/[<>=`'"]/.test(bare) && !/^[0-9.,%₺$+\-*/ ]+$/.test(bare) && isTurkish(bare)) {
+      // KOD NOKTALAMASI DIŞLANIR. Bu proje TÜRKÇE DEĞİŞKEN ADI kullanıyor (kalan, hata, kod…),
+      // bu yüzden `}, [kalan])` ya da `{hata && (` gibi saf kod satırları "çevrilmemiş metin"
+      // sanılıyordu — tarayıcı sahte kırmızı veriyordu. JSX metin düğümünde süslü/köşeli parantez,
+      // noktalı virgül, & veya | pratikte bulunmaz; normal parantez ise metinde geçebildiği için
+      // ("Ders (60 dk)") BİLEREK dışlanmıyor.
+      const kodNoktalama = /[<>=`'"{}[\];&|]/.test(bare) || /=>/.test(bare)
+      if (bare && !kodNoktalama && !/^[0-9.,%₺$+\-*/ ]+$/.test(bare) && isTurkish(bare)) {
         findings.push({ rel, line: i + 1, kind: 'JSX', text: bare })
       }
     }

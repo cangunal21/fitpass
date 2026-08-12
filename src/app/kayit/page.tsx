@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { api, saveToken, saveUser, saveRefreshToken } from '@/lib/api'
 import { AlertCircle, Gift } from 'lucide-react'
 import { useT } from '@/lib/i18n'
+import DogrulamaKodu from '@/components/DogrulamaKodu'
 
 function KayitForm() {
   const router = useRouter()
@@ -19,6 +20,11 @@ function KayitForm() {
   }, [searchParams])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  // KAYIT İKİ ADIMLI. Hesap açılır ama DOĞRULANMAMIŞ olur: kod girilene kadar rezervasyon,
+  // yorum ve sosyal yazma uçları 403 döner (backend middlewares/requireVerified.ts).
+  // Jetonu bu adımda zaten saklıyoruz — kod ucu jetonla korunuyor ve kullanıcı "kodu tekrar
+  // gönder" diyebilmeli. Yarım kalan kayıt, girişte kod ekranına düşer.
+  const [dogrulama, setDogrulama] = useState<{ token: string; email: string } | null>(null)
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([])
   const [neighborhoods, setNeighborhoods] = useState<{ id: number; name: string }[]>([])
   const [selectedSports, setSelectedSports] = useState<string[]>([])
@@ -61,6 +67,12 @@ function KayitForm() {
       saveToken(res.token)
       saveRefreshToken(res.refreshToken)
       saveUser(res.user)
+
+      if (res.requiresEmailVerification) {
+        setDogrulama({ token: res.token, email: form.email })
+        setLoading(false)
+        return
+      }
       router.push('/')
     } catch {
       setError(t('common.connectionError'))
@@ -91,6 +103,14 @@ function KayitForm() {
 
       {/* Sağ panel */}
       <div className="split-right" style={{ width: 520, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '60px 48px', backgroundColor: '#fff', overflowY: 'auto' }}>
+        {dogrulama ? (
+          <DogrulamaKodu
+            token={dogrulama.token}
+            email={dogrulama.email}
+            onBasarili={() => router.push('/')}
+          />
+        ) : (
+        <>
         <div style={{ marginBottom: 32 }}>
           <h1 style={{ fontSize: 28, fontWeight: 800, color: '#111', marginBottom: 8 }}>{t('register.title')}</h1>
           <p style={{ fontSize: 15, color: '#888' }}>{t('register.subtitle2')}</p>
@@ -191,6 +211,8 @@ function KayitForm() {
             {t('login.venueOwner')}
           </Link>
         </div>
+        </>
+        )}
       </div>
     </div>
   )

@@ -223,6 +223,11 @@ export const api = {
   resendVerification: (token: string) =>
     request('/api/auth/resend-verification', { method: 'POST', headers: jsonHeaders(token) }),
 
+  // Kayıt akışının ikinci adımı: e-postaya giden 6 haneli kod. Jetonla korunuyor (kullanıcı
+  // kendi hesabını doğruluyor), bu yüzden gövdede e-posta taşınmıyor.
+  verifyCode: (token: string, code: string) =>
+    request('/api/auth/verify-code', { method: 'POST', headers: jsonHeaders(token), body: JSON.stringify({ code }) }),
+
   changePassword: (token: string, data: { currentPassword: string; newPassword: string }) =>
     request('/api/auth/change-password', { method: 'PUT', headers: jsonHeaders(token), body: JSON.stringify(data) }),
 

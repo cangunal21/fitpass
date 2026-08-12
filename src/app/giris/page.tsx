@@ -32,6 +32,9 @@ function GirisForm() {
       saveToken(res.token)
       saveRefreshToken(res.refreshToken)
       saveUser(res.user)
+      // Kayıt yarım kalmışsa (kod hiç girilmemiş) doğrulama ekranına götür. Aksi halde kullanıcı
+      // içeri girer ama rezervasyon/yorum denediğinde sebebini anlamadan 403 alır.
+      if (res.requiresEmailVerification) { router.push('/dogrula'); return }
       // Open-redirect önlemi: yalnızca site-içi mutlak yolu kabul et. '//evil.com' ve '/\evil'
       // tarayıcıda çapraz-origin çözülür; tek '/' ile başlayıp ardından '/' veya '\' gelmeyen değere izin ver.
       const raw = searchParams.get('redirect')
