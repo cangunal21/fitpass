@@ -144,6 +144,7 @@ export default function SalonPaneliPage() {
   // kayboldu" saniyordu. Bu yardimci token'i temizleyip giris'e atar; her sekme fetch'i res.status 401'de cagirir.
   const venueSessionExpired = () => {
     localStorage.removeItem('fitpass_venue_token')
+    localStorage.removeItem('fitpass_venue_refresh') // yenileme jetonu da gitmeli, yoksa ölü oturum kalır
     router.push('/salon-giris')
   }
 
@@ -471,8 +472,19 @@ export default function SalonPaneliPage() {
     setTimeout(() => setInstructorSuccess(''), 4000)
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // ÇIKIŞ SUNUCUYA DA SÖYLENİR: refresh jetonu iptal edilmezse 180 gün geçerli kalır ve
+    // "çıkış" yalnızca istemcide token silme tiyatrosu olur (#30).
+    const rt = localStorage.getItem('fitpass_venue_refresh')
+    if (rt) {
+      try {
+        await fetch(`${API_URL}/api/venue/logout`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }),
+        })
+      } catch { /* ağ hatası çıkışı engellemesin */ }
+    }
     localStorage.removeItem('fitpass_venue_token')
+    localStorage.removeItem('fitpass_venue_refresh')
     localStorage.removeItem('fitpass_venue')
     router.push('/salon-giris')
   }

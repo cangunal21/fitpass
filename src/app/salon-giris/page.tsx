@@ -51,6 +51,8 @@ export default function SalonGirisPage() {
       const data = await res.json()
       if (data.error) { setError(data.error); setLoading(false); return }
       localStorage.setItem('fitpass_venue_token', data.token)
+      // Access token 1 saat (#30) → refresh jetonu saklanmazsa panel saat başı çıkış yapar.
+      if (data.refreshToken) localStorage.setItem('fitpass_venue_refresh', data.refreshToken)
       localStorage.setItem('fitpass_venue', JSON.stringify(data.venue))
       router.push('/salon-paneli')
     } catch {
@@ -109,6 +111,8 @@ export default function SalonGirisPage() {
       const data = await res.json()
       if (data.error) { setError(data.error); setLoading(false); return }
       localStorage.setItem('fitpass_venue_token', data.token)
+      // Access token 1 saat (#30) → refresh jetonu saklanmazsa panel saat başı çıkış yapar.
+      if (data.refreshToken) localStorage.setItem('fitpass_venue_refresh', data.refreshToken)
       localStorage.setItem('fitpass_venue', JSON.stringify(data.venue))
       router.push('/salon-paneli')
     } catch {

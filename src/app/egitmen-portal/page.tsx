@@ -68,7 +68,7 @@ export default function EgitmenPortalPage() {
     if (!token) { router.push('/egitmen-giris'); return }
     ;(async () => {
       const r = await fetch(`${API_URL}/api/instructor/me`, { headers: authHeaders }).then(x => x.json()).catch(() => null)
-      if (!r || r.error || !r.instructor) { localStorage.removeItem('fitpass_instructor_token'); router.push('/egitmen-giris'); return }
+      if (!r || r.error || !r.instructor) { localStorage.removeItem('fitpass_instructor_token'); localStorage.removeItem('fitpass_instructor_refresh'); router.push('/egitmen-giris'); return }
       applyMe(r.instructor)
       fetch(`${API_URL}/api/public/categories`).then(x => x.json()).then(d => { if (Array.isArray(d?.categories)) setCategories(d.categories.map((c: any) => c.name)) }).catch(() => {})
       await Promise.all([loadReviews(), loadClasses()])
@@ -77,7 +77,21 @@ export default function EgitmenPortalPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const logout = () => { localStorage.removeItem('fitpass_instructor_token'); localStorage.removeItem('fitpass_instructor'); router.push('/egitmen-giris') }
+  // Çıkış sunucuya da söylenir: refresh jetonu iptal edilmezse 180 gün geçerli kalır (#30).
+  const logout = async () => {
+    const rt = localStorage.getItem('fitpass_instructor_refresh')
+    if (rt) {
+      try {
+        await fetch(`${API_URL}/api/instructor/logout`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }),
+        })
+      } catch { /* ağ hatası çıkışı engellemesin */ }
+    }
+    localStorage.removeItem('fitpass_instructor_token')
+    localStorage.removeItem('fitpass_instructor_refresh')
+    localStorage.removeItem('fitpass_instructor')
+    router.push('/egitmen-giris')
+  }
   const toggleSpec = (s: string) => setPSpecs(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])
 
   const putMe = async (body: any) => fetch(`${API_URL}/api/instructor/me`, { method: 'PUT', headers: jsonAuth, body: JSON.stringify(body) }).then(x => x.json())

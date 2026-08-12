@@ -28,6 +28,8 @@ export default function EgitmenGirisPage() {
       const data = await res.json()
       if (data.error) { setError(data.error); setLoading(false); return }
       localStorage.setItem('fitpass_instructor_token', data.token)
+      // Access token 1 saat (#30) → refresh jetonu saklanmazsa panel saat başı çıkış yapar.
+      if (data.refreshToken) localStorage.setItem('fitpass_instructor_refresh', data.refreshToken)
       localStorage.setItem('fitpass_instructor', JSON.stringify(data.instructor))
       router.push('/egitmen-portal')
     } catch {

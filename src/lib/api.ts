@@ -6,17 +6,40 @@ const DEFAULT_TIMEOUT = 15000
 // ASLA exception fırlatmaz → çağıran sayfalar offline/timeout/502'de çökmez,
 // tutarlı `{ error }` alır. (Çöp yığını whack-a-mole yerine oturan sistem.)
 // Sessiz yenileme: access token 401 dönünce refresh token ile yenisini al.
-// Eşzamanlı 401'ler tek bir refresh çağrısını paylaşır (refreshPromise).
-let refreshPromise: Promise<string | null> | null = null
-async function doRefresh(): Promise<string | null> {
+// Eşzamanlı 401'ler realm BAŞINA tek bir refresh çağrısını paylaşır.
+//
+// REALM-DUYARLI (#30): eskiden tek bir yol vardı — hep `fitpass_refresh` + /api/auth/refresh,
+// hata olunca da ÜYE oturumu kapatılırdı. Salon/eğitmen panelinde 401 alınınca yanlış realm'in
+// jetonuyla yenileme deneniyor, sonra ÜYE oturumu siliniyor ve kullanıcı üye giriş sayfasına
+// atılıyordu. Panel token'ları 1 saate indiği için (eskiden 7 gün) bu yol artık SÜREKLİ
+// kullanılıyor; realm ayrımı olmadan salonlar saat başı dışarı atılırdı.
+type Realm = 'user' | 'venue' | 'instructor'
+
+const REALM_AYAR: Record<Realm, { access: string; refresh: string; uc: string; giris: string }> = {
+  user:       { access: 'fitpass_token',            refresh: 'fitpass_refresh',            uc: '/api/auth/refresh',       giris: '/giris' },
+  venue:      { access: 'fitpass_venue_token',      refresh: 'fitpass_venue_refresh',      uc: '/api/venue/refresh',      giris: '/salon-giris' },
+  instructor: { access: 'fitpass_instructor_token', refresh: 'fitpass_instructor_refresh', uc: '/api/instructor/refresh', giris: '/egitmen-giris' },
+}
+
+/** İsteğin hangi realm'e ait olduğunu URL yolundan çıkar. */
+function realmOf(url: string): Realm {
+  if (url.includes('/api/venue/')) return 'venue'
+  if (url.includes('/api/instructor/')) return 'instructor'
+  return 'user'
+}
+
+const refreshPromises: Partial<Record<Realm, Promise<string | null> | null>> = {}
+
+async function doRefresh(realm: Realm = 'user'): Promise<string | null> {
   if (typeof window === 'undefined') return null
-  const rt = localStorage.getItem('fitpass_refresh')
+  const a = REALM_AYAR[realm]
+  const rt = localStorage.getItem(a.refresh)
   if (!rt) return null
   try {
-    const res = await fetch(`${API_URL}/api/auth/refresh`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) })
+    const res = await fetch(`${API_URL}${a.uc}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) })
     if (!res.ok) return null
     const data = await res.json()
-    if (data?.token) { localStorage.setItem('fitpass_token', data.token); return data.token }
+    if (data?.token) { localStorage.setItem(a.access, data.token); return data.token }
     return null
   } catch { return null }
 }
@@ -41,15 +64,18 @@ function localeHeader(existing?: HeadersInit): Record<string, string> {
   } catch { return {} }
 }
 
-// Oturum gerçekten bittiğinde: yerel oturumu temizle + girişe yönlendir.
-function endSession() {
+// Oturum gerçekten bittiğinde: O REALM'in yerel oturumunu temizle + kendi giriş sayfasına yönlendir.
+// Eskiden hangi realm'de olursak olalım ÜYE oturumu siliniyor ve /giris'e atılıyordu.
+function endSession(realm: Realm = 'user') {
   if (typeof window === 'undefined') return
   const p = window.location.pathname
-  if (p.startsWith('/giris') || p.startsWith('/kayit') || p.startsWith('/salon') || p.startsWith('/admin')) return
-  localStorage.removeItem('fitpass_token')
-  localStorage.removeItem('fitpass_user')
-  localStorage.removeItem('fitpass_refresh')
-  window.location.href = '/giris?expired=1'
+  const a = REALM_AYAR[realm]
+  // Zaten ilgili giriş/kayıt sayfasındaysak yönlendirme döngüsü kurma.
+  if (p.startsWith(a.giris) || p.startsWith('/kayit') || p.startsWith('/admin')) return
+  localStorage.removeItem(a.access)
+  localStorage.removeItem(a.refresh)
+  if (realm === 'user') localStorage.removeItem('fitpass_user')
+  window.location.href = `${a.giris}?expired=1`
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -78,7 +104,7 @@ export function installAuthFetch() {
     const headers = (init?.headers || {}) as Record<string, string>
     const isOurApi = typeof url === 'string' && url.startsWith(API_URL)
     const hasAuth = !!(headers.Authorization || headers.authorization)
-    const isRefresh = typeof url === 'string' && url.includes('/api/auth/refresh')
+    const isRefresh = typeof url === 'string' && /\/api\/(auth|venue|instructor)\/refresh/.test(url)
     // Request nesnesiyle çağrılan (nadir) istekleri ellemeyiz: header'ını güvenle yeniden yazamayız.
     const plain = typeof input === 'string' || input instanceof URL
 
@@ -89,10 +115,11 @@ export function installAuthFetch() {
     const res = await native(input as any, init)
     if (res.status !== 401) return res
 
-    // Access token süresi dolmuş olabilir → tek bir paylaşılan yenileme, sonra TEK tekrar deneme.
-    if (!refreshPromise) refreshPromise = doRefresh().finally(() => { refreshPromise = null })
-    const newToken = await refreshPromise
-    if (!newToken) { endSession(); return res }
+    // Access token süresi dolmuş olabilir → o REALM için tek bir paylaşılan yenileme, sonra TEK tekrar deneme.
+    const realm = realmOf(url)
+    if (!refreshPromises[realm]) refreshPromises[realm] = doRefresh(realm).finally(() => { refreshPromises[realm] = null })
+    const newToken = await refreshPromises[realm]
+    if (!newToken) { endSession(realm); return res }
 
     // Tekrar deneme YAMALI fetch'i değil `native`'i çağırır → yama hiç yeniden girilmez,
     // sonsuz döngü imkânsız (işaretçi başlığa gerek yok, sunucuya çöp başlık gitmez).
