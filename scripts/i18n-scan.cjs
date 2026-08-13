@@ -127,7 +127,14 @@ function scanFile(abs, rel) {
     // (a) JSX metin düğümleri:  >  metin  <  (ortada {ifade} olabilir: "({n} değerlendirme)")
     for (const m of line.matchAll(/>([^<]*)</g)) {
       const txt = m[1].replace(/\{[^{}]*\}/g, '').trim()   // gömülü {ifade}'leri çıkar
-      if (isTurkish(txt)) findings.push({ rel, line: i + 1, kind: 'JSX', text: txt })
+      // KARŞILAŞTIRMA OPERATÖRÜ JSX ETİKETİ DEĞİLDİR. `gun >= 1 && gun <= n` ifadesinde `>` ve
+      // `<` işaretleri bu desene takılıyor ve aradaki "= 1 && gun" metin düğümü sanılıyordu —
+      // proje Türkçe değişken adı kullandığı için de "çevrilmemiş metin" diye raporlanıyordu.
+      // GERÇEK OLAY: bu yanlış pozitif mobil CI'ı 11 Ağustos'tan beri kırmızı tuttu.
+      // Gerçek bir JSX metninde `=`, `&&`, `||` ya da `;` bulunmaz; tek `&` (Şartlar & Koşullar)
+      // BİLEREK dışlanmıyor.
+      const operator = /[=;]|&&|\|\|/.test(txt)
+      if (!operator && isTurkish(txt)) findings.push({ rel, line: i + 1, kind: 'JSX', text: txt })
     }
     // Kenar JSX metinleri kod-noktalama içermez (TS generic'leri <T>('x') vb. elemek için)
     const isProse = (txt) => isTurkish(txt) && !/[()[\]'"=;|`]/.test(txt)
