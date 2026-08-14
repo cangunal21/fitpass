@@ -2,7 +2,7 @@
 // Eskiden bu üç metin SABİT TÜRKÇE idi; EN kullanıcısı offline/timeout durumunda Türkçe görüyordu.
 import { tSync } from './i18n'
 // API SÖZLEŞMESİ — üç repoda birebir aynı dosya (bkz. scripts/tip-damgasi.cjs).
-import type { ApiResult, SessionListResponse, SessionDetailResponse, ForYouResponse, VenueReviewsResponse, FavoritesResponse } from '@/types/api'
+import type { ApiResult, SessionListResponse, SessionDetailResponse, ForYouResponse, VenueReviewsResponse, FavoritesResponse, VenueListResponse, VenueDetailResponse, MyBookingsResponse, WaitlistStatusResponse, WaitlistActionResponse } from '@/types/api'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
@@ -213,7 +213,7 @@ export const api = {
     request('/api/auth/me', { headers: authHeaders(token) }),
 
   getMyBookings: (token: string) =>
-    request('/api/bookings/my', { headers: authHeaders(token) }),
+    request<ApiResult<MyBookingsResponse>>('/api/bookings/my', { headers: authHeaders(token) }),
 
   // Puanlanmayı bekleyen dersler (katıldı + bitti + puansız) → puanlama modalını besler
   getPendingReviews: (token: string) =>
@@ -240,13 +240,13 @@ export const api = {
   // listede olduğunu göremediği için butona tekrar basınca "Zaten bekleme listesindesiniz."
   // hatası alıyordu. Mobilde üçü de çalışıyordu.
   joinWaitlist: (token: string, sessionId: number) =>
-    request(`/api/waitlist/sessions/${sessionId}`, { method: 'POST', headers: authHeaders(token) }),
+    request<ApiResult<WaitlistActionResponse>>(`/api/waitlist/sessions/${sessionId}`, { method: 'POST', headers: authHeaders(token) }),
 
   leaveWaitlist: (token: string, sessionId: number) =>
-    request(`/api/waitlist/sessions/${sessionId}`, { method: 'DELETE', headers: authHeaders(token) }),
+    request<ApiResult<WaitlistActionResponse>>(`/api/waitlist/sessions/${sessionId}`, { method: 'DELETE', headers: authHeaders(token) }),
 
   getWaitlistStatus: (token: string, sessionId: number) =>
-    request(`/api/waitlist/sessions/${sessionId}/status`, { headers: authHeaders(token) }),
+    request<ApiResult<WaitlistStatusResponse>>(`/api/waitlist/sessions/${sessionId}/status`, { headers: authHeaders(token) }),
 
   resendVerification: (token: string) =>
     request('/api/auth/resend-verification', { method: 'POST', headers: jsonHeaders(token) }),
@@ -287,10 +287,10 @@ export const api = {
     request<ApiResult<FavoritesResponse>>(`/api/favorites/user/${encodeURIComponent(username)}`),
 
   getVenues: () =>
-    request('/api/public/venues'),
+    request<ApiResult<VenueListResponse>>('/api/public/venues'),
 
   getVenueById: (id: number) =>
-    request(`/api/public/venues/${id}`),
+    request<ApiResult<VenueDetailResponse>>(`/api/public/venues/${id}`),
 
   getCategories: () =>
     request('/api/public/categories'),

@@ -77,6 +77,11 @@ export default function DersDetay() {
   // göremediği için ana sayfadaki butona tekrar basınca "Zaten bekleme listesindesiniz." hatası
   // alıyordu. Backend üç ucu da sunuyor, mobil üçünü de kullanıyordu.
   const [listede, setListede] = useState(false)
+  // SIRADAKİ YER: sunucu bunu her durum sorgusunda İKİ COUNT ile hesaplayıp gönderiyordu ama
+  // hiçbir istemci çizmiyordu — hesap boşa gidiyor, kullanıcı da "sıram ne?" sorusunun
+  // cevabını göremiyordu. `position` KENDİ sıran (1 = en önde), `totalWaiting` TOPLAM kişi;
+  // ikisi bir dönem karışmıştı (5 kişi varken 2. kişiye de "5" deniyordu).
+  const [sira, setSira] = useState<{ position: number | null; totalWaiting: number } | null>(null)
   const [listeYukleniyor, setListeYukleniyor] = useState(false)
   const [listeHata, setListeHata] = useState('')
 
@@ -113,6 +118,7 @@ export default function DersDetay() {
     // Yutulursa buton hiçbir şey yapmıyormuş gibi görünür.
     if (r?.error) { setListeHata(r.error); return }
     setListede(!listede)
+    setSira(null) // katılma/çıkma sonrası sıra bilgisi bayatlar; bir sonraki durum sorgusu tazeler
   }
 
   // Zaten listede miyim? Bilinmezse kullanıcı "Katıl"a basıp hata alıyordu.
@@ -120,7 +126,10 @@ export default function DersDetay() {
     const token = getToken()
     if (!token || !cls?.isRealSession) return
     api.getWaitlistStatus(token, Number(params.id))
-      .then(r => setListede(!!r?.onWaitlist))
+      .then(r => {
+        setListede(!!r?.onWaitlist)
+        setSira(r?.onWaitlist && typeof r.totalWaiting === 'number' ? { position: r.position ?? null, totalWaiting: r.totalWaiting } : null)
+      })
       .catch(() => { /* durum bilinmiyorsa buton "Katıl" kalır; sunucu yine de doğru davranır */ })
   }, [params.id, cls?.isRealSession])
 
@@ -336,7 +345,11 @@ export default function DersDetay() {
                     <p style={{ textAlign: 'center', fontSize: 13, color: '#DC2626', marginBottom: 10 }}>{listeHata}</p>
                   )}
                   <p style={{ textAlign: 'center', fontSize: 12, color: '#999', marginBottom: 14 }}>
-                    {listede ? t('cls.waitlistOn') : t('cls.waitlistHint')}
+                    {listede
+                      ? (sira?.position
+                          ? t('cls.waitlistPos').replace('{n}', String(sira.position)).replace('{t}', String(sira.totalWaiting))
+                          : t('cls.waitlistOn'))
+                      : t('cls.waitlistHint')}
                   </p>
                 </>
               ) : (

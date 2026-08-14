@@ -12,6 +12,7 @@ import { MapPin, Calendar, User, Star, Clock, Timer, Flame, Bookmark, BadgeCheck
 import { SportIconBox, resolveCategoryColor, resolveCategoryIcon } from '@/lib/sportIcons'
 import { api } from '@/lib/api'
 import { SkeletonVenuePage } from '@/components/Skeleton'
+import type { VenueClass } from '@/types/api'
 
 export default function VenuePage() {
   const { t, lang } = useT()
@@ -120,6 +121,11 @@ export default function VenuePage() {
     ? mockInstructors.filter((i: any) => (mockVenues.find(v => v.id === id) || mockVenues[0]).instructorIds?.includes(i.id))
     : (venue.instructors ?? [])
   const sportCategories: any[] = isMock ? [] : (venue.sportCategories ?? [])
+  // GERÇEK dersler AYRI ve TİPLİ. `classes` yukarıda mock ile gerçek şekli birleştiren bir
+  // birleşim; mock ders kartları farklı alanlar taşıyor (icon/color/time/spots) ve ayrı
+  // çiziliyor. Sunucudan gelen dallarda sözleşme tipini kullanmak, `sessions[0].id` ve
+  // `spotsLeft` gibi tuzaklı alanların yanlış okunmasını derleyiciye yakalatır.
+  const gercekDersler: VenueClass[] = isMock ? [] : (venue.classes ?? [])
 
   // Hero color — use first sport category color or fallback
   const heroColor = isMock
@@ -360,8 +366,8 @@ export default function VenuePage() {
                 </Link>
               ))
             ) : (
-              // Real class cards
-              classes.map((cls: any) => {
+              // Real class cards — SÖZLEŞME TİPLİ (bkz. gercekDersler)
+              gercekDersler.map((cls) => {
                 const cat = cls.sportCategory
                 const color = resolveCategoryColor(cat?.colorHex, cat?.name)
                 const iconName = resolveCategoryIcon(cat?.iconUrl, cat?.name)
