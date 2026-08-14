@@ -47,6 +47,12 @@ jobs:
       # hatalarının hepsi (kalan-yer, saat dilimi, rozet, hata gösterimi) tam bu boşluktaydı.
       # API mock'lanır: gerçek backend/DB gerekmez, testler deterministiktir ve doğru katmanı
       # (istemcinin sunucudan geleni yorumlaması) sınar.
+      # BİRİM TESTLERİ (Vitest) — web'de HİÇ birim testi koşucusu yoktu, yalnız Playwright vardı.
+      # Realm-duyarlı jeton yenileme saf TypeScript ve İKİ KEZ gerçekten bozuldu; mobil ikizinde
+      # regresyon testi varken web'de yoktu. e2e ile çakışmaz (vitest e2e/ klasörünü hariç tutar).
+      - name: birim testleri (vitest)
+        run: npm test
+
       - name: Playwright tarayıcısı
         run: npx playwright install --with-deps chromium
 

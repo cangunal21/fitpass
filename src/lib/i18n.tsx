@@ -7,6 +7,9 @@ export type Lang = 'tr' | 'en'
 // Çeviri sözlüğü. Yeni metinler eklendikçe iki dile de eklenir.
 const dict: Record<Lang, Record<string, string>> = {
   tr: {
+    'net.unreachable': 'Sunucuya ulaşılamadı. Lütfen tekrar dene.',
+    'net.timeout': 'İstek zaman aşımına uğradı. Bağlantını kontrol et.',
+    'net.offline': 'Bağlantı hatası. İnternetini kontrol et.',
     'errorBoundary.title': 'Bir şeyler ters gitti',
     'errorBoundary.sub': 'Beklenmedik bir hata oluştu. Lütfen tekrar dene.',
     'errorBoundary.retry': 'Tekrar dene',
@@ -516,6 +519,9 @@ const dict: Record<Lang, Record<string, string>> = {
     'comp.namePlaceholder': 'Can Günal',
   },
   en: {
+    'net.unreachable': 'Cannot reach the server. Please try again.',
+    'net.timeout': 'Request timed out. Check your connection.',
+    'net.offline': 'Connection error. Check your internet.',
     'errorBoundary.title': 'Something went wrong',
     'errorBoundary.sub': 'An unexpected error occurred. Please try again.',
     'errorBoundary.retry': 'Try again',
@@ -1102,6 +1108,24 @@ export function translateBadge(ub: any, lang: Lang): string {
 }
 
 interface LangCtx { lang: Lang; setLang: (l: Lang) => void; t: (key: string) => string }
+/**
+ * REACT AĞACI DIŞINDAN ÇEVİRİ — `lib/api.ts` gibi hook kullanamayan modüller için.
+ * Bunlar olmadan taşıma-katmanı hata metinleri SABİT TÜRKÇE kalıyordu: dili İngilizce olan
+ * kullanıcı zaman aşımı/çevrimdışı/502 durumunda tamamen İngilizce arayüzün ortasında Türkçe
+ * hata görüyordu — en görünür yeri giriş ekranı. Mobil ikizinde bu zaten çözülmüştü.
+ * Dil localStorage'dan okunur (LanguageProvider onu kalıcı yazıyor).
+ */
+export function getLangSync(): Lang {
+  try {
+    const stored = typeof window !== 'undefined' ? localStorage.getItem('fitpass_lang') : null
+    return stored === 'en' ? 'en' : 'tr'
+  } catch { return 'tr' }
+}
+export function tSync(key: string): string {
+  const l = getLangSync()
+  return dict[l][key] ?? dict.tr[key] ?? key
+}
+
 const LanguageContext = createContext<LangCtx>({ lang: 'tr', setLang: () => {}, t: (k) => k })
 
 export function LanguageProvider({ children }: { children: ReactNode }) {

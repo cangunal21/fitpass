@@ -578,11 +578,16 @@ export default function ProfilPage() {
               </button>
             )}
 
+            {/* Math.max(0, …): seviye adı istemcideki sabit listede bulunmayan bir değere denk
+                gelirse (i18n sözlüğünde tanımlı ama listede olmayan 'Atlet'/'Şampiyon' ya da DB'de
+                eklenmiş yeni bir seviye) currentTierIndex -1 kalıyor, bir sonraki seviyenin eşiği
+                kullanıcının ders sayısının ALTINDA çıkıyor ve "-12 ders kaldı" gibi negatif bir
+                metin görünüyordu. Mobil ikizinde bu koruma vardı, web'e taşınmamıştı. */}
             {nextTier ? (
               <div style={{ backgroundColor: '#FAFAFA', borderRadius: 14, padding: '14px 18px', marginBottom: 16, border: '1px solid #F0F0F0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                   <span style={{ fontSize: 13, color: '#555', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}><SportIcon name={displayTierIcon} size={13} color={displayTierColor} /> {tierLabel}</span>
-                  <span style={{ fontSize: 12, color: '#999' }}>{t('prof.lessonsToNext').replace('{n}', String(nextTier.min - displayTotalLessons))}<strong style={{ color: '#111' }}>{translateTier(nextTier.name, lang)}</strong></span>
+                  <span style={{ fontSize: 12, color: '#999' }}>{t('prof.lessonsToNext').replace('{n}', String(Math.max(0, nextTier.min - displayTotalLessons)))}<strong style={{ color: '#111' }}>{translateTier(nextTier.name, lang)}</strong></span>
                 </div>
                 <div style={{ height: 6, backgroundColor: '#EBEBEB', borderRadius: 100 }}>
                   <div style={{ height: '100%', backgroundColor: displayTierColor, borderRadius: 100, width: `${progressPercent}%`, transition: 'width 0.5s ease' }} />

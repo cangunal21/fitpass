@@ -1,3 +1,7 @@
+// Taşıma-katmanı hataları React dışında üretiliyor (useT yok) → sözlüğü doğrudan oku.
+// Eskiden bu üç metin SABİT TÜRKÇE idi; EN kullanıcısı offline/timeout durumunda Türkçe görüyordu.
+import { tSync } from './i18n'
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
 const DEFAULT_TIMEOUT = 15000
@@ -15,10 +19,10 @@ const DEFAULT_TIMEOUT = 15000
 // kullanılıyor; realm ayrımı olmadan salonlar saat başı dışarı atılırdı.
 type Realm = 'user' | 'venue' | 'instructor'
 
-const REALM_AYAR: Record<Realm, { access: string; refresh: string; uc: string; giris: string }> = {
-  user:       { access: 'fitpass_token',            refresh: 'fitpass_refresh',            uc: '/api/auth/refresh',       giris: '/giris' },
-  venue:      { access: 'fitpass_venue_token',      refresh: 'fitpass_venue_refresh',      uc: '/api/venue/refresh',      giris: '/salon-giris' },
-  instructor: { access: 'fitpass_instructor_token', refresh: 'fitpass_instructor_refresh', uc: '/api/instructor/refresh', giris: '/egitmen-giris' },
+const REALM_AYAR: Record<Realm, { access: string; refresh: string; profil: string; uc: string; giris: string }> = {
+  user:       { access: 'fitpass_token',            refresh: 'fitpass_refresh',            profil: 'fitpass_user',       uc: '/api/auth/refresh',       giris: '/giris' },
+  venue:      { access: 'fitpass_venue_token',      refresh: 'fitpass_venue_refresh',      profil: 'fitpass_venue',      uc: '/api/venue/refresh',      giris: '/salon-giris' },
+  instructor: { access: 'fitpass_instructor_token', refresh: 'fitpass_instructor_refresh', profil: 'fitpass_instructor', uc: '/api/instructor/refresh', giris: '/egitmen-giris' },
 }
 
 /**
@@ -106,7 +110,11 @@ function endSession(realm: Realm = 'user') {
   if (p.startsWith(a.giris) || p.startsWith('/kayit') || p.startsWith('/admin')) return
   localStorage.removeItem(a.access)
   localStorage.removeItem(a.refresh)
-  if (realm === 'user') localStorage.removeItem('fitpass_user')
+  // HESAP NESNESİ DE SİLİNİR. Eskiden yalnız üye realm'inde (`fitpass_user`) siliniyordu;
+  // salon/eğitmen zorla çıkarıldığında `fitpass_venue` / `fitpass_instructor` diskte KALIYORDU.
+  // İçinde hesabın E-POSTASI da var (backend girişte {id,name,email,isApproved} döndürüyor),
+  // yani ortak/ödünç bir bilgisayarda oturum kapandıktan sonra bile okunabilir kalıyordu.
+  localStorage.removeItem(a.profil)
   window.location.href = `${a.giris}?expired=1`
 }
 
@@ -173,10 +181,10 @@ export async function request(path: string, opts: RequestInit = {}, timeoutMs = 
     let body: any = null
     if (text) { try { body = JSON.parse(text) } catch { body = null } }
     if (body !== null && typeof body === 'object') return body
-    return { error: res.ok ? null : 'Sunucuya ulaşılamadı. Lütfen tekrar dene.' }
+    return { error: res.ok ? null : tSync('net.unreachable') }
   } catch (e: any) {
-    if (e?.name === 'AbortError') return { error: 'İstek zaman aşımına uğradı. Bağlantını kontrol et.' }
-    return { error: 'Bağlantı hatası. İnternetini kontrol et.' }
+    if (e?.name === 'AbortError') return { error: tSync('net.timeout') }
+    return { error: tSync('net.offline') }
   } finally {
     clearTimeout(timer)
   }
@@ -276,7 +284,7 @@ export const api = {
     request(`/api/public/dropin/${id}${code ? `?code=${encodeURIComponent(code)}` : ''}`),
 
   getUserActivities: (username: string) =>
-    request(`/api/public/users/${username}`),
+    request(`/api/public/users/${encodeURIComponent(username)}`),
 
   updatePrivacy: (token: string, activityPrivacy: string) =>
     request('/api/auth/privacy', { method: 'PUT', headers: jsonHeaders(token), body: JSON.stringify({ activityPrivacy }) }),
@@ -290,26 +298,26 @@ export const api = {
     request('/api/auth/reset-password', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ token, password }) }),
 
   followUser: (token: string, username: string) =>
-    request(`/api/social/follow/${username}`, { method: 'POST', headers: authHeaders(token) }),
+    request(`/api/social/follow/${encodeURIComponent(username)}`, { method: 'POST', headers: authHeaders(token) }),
 
   unfollowUser: (token: string, username: string) =>
-    request(`/api/social/unfollow/${username}`, { method: 'DELETE', headers: authHeaders(token) }),
+    request(`/api/social/unfollow/${encodeURIComponent(username)}`, { method: 'DELETE', headers: authHeaders(token) }),
 
   getFollowStatus: (token: string, username: string) =>
-    request(`/api/social/status/${username}`, { headers: authHeaders(token) }),
+    request(`/api/social/status/${encodeURIComponent(username)}`, { headers: authHeaders(token) }),
 
   getFollowers: (username: string, token?: string | null) =>
-    request(`/api/social/followers/${username}`, { headers: jsonHeaders(token) }),
+    request(`/api/social/followers/${encodeURIComponent(username)}`, { headers: jsonHeaders(token) }),
 
   getFollowing: (username: string, token?: string | null) =>
-    request(`/api/social/following/${username}`, { headers: jsonHeaders(token) }),
+    request(`/api/social/following/${encodeURIComponent(username)}`, { headers: jsonHeaders(token) }),
 
   getFollowRequests: (token: string) =>
     request(`/api/social/follow-requests`, { headers: authHeaders(token) }),
   acceptFollowRequest: (token: string, username: string) =>
-    request(`/api/social/follow-requests/${username}/accept`, { method: 'POST', headers: authHeaders(token) }),
+    request(`/api/social/follow-requests/${encodeURIComponent(username)}/accept`, { method: 'POST', headers: authHeaders(token) }),
   rejectFollowRequest: (token: string, username: string) =>
-    request(`/api/social/follow-requests/${username}/reject`, { method: 'POST', headers: authHeaders(token) }),
+    request(`/api/social/follow-requests/${encodeURIComponent(username)}/reject`, { method: 'POST', headers: authHeaders(token) }),
 
   updateProfile: (token: string, data: { fullName?: string; bio?: string; neighborhoodId?: number; avatarUrl?: string }) =>
     request('/api/auth/profile', { method: 'PUT', headers: jsonHeaders(token), body: JSON.stringify(data) }),

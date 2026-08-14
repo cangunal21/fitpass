@@ -25,7 +25,7 @@ type Pending = {
 export default function RatingPrompt() {
   const pathname = usePathname()
   const [target, setTarget] = useState<Pending | null>(null)
-  const checkedRef = useRef(false)
+  const sonKontrolRef = useRef(0)
 
   const getDismissed = (): number[] => {
     try { return JSON.parse(localStorage.getItem(DISMISS_KEY) || '[]') } catch { return [] }
@@ -36,11 +36,18 @@ export default function RatingPrompt() {
   }
 
   const check = useCallback(async () => {
-    if (checkedRef.current) return
+    // KISA SÜRELİ KİLİT, KALICI DEĞİL. Eskiden `checkedRef` bir kez true olunca bir daha
+    // sıfırlanmıyordu (yalnız modal kapatılınca) → focus/visibilitychange dinleyicileri
+    // KURULUYOR ama hiçbir şey YAPMIYORDU: sekmesi açık duran kullanıcı derse gidip
+    // döndüğünde puanlama modalı açılmıyor, ancak sayfayı tam yenilerse çıkıyordu.
+    // Mobilde uygulamaya dönüldüğü anda çalışıyordu — parite denetimi farkı buldu.
+    // 60 sn: aynı anda gelen focus+visibilitychange çifti tek isteğe iner, ama sekmeye
+    // dakikalar sonra dönen kullanıcı gerçekten yeniden kontrol edilir.
+    if (Date.now() - sonKontrolRef.current < 60_000) return
     const token = typeof window !== 'undefined' ? localStorage.getItem('fitpass_token') : null
     if (!token) return
     if (SKIP_PREFIXES.some(p => pathname?.startsWith(p))) return
-    checkedRef.current = true
+    sonKontrolRef.current = Date.now()
     const res = await api.getPendingReviews(token)
     const list: Pending[] = Array.isArray(res?.pending) ? res.pending : []
     const dismissed = getDismissed()
@@ -63,7 +70,7 @@ export default function RatingPrompt() {
   const close = () => {
     if (target) addDismissed(target.bookingId)
     setTarget(null)
-    checkedRef.current = false // kapatınca sonraki foreground'da bir sonraki bekleyeni yakalayabilir
+    sonKontrolRef.current = 0 // kapatınca sonraki foreground'da bir sonraki bekleyeni yakalayabilir
   }
 
   if (!target) return null
