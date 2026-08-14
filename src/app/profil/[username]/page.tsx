@@ -157,6 +157,7 @@ import { trTime, trDateLong, trDateShort, trDateTimeShort } from '@/lib/trTime'
 
 const dateLocale = () => (typeof window !== 'undefined' && localStorage.getItem('fitpass_lang') === 'en') ? 'en-US' : 'tr-TR'
 import AvatarUpload from '@/components/AvatarUpload'
+import ReviewSheet, { type ReviewHedefi } from '@/components/ReviewSheet'
 import { getInitialsAvatar } from '@/lib/cloudinary'
 
 type OwnTab = 'rezervasyonlar' | 'takvim' | 'hesap' | 'ödeme' | 'favoriler' | 'referans'
@@ -195,12 +196,10 @@ export default function ProfilPage() {
   const [reportReason, setReportReason] = useState('')
   const [reportCustom, setReportCustom] = useState('')
   const [reportSent, setReportSent] = useState<string | null>(null)
-  const [reviewModal, setReviewModal] = useState<{ bookingId: number } | null>(null)
-  const [reviewRating, setReviewRating] = useState(5)
-  const [reviewComment, setReviewComment] = useState('')
-  const [reviewAnonymous, setReviewAnonymous] = useState(true)
-  const [submittingReview, setSubmittingReview] = useState(false)
-  const [reviewError, setReviewError] = useState('')
+  // PUANLAMA ORTAK BİLEŞENDE (components/ReviewSheet.tsx). Burada eskiden AYRI bir modal
+  // vardı ve YALNIZ SALONU puanlıyordu; backend bir rezervasyonu tek kez puanlattığı için
+  // profilden puan veren kullanıcının HOCA PUANI o rezervasyon için kalıcı olarak kayboluyordu.
+  const [reviewModal, setReviewModal] = useState<ReviewHedefi | null>(null)
   const [favorites, setFavorites] = useState<any[]>([])
 
   // Public profile data
@@ -372,42 +371,18 @@ export default function ProfilPage() {
     }
   }
 
-  const openReviewModal = (bookingId: number) => {
-    setReviewRating(5)
-    setReviewComment('')
-    setReviewAnonymous(true)
-    setReviewError('')
-    setReviewModal({ bookingId })
+  // Hoca bilgisi rezervasyonun dersinden gelir; ReviewSheet hoca bölümünü buna göre gösterir.
+  const openReviewModal = (b: any) => {
+    const cls = b?.session?.class
+    setReviewModal({
+      bookingId: b.id,
+      className: (lang === 'en' && cls?.titleEn) ? cls.titleEn : (cls?.title || null),
+      venueName: cls?.venue?.name || null,
+      instructorId: cls?.instructorId ?? null,
+      instructorName: cls?.instructor?.fullName ?? null,
+    })
   }
 
-  const submitReview = async () => {
-    const token = getToken()
-    if (!token || !reviewModal) return
-    setSubmittingReview(true)
-    try {
-      const res = await fetch(`${API_URL}/api/reviews`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ bookingId: reviewModal.bookingId, rating: reviewRating, comment: reviewComment, isAnonymous: reviewAnonymous }),
-      })
-      const data = await res.json()
-      if (!data.error) {
-        setBookings(prev => prev.map(b => b.id === reviewModal.bookingId ? { ...b, review: data.review || { rating: reviewRating, comment: reviewComment } } : b))
-        setReviewModal(null)
-        setReviewError('')
-      } else {
-        // Sunucunun {error} gövdesi HİÇ okunmuyordu: puanlama reddedilince (check-in yok,
-        // ders bitmedi, zaten puanlanmış) modal sessizce açık kalıyor, kullanıcı neden
-        // olmadığını anlamıyordu.
-        setReviewError(String(data.error))
-      }
-    } catch {
-      setReviewError(t('common.error'))
-    }
-    setSubmittingReview(false)
-  }
-
-  // Tiers for progress bar
   const tiers = [
     { name: 'Aday', min: 0 }, { name: 'Sporcu', min: 10 }, { name: 'Profesyonel', min: 35 },
     { name: 'Elit', min: 70 }, { name: 'Olimpik', min: 120 },
@@ -657,8 +632,14 @@ export default function ProfilPage() {
           </div>
         </div>
 
-        {/* Sporlar + Rozetler — only for public profiles */}
-        {!isOwnProfile && !loadingPublic && !publicData?.isPrivate && !publicData?.isProfilePrivate && (
+        {/* Sporlar + Rozetler.
+            ONAYLI GİZLİLİK SPEC'İ (kullanıcı kararı): `activityPrivacy=private` YALNIZCA gidilen
+            dersleri/takvimi gizler — rozet, tier ve istatistik HERKESE AÇIK kalır. Yalnız
+            `profilePrivacy=private` her şeyi kapatır.
+            Burada ikisi AYNI kefeye konuyordu (`isPrivate || isProfilePrivate`) ve aktivitesini
+            gizleyen kullanıcının ROZETLERİ de saklanıyordu. Mobil doğru davranıyordu; sunucu da
+            aktivite-gizli dalında TAM user nesnesini (rozetler dahil) bilerek gönderiyor. */}
+        {!isOwnProfile && !loadingPublic && !publicData?.isProfilePrivate && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
             <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '22px 24px', border: '1px solid #F0F0F0' }}>
               <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}><Medal size={16} /> {t('prof.topSports')}</h3>
@@ -1058,7 +1039,7 @@ export default function ProfilPage() {
                               {isCancelled ? (
                                 <span style={{ fontSize: 12, color: '#EF4444', fontWeight: 600, backgroundColor: '#FEF2F2', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><X size={12} /> {t('prof.cancelled')}</span>
                               ) : canReview ? (
-                                <button onClick={() => openReviewModal(b.id)} style={{ fontSize: 12, color: '#4F46E5', fontWeight: 600, background: '#EEF2FF', border: 'none', borderRadius: 100, padding: '5px 12px', cursor: 'pointer' }}>{t('prof.reviewBtn')}</button>
+                                <button onClick={() => openReviewModal(b)} style={{ fontSize: 12, color: '#4F46E5', fontWeight: 600, background: '#EEF2FF', border: 'none', borderRadius: 100, padding: '5px 12px', cursor: 'pointer' }}>{t('prof.reviewBtn')}</button>
                               ) : (
                                 <span style={{ fontSize: 12, color: '#10B981', fontWeight: 600, backgroundColor: '#F0FDF4', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Check size={12} /> {t('prof.completed')}</span>
                               )}
@@ -1101,39 +1082,16 @@ export default function ProfilPage() {
         )}
 
         {reviewModal && (
-          <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={() => setReviewModal(null)}>
-            <div style={{ backgroundColor: '#fff', borderRadius: 20, width: '100%', maxWidth: 420, padding: 28 }} onClick={e => e.stopPropagation()}>
-              <div style={{ fontSize: 17, fontWeight: 800, color: '#111', marginBottom: 4, textAlign: 'center' }}>{t('review.title')}</div>
-              <div style={{ fontSize: 12, color: '#999', textAlign: 'center', marginBottom: 18 }}>{t('review.sub')}</div>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 18 }}>
-                {[1, 2, 3, 4, 5].map(n => (
-                  <button key={n} onClick={() => setReviewRating(n)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 28, color: n <= reviewRating ? '#F59E0B' : '#e5e5e5' }}>★</button>
-                ))}
-              </div>
-              <textarea
-                value={reviewComment}
-                onChange={e => setReviewComment(e.target.value)}
-                placeholder={t('review.placeholder')}
-                rows={4}
-                style={{ width: '100%', padding: '10px 14px', borderRadius: 12, border: '1.5px solid #E5E7EB', fontSize: 14, outline: 'none', resize: 'vertical', boxSizing: 'border-box' as const, fontFamily: 'inherit' }}
-              />
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#666', cursor: 'pointer', marginTop: 12 }}>
-                <input type="checkbox" checked={reviewAnonymous} onChange={e => setReviewAnonymous(e.target.checked)} />
-                {t('common.anonShare')}
-              </label>
-              {/* Sunucunun reddetme gerekçesi (check-in yok, ders bitmedi, zaten puanlanmış)
-                  kullanıcıya GÖSTERİLİR — eskiden yutuluyordu ve modal sessizce kilitleniyordu. */}
-              {reviewError && (
-                <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 10, backgroundColor: '#FEF2F2', color: '#DC2626', fontSize: 13, lineHeight: 1.5 }}>{reviewError}</div>
-              )}
-              <button onClick={submitReview} disabled={submittingReview} style={{ width: '100%', padding: 14, borderRadius: 12, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', marginTop: 16 }}>
-                {submittingReview ? t('prof.submitting') : t('common.send')}
-              </button>
-              <button onClick={() => setReviewModal(null)} style={{ width: '100%', padding: 10, borderRadius: 12, border: 'none', background: 'none', color: '#999', fontSize: 13, fontWeight: 600, cursor: 'pointer', marginTop: 4 }}>
-                {t('common.later')}
-              </button>
-            </div>
-          </div>
+          <ReviewSheet
+            key={reviewModal.bookingId}
+            hedef={reviewModal}
+            onKapat={() => setReviewModal(null)}
+            onGonderildi={({ venueRating, venueComment }) => {
+              setBookings(prev => prev.map(x => x.id === reviewModal.bookingId
+                ? { ...x, reviewed: true, review: { rating: venueRating, comment: venueComment } }
+                : x))
+            }}
+          />
         )}
 
         {/* Aktivite takvimi — own profile only */}
