@@ -11,14 +11,17 @@ import { SportIcon, SportIconBox, getIconKeyForCategory, getColorForCategory } f
 import { SkeletonCardGrid } from '@/components/Skeleton'
 import { useT, translateCategory, localizeText } from '@/lib/i18n'
 import { trToday, trAddDays, trInstant, trWeekday, trTime, trDateFull } from '@/lib/trTime'
+import type { SessionSummary } from '@/types/api'
 
 const dateLocale = () => (typeof window !== 'undefined' && localStorage.getItem('fitpass_lang') === 'en') ? 'en-US' : 'tr-TR'
 
 // Kategoriler API'dan dinamik olarak yüklenir
 interface Category { id: number; name: string; icon: string; color: string }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapSessionToItem(session: any) {
+// PARAMETRE ARTIK `any` DEĞİL: sunucu sözleşmesine bağlı (src/types/api.ts). `any` iken bu
+// fonksiyon sözleşmenin bittiği yerdi — alan adı yanlış yazılsa ya da sunucudan kalksa tsc
+// göremiyordu. `availableSpots` faciası tam olarak burada, bu satırlarda görünmüştü.
+function mapSessionToItem(session: SessionSummary) {
   return {
     id: session.id,
     title: session.title,
@@ -50,7 +53,10 @@ interface DisplayItem {
   title: string
   venueId?: number
   venue?: string
-  neighborhood: string
+  // `string | null` — SUNUCU GERÇEĞİ: mahallesi atanmamış salon için `null` geliyor.
+  // Burada `string` yazıyordu ve `any` sayesinde kimse fark etmiyordu; sonuç, aşağıdaki
+  // kartlarda boşta kalan bir "·" ayracıydı (React `null`'ı hiç basmaz, ayraç kalır).
+  neighborhood: string | null
   category: string
   icon: string
   color: string
@@ -102,9 +108,11 @@ export default function Home() {
   useEffect(() => {
     const token = getToken()
     if (!token) return
-    const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-    fetch(`${API}/api/public/for-you`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.json())
+    // HAM `fetch` DEĞİL, TİPLİ İSTEMCİ: ham fetch sözleşme katmanını atlıyordu (yanıt `any`,
+    // alan adı denetlenmiyor). Ayrıca zaman aşımı, dil başlığı ve tek biçimli hata gövdesi de
+    // `request()` içinde. (Jeton yenileme ham fetch'te de vardı — global `installAuthFetch`
+    // yaması onu da kapsıyor; oradaki kayıp tip denetimiydi.)
+    api.getForYouSessions(token)
       .then(d => {
         if (Array.isArray(d?.sessions) && d.sessions.length > 0) setForYouItems(d.sessions.map(mapSessionToItem))
       })
@@ -185,7 +193,7 @@ export default function Home() {
       if ((dateRange as any).dateTo) params.dateTo = (dateRange as any).dateTo
 
       const result = await api.getSessions(Object.keys(params).length ? params : undefined)
-      const sessions: unknown[] = result?.sessions ?? []
+      const sessions: SessionSummary[] = result?.sessions ?? []
       if (Array.isArray(sessions) && sessions.length > 0) {
         const mapped = sessions.map(mapSessionToItem)
         setAllItems(prev => append ? [...prev, ...mapped] : mapped)
@@ -495,7 +503,7 @@ export default function Home() {
                     <div style={{ background: item.color, padding: '16px 16px 14px' }}>
                       <SportIconBox name={item.icon} bgColor='rgba(255,255,255,0.2)' iconColor='#fff' boxSize={40} borderRadius={12} size={18} />
                       <h3 style={{ fontSize: 15, fontWeight: 700, color: '#fff', margin: '10px 0 2px', lineHeight: 1.3 }}>{lang === 'en' && item.titleEn ? String(item.titleEn) : item.title}</h3>
-                      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)' }}>{'venue' in item && typeof item.venue === 'string' ? item.venue : ''} · {item.neighborhood}</p>
+                      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)' }}>{'venue' in item && typeof item.venue === 'string' ? item.venue : ''}{item.neighborhood ? ` · ${item.neighborhood}` : ''}</p>
                     </div>
                     <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: 12, color: '#666', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Clock size={14} /> {'time' in item ? localizeText(item.time as string, lang) : ''}</span>
@@ -568,7 +576,7 @@ export default function Home() {
                           </Link>
                         ) : (
                           'venue' in item && typeof item.venue === 'string' ? item.venue : ''
-                        )} · {item.neighborhood}
+                        )}{item.neighborhood ? ` · ${item.neighborhood}` : ''}
                       </p>
                     </div>
 

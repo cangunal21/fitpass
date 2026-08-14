@@ -1,6 +1,8 @@
 // Taşıma-katmanı hataları React dışında üretiliyor (useT yok) → sözlüğü doğrudan oku.
 // Eskiden bu üç metin SABİT TÜRKÇE idi; EN kullanıcısı offline/timeout durumunda Türkçe görüyordu.
 import { tSync } from './i18n'
+// API SÖZLEŞMESİ — üç repoda birebir aynı dosya (bkz. scripts/tip-damgasi.cjs).
+import type { ApiResult, SessionListResponse, SessionDetailResponse, ForYouResponse } from '@/types/api'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
@@ -170,7 +172,7 @@ export function installAuthFetch() {
   }
 }
 
-export async function request(path: string, opts: RequestInit = {}, timeoutMs = DEFAULT_TIMEOUT): Promise<any> {
+export async function request<T = any>(path: string, opts: RequestInit = {}, timeoutMs = DEFAULT_TIMEOUT): Promise<T> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
   try {
@@ -181,10 +183,14 @@ export async function request(path: string, opts: RequestInit = {}, timeoutMs = 
     let body: any = null
     if (text) { try { body = JSON.parse(text) } catch { body = null } }
     if (body !== null && typeof body === 'object') return body
-    return { error: res.ok ? null : tSync('net.unreachable') }
+    // AŞAĞIDAKİ ÜÇ `as T` SINIR DÖNÜŞÜMÜ — gerekçesi: ağ katmanı ya gövdeyi ya da `{ error }`
+    // döndürür; `T` yalnızca ÇAĞIRANIN "gövde gelirse şu şekilde olur" iddiasıdır. Bu yüzden
+    // çağıran tarafta tip DAİMA `ApiResult<T>` olmalı (veri alanları isteğe bağlı + `error`).
+    // `ApiResult` kullanılmazsa `data.sessions.map(...)` ağ koptuğunda çöker ve tsc göremez.
+    return { error: res.ok ? null : tSync('net.unreachable') } as T
   } catch (e: any) {
-    if (e?.name === 'AbortError') return { error: tSync('net.timeout') }
-    return { error: tSync('net.offline') }
+    if (e?.name === 'AbortError') return { error: tSync('net.timeout') } as T
+    return { error: tSync('net.offline') } as T
   } finally {
     clearTimeout(timer)
   }
@@ -257,10 +263,15 @@ export const api = {
     request(`/api/bookings/${bookingId}/cancel`, { method: 'PUT', headers: authHeaders(token) }),
 
   getSessions: (params?: { category?: string; date?: string; dateFrom?: string; dateTo?: string; neighborhoodId?: string; cityId?: string; search?: string; sort?: string; userNeighborhoodId?: string }) =>
-    request(`/api/public/sessions${qsOf(params)}`),
+    request<ApiResult<SessionListResponse>>(`/api/public/sessions${qsOf(params)}`),
 
   getSessionById: (id: number) =>
-    request(`/api/public/sessions/${id}`),
+    request<ApiResult<SessionDetailResponse>>(`/api/public/sessions/${id}`),
+
+  // Kişiselleştirilmiş öneriler. Ana sayfa bunu HAM `fetch` ile çağırıyordu: sözleşme katmanını
+  // da, jeton yenileme/zaman aşımı korumasını da atlıyordu.
+  getForYouSessions: (token: string) =>
+    request<ApiResult<ForYouResponse>>(`/api/public/for-you`, { headers: authHeaders(token) }),
 
   getVenues: () =>
     request('/api/public/venues'),
