@@ -1,238 +1,60 @@
 #!/usr/bin/env node
 /*
- * i18n kapsama tarayıcısı — çevrilmemiş (t() ile sarılmamış) Türkçe metinleri bulur.
+ * i18n kapsama tarayıcısı — WEB sarmalayıcısı.
  *
- * Kök sorun: i18n elle yapılıyor; sarılmayan her string sessizce Türkçe kalıyor.
- * Bu script bir güvenlik ağıdır: src/app + src/components içindeki tüm .tsx dosyalarını
- * tarar, t()/çeviri-helper'larıyla sarılmış kısımları çıkarır, geriye kalan
- *   (a) JSX metin düğümlerinde   >Türkçe<
- *   (b) string literal'lerinde   'Türkçe' / "Türkçe"
- * Türkçe ifadeleri raporlar. Sıfır bulgu = tam kapsama.
+ * KURALLAR BURADA DEĞİL: "neyi Türkçe sayarız / neyi metin sayarız" mantığı `i18n-core.cjs`
+ * içinde ve o dosya MOBİL REPOYLA BİREBİR AYNI. Burada yalnızca PLATFORMA ÖZEL yapılandırma
+ * durur: hangi klasörler taranır, hangi yüzeyler bilerek Türkçe kalır.
+ *
+ * NEDEN AYRILDI: tarayıcının iki kopyası bağımsız evrimleşmişti ve kör noktaları TAM TERSTİ —
+ * web 'DOLU'/'Kapasite'yi yakalayıp 'Bildirimler'i kaçırıyor, mobil tam tersini yapıyordu.
+ * Yani "i18n kapısı" diye iki farklı kapı vardı. Çekirdek tek olunca bu imkânsız hâle geliyor.
  *
  * Kullanım:  node scripts/i18n-scan.cjs        (bulgu varsa exit 1)
- * Veri/legacy Türkçe içeren dosyalar (i18n sözlüğü, mock veri) hariç tutulur.
  */
-const fs = require('fs')
 const path = require('path')
+const { tara, anahtarParitesi } = require('./i18n-core.cjs')
 
 const ROOT = path.resolve(__dirname, '..')
-const SCAN_DIRS = ['src/app', 'src/components']
-// Bu dosyalar meşru biçimde Türkçe içerir (sözlük / mock veri / bu script).
-const SKIP_FILES = new Set(['i18n.tsx', 'mockData.ts'])
-// layout.tsx = SEO metadata (SSR, ayrı konu); admin + salon-* = dahili/B2B panel (kasıtlı Türkçe)
-// global-error.tsx = i18n context'ine erişemez (Next tasarımı) → kasıtlı iki dilli statik metin
-const SKIP_FILE_RE = /(^|\/)(layout|sitemap|robots|global-error)\.tsx?$/
-// admin + salon-* + egitmen-* : B2B/dahili yüzeyler, bilerek Türkçe-only.
-// egitmen-* eklenmezse tarayıcı 71 sahte uyarı üretiyordu → kapı sürekli kırmızı kalıp
-// GERÇEK çeviri eksiklerini gizliyordu (uyarı körlüğü).
-const SKIP_DIR_RE = /(^|\/)(admin|salon-[a-z-]+|egitmen-[a-z-]+)\//
-// Marka adı çevrilmez
-const BRAND_RE = /^(©\s*\d{4}\s*)?[\s•·|—-]*şip[şs]akspor[\s•·|—-]*$/i
 
-const TR_CHARS = /[ğĞşŞıİçÇöÖüÜ]/
-// Özel karakter içermeyen ama Türkçe olduğu kesin kelimeler (false-negative azaltır)
-const TR_WORDS = new RegExp(
-  '\\b(' + [
-    've', 'ile', 'icin', 'bir', 'bu', 'daha', 'tum', 'tumu', 'ders', 'dersler',
-    'salon', 'salonlar', 'yorum', 'yorumlar', 'geri', 'don', 'yok', 'var',
-    'gun', 'kisi', 'ara', 'hata', 'iptal', 'onayla', 'sec', 'secenek', 'favori',
-    'ekle', 'cikar', 'takip', 'bekle', 'gonder', 'kaydet', 'duzenle', 'sil',
-    'kapat', 'goster', 'gizle', 'tarih', 'saat', 'sure', 'adres', 'telefon',
-    'sifre', 'giris', 'cikis', 'kayit', 'hesap', 'profil', 'bildirim', 'mesaj',
-    'arkadas', 'takipci', 'puan', 'seri', 'rozet', 'seviye', 'toplam', 'hafta',
-    'bugun', 'yarin', 'hos', 'geldin', 'lutfen', 'evet', 'hayir', 'tesekkur',
-    // 2026-08 denetimi: aşağıdakiler listede YOKTU ve Türkçe özel karakter de içermedikleri için
-    // üç metin ('DOLU', '← Ana sayfa', '{n} aktivite') tarayıcıdan geçip EN arayüzde Türkçe kaldı.
-    // Liste doğası gereği eksik kalır; yeni sabit metin eklerken t() kullan, buraya güvenme.
-    'dolu', 'bos', 'sayfa', 'aktivite', 'yer', 'kalan', 'kaldi', 'sonraki', 'onceki',
-    'kapasite', 'kontenjan', 'rezervasyon', 'fiyat', 'ucret', 'indirim', 'kupon',
-    'davet', 'paylas', 'kopyala', 'katil', 'liste', 'harita', 'kategori', 'sirala',
-    'filtre', 'temizle', 'tamam', 'vazgec', 'devam', 'basla', 'yeni', 'eski',
-  ].join('|') + ')\\b', 'i'
-)
+const bulgular = tara({
+  root: ROOT,
+  scanDirs: ['src/app', 'src/components'],
+  // Bu dosyalar meşru biçimde Türkçe içerir (sözlük / mock veri).
+  skipFiles: new Set(['i18n.tsx', 'mockData.ts']),
+  // global-error.tsx = i18n context'ine erişemez (Next tasarımı) → kasıtlı iki dilli statik metin
+  skipFileRe: /(^|\/)(layout|sitemap|robots|global-error)\.tsx?$/,
+  // admin + salon-* + egitmen-* : B2B/dahili yüzeyler, bilerek Türkçe-only.
+  // Eklenmezse tarayıcı 71 sahte uyarı üretiyor ve kapı sürekli kırmızı kalıp GERÇEK
+  // çeviri eksiklerini gizliyordu (uyarı körlüğü).
+  skipDirRe: /(^|\/)(admin|salon-[a-z-]+|egitmen-[a-z-]+)\//,
+})
 
-function isTurkish(text) {
-  let trimmed = text.trim()
-  if (trimmed.length < 2) return false
-  if (!/[A-Za-zĞğŞşİıÇçÖöÜü]/.test(trimmed)) return false // harf yoksa atla (sayı/emoji/ikon)
-  if (trimmed.startsWith('/')) return false                // route/path (/giris, /kayit ...)
-  if (BRAND_RE.test(trimmed)) return false                 // marka adı
-  trimmed = trimmed.replace(/İstanbul/g, '')           // özel isim, iki dilde aynı
-  return TR_CHARS.test(trimmed) || TR_WORDS.test(trimmed)
-}
+// TR/EN anahtar paritesi
+const parite = anahtarParitesi(path.join(ROOT, 'src/lib/i18n.tsx'))
 
-// Bir satırdaki "güvenli" (zaten çevrili/teknik) parçaları maskele ki geriye sadece şüpheli kalsın
-// Satır sonu `//` yorumunu ayıkla — tırnak/şablon içindeki `//` (URL'ler) korunur.
-function stripLineComment(line) {
-  let q = null // aktif tırnak: ' " `
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i]
-    if (q) {
-      if (ch === '\\') { i++; continue }
-      if (ch === q) q = null
-      continue
-    }
-    if (ch === "'" || ch === '"' || ch === '`') { q = ch; continue }
-    if (ch === '/' && line[i + 1] === '/') return line.slice(0, i)
+let cikis = 0
+if (bulgular.length) {
+  const dosyaBasina = new Map()
+  for (const b of bulgular) {
+    if (!dosyaBasina.has(b.rel)) dosyaBasina.set(b.rel, [])
+    dosyaBasina.get(b.rel).push(b)
   }
-  return line
-}
-
-function maskSafe(line) {
-  let s = line
-  // lang === 'en'|'tr' ? 'A' : 'B'  → her iki dal zaten ele alınmış (tırnak veya backtick)
-  s = s.replace(/lang\s*===\s*['"](?:en|tr)['"]\s*\?\s*([`'"])(?:\\.|(?!\1).)*\1\s*:\s*([`'"])(?:\\.|(?!\2).)*\2/g, ' __L__ ')
-  // t('...') / t("...") / t(`...`)  → çağrı içeriği çevrilidir
-  s = s.replace(/\bt\(\s*(['"`])(?:\\.|(?!\1).)*\1\s*\)/g, ' __T__ ')
-  // çeviri helper çağrıları (içlerindeki literal değil değişken çevirir)
-  s = s.replace(/\b(translate[A-Za-z]+|localizeText)\([^)]*\)/g, ' __H__ ')
-  // string metot argümanları veri-ayrıştırmadır, gösterim değil: .split('İptal: '), .includes('...') ...
-  s = s.replace(/\.(split|includes|startsWith|endsWith|indexOf|replace|replaceAll)\(\s*(['"])(?:\\.|(?!\2).)*\2/g, '.$1( __A__ ')
-  // import/export yolları, className, href, src, key, id, name="x" gibi teknik attribute literali değil — yine de
-  // sadece Türkçe içerenleri yakalayacağımız için teknik İngilizce stringler zaten elenir.
-  return s
-}
-
-const findings = []
-
-function scanFile(abs, rel) {
-  const src = fs.readFileSync(abs, 'utf8')
-  const lines = src.split('\n')
-  let inBlockComment = false
-  for (let i = 0; i < lines.length; i++) {
-    const raw = lines[i]
-    const trimmed = raw.trim()
-    // yorum satırları / dev log'ları kullanıcıya gitmez
-    if (inBlockComment) { if (trimmed.includes('*/')) inBlockComment = false; continue }
-    // JSX yorumu `{/* ... */}` da atlanmalı: eskiden yalnız `/*` ile BAŞLAYAN satır tanınıyordu,
-    // `{/*` ile başlayan çok satırlı JSX yorumunun DEVAM satırları "çevrilmemiş metin" sanılıyordu
-    // (yanlış pozitif → CI uyarısı gerçek bir sorun değilken kırmızı yanıyordu).
-    if (trimmed.startsWith('/*') || trimmed.startsWith('{/*')) {
-      if (!trimmed.includes('*/')) inBlockComment = true
-      continue
-    }
-    if (trimmed.startsWith('//') || trimmed.startsWith('*')) continue
-    // JSX YORUMU: {/* ... */} — kullanıcıya render EDİLMEZ, çeviri gerektirmez.
-    // Atlanmazsa açıklama satırları "çevrilmemiş metin" diye raporlanıp kapıyı sahte kırmızıya çekiyordu.
-    if (trimmed.startsWith('{/*')) { if (!trimmed.includes('*/}')) inBlockComment = true; continue }
-    if (/\bconsole\.(log|warn|error|info)\b/.test(raw)) continue
-
-    // SATIR SONU YORUMLARINI AT. Yalnız `//` ile BAŞLAYAN satırlar atlanıyordu; kodun
-    // arkasına yazılmış `... // Türkçe açıklama` yorumları metin sanılıp yanlış alarm
-    // veriyordu (gerçek bir olay: bir kod yorumu CI'ı kırmızıya çekti). Tırnak ve şablon
-    // dizgisi İÇİNDEKİ `//` (ör. 'https://...') korunur.
-    const raw2 = stripLineComment(raw)
-    const line = maskSafe(raw2)
-
-    // (a) JSX metin düğümleri:  >  metin  <  (ortada {ifade} olabilir: "({n} değerlendirme)")
-    for (const m of line.matchAll(/>([^<]*)</g)) {
-      const txt = m[1].replace(/\{[^{}]*\}/g, '').trim()   // gömülü {ifade}'leri çıkar
-      // KARŞILAŞTIRMA OPERATÖRÜ JSX ETİKETİ DEĞİLDİR. `gun >= 1 && gun <= n` ifadesinde `>` ve
-      // `<` işaretleri bu desene takılıyor ve aradaki "= 1 && gun" metin düğümü sanılıyordu —
-      // proje Türkçe değişken adı kullandığı için de "çevrilmemiş metin" diye raporlanıyordu.
-      // GERÇEK OLAY: bu yanlış pozitif mobil CI'ı 11 Ağustos'tan beri kırmızı tuttu.
-      // Gerçek bir JSX metninde `=`, `&&`, `||` ya da `;` bulunmaz; tek `&` (Şartlar & Koşullar)
-      // BİLEREK dışlanmıyor.
-      const operator = /[=;]|&&|\|\|/.test(txt)
-      if (!operator && isTurkish(txt)) findings.push({ rel, line: i + 1, kind: 'JSX', text: txt })
-    }
-    // Kenar JSX metinleri kod-noktalama içermez (TS generic'leri <T>('x') vb. elemek için)
-    const isProse = (txt) => isTurkish(txt) && !/[()[\]'"=;|`]/.test(txt)
-    // (a1) metin satır SONUNDA:  <Icon /> Türkçe   (kapanış etiketi sonraki satırda)
-    for (const m of line.matchAll(/>([^<>{}]+?)\s*$/g)) {
-      if (isProse(m[1])) findings.push({ rel, line: i + 1, kind: 'JSX', text: m[1].trim() })
-    }
-    // (a1b) metin satır BAŞINDA:  Türkçe </tag>   (açılış etiketi önceki satırda)
-    for (const m of line.matchAll(/^\s*([^<>{}]+?)\s*</g)) {
-      if (isProse(m[1])) findings.push({ rel, line: i + 1, kind: 'JSX', text: m[1].trim() })
-    }
-    // (a2) Çok satırlı JSX metni: açılış/kapanış etiketi başka satırda olunca metin tek başına bir satırda kalır
-    //      (örn.  <p>\n  Türkçe metin\n</p>) — bu satırlarda <>{} ve tırnak yoktur.
-    {
-      // basit {ifade}'leri ({' '}, {name} vb.) çıkar — metin yanlarında olabilir
-      // raw2: satır sonu yorumu AYIKLANMIŞ hâli. Eskiden ham `raw` kullanılıyordu, bu yüzden
-      // kodun arkasındaki Türkçe yorum "tek başına duran JSX metni" sanılıyordu.
-      const bare = raw2.replace(/\{[^{}]*\}/g, '').trim()
-      // KOD NOKTALAMASI DIŞLANIR. Bu proje TÜRKÇE DEĞİŞKEN ADI kullanıyor (kalan, hata, kod…),
-      // bu yüzden `}, [kalan])` ya da `{hata && (` gibi saf kod satırları "çevrilmemiş metin"
-      // sanılıyordu — tarayıcı sahte kırmızı veriyordu. JSX metin düğümünde süslü/köşeli parantez,
-      // noktalı virgül, & veya | pratikte bulunmaz; normal parantez ise metinde geçebildiği için
-      // ("Ders (60 dk)") BİLEREK dışlanmıyor.
-      const kodNoktalama = /[<>=`'"{}[\];&|]/.test(bare) || /=>/.test(bare)
-      if (bare && !kodNoktalama && !/^[0-9.,%₺$+\-*/ ]+$/.test(bare) && isTurkish(bare)) {
-        findings.push({ rel, line: i + 1, kind: 'JSX', text: bare })
-      }
-    }
-    // (b) string literal'ler:  '...' / "..."  (maskelemeden sonra kalanlar şüpheli)
-    const strs = line.matchAll(/(['"])((?:\\.|(?!\1).)*?)\1/g)
-    for (const m of strs) {
-      if (!isTurkish(m[2])) continue
-      // obje anahtarı mı?  'Halı Saha': 'football'  → anahtar veridir, gösterim değil
-      const after = line.slice(m.index + m[0].length)
-      if (/^\s*:/.test(after)) continue
-      // tek-kelime, tamamı küçük harf token → büyük olasılıkla state/id ('hesap','dersler','salon')
-      if (/^[a-z0-9ğşıçöü_-]+$/.test(m[2].trim())) continue
-      findings.push({ rel, line: i + 1, kind: 'STR', text: m[2].trim() })
-    }
+  for (const [rel, list] of dosyaBasina) {
+    console.log(`\n${rel}`)
+    for (const b of list) console.log(`  ${String(b.line).padStart(4)}  [${b.kind}]  ${b.text.slice(0, 100)}`)
   }
+  cikis = 1
+}
+if (parite.eksikEn.length || parite.eksikTr.length) {
+  if (parite.eksikEn.length) console.log(`\nEN'de EKSİK anahtarlar (${parite.eksikEn.length}): ${parite.eksikEn.join(', ')}`)
+  if (parite.eksikTr.length) console.log(`\nTR'de EKSİK anahtarlar (${parite.eksikTr.length}): ${parite.eksikTr.join(', ')}`)
+  cikis = 1
 }
 
-function walk(dir) {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const abs = path.join(dir, entry.name)
-    if (entry.isDirectory()) { walk(abs); continue }
-    if (!entry.name.endsWith('.tsx') && !entry.name.endsWith('.ts')) continue
-    if (SKIP_FILES.has(entry.name)) continue
-    const rel = path.relative(ROOT, abs)
-    if (SKIP_FILE_RE.test(rel) || SKIP_DIR_RE.test(rel)) continue
-    scanFile(abs, rel)
-  }
+if (cikis) {
+  console.log(`\n⚠️  ${bulgular.length} olası çevrilmemiş metin (${new Set(bulgular.map(b => b.rel)).size} dosya) + ${parite.eksikEn.length + parite.eksikTr.length} anahtar paritesi sorunu.`)
+} else {
+  console.log('\n✅ i18n taraması temiz — çevrilmemiş Türkçe metin yok, TR/EN anahtarları tutarlı.')
 }
-
-for (const d of SCAN_DIRS) walk(path.join(ROOT, d))
-
-// --- Anahtar paritesi: TR'de olup EN'de olmayan (veya tersi) bir anahtar varsa t() sessizce Türkçe'ye düşer ---
-function checkKeyParity() {
-  const dictFile = path.join(ROOT, 'src/lib/i18n.tsx')
-  const src = fs.readFileSync(dictFile, 'utf8')
-  const trStart = src.indexOf('tr: {')
-  const enStart = src.indexOf('en: {')
-  if (trStart < 0 || enStart < 0) return []
-  const trBlock = src.slice(trStart, enStart)
-  const enBlock = src.slice(enStart)
-  // Sadece noktalı i18n anahtarları (a.b) — yardımcı haritalar ('Basketbol' vb.) hariç
-  const keysOf = (b) => new Set([...b.matchAll(/^\s*'([a-z][\w]*\.[\w.]+)'\s*:/gm)].map(m => m[1]))
-  const tr = keysOf(trBlock), en = keysOf(enBlock)
-  const issues = []
-  for (const k of tr) if (!en.has(k)) issues.push(`EN eksik: '${k}'`)
-  for (const k of en) if (!tr.has(k)) issues.push(`TR eksik: '${k}'`)
-  return issues
-}
-const parity = checkKeyParity()
-
-// Tekrarları kaldır (aynı dosya+satır+metin birden çok desenle yakalanmış olabilir)
-const seen = new Set()
-const unique = findings.filter(f => { const k = `${f.rel}:${f.line}:${f.text}`; if (seen.has(k)) return false; seen.add(k); return true })
-
-// Raporla
-const byFile = {}
-for (const f of unique) (byFile[f.rel] ||= []).push(f)
-const files = Object.keys(byFile).sort()
-let total = 0
-for (const file of files) {
-  console.log(`\n${file}`)
-  for (const f of byFile[file]) {
-    console.log(`  ${String(f.line).padStart(4)}  [${f.kind}]  ${f.text.slice(0, 90)}`)
-    total++
-  }
-}
-if (parity.length) {
-  console.log('\nAnahtar paritesi (TR/EN sözlüğü tutarsız → t() Türkçe\'ye düşer):')
-  for (const p of parity) console.log('  ' + p)
-}
-if (total === 0 && parity.length === 0) {
-  console.log('✅ i18n taraması temiz — çevrilmemiş Türkçe metin yok, TR/EN anahtarları tutarlı.')
-  process.exit(0)
-}
-console.log(`\n⚠️  ${total} olası çevrilmemiş metin (${files.length} dosya) + ${parity.length} anahtar paritesi sorunu.`)
-process.exit(1)
+process.exit(cikis)
