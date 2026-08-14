@@ -228,6 +228,20 @@ export const api = {
   deleteAccount: (token: string, password: string) =>
     request('/api/auth/account', { method: 'DELETE', headers: jsonHeaders(token), body: JSON.stringify({ password }) }),
 
+  // BEKLEME LİSTESİ — üç ucun tamamı. Web'de HİÇ sarmalayıcı yoktu: yalnız ana sayfada bir
+  // ham `fetch` POST duruyordu, çıkma ve durum sorgusu hiçbir yerde kullanılmıyordu. Sonuç:
+  // web kullanıcısı ders detayından listeye giremiyor, girdiği listeden çıkamıyor ve zaten
+  // listede olduğunu göremediği için butona tekrar basınca "Zaten bekleme listesindesiniz."
+  // hatası alıyordu. Mobilde üçü de çalışıyordu.
+  joinWaitlist: (token: string, sessionId: number) =>
+    request(`/api/waitlist/sessions/${sessionId}`, { method: 'POST', headers: authHeaders(token) }),
+
+  leaveWaitlist: (token: string, sessionId: number) =>
+    request(`/api/waitlist/sessions/${sessionId}`, { method: 'DELETE', headers: authHeaders(token) }),
+
+  getWaitlistStatus: (token: string, sessionId: number) =>
+    request(`/api/waitlist/sessions/${sessionId}/status`, { headers: authHeaders(token) }),
+
   resendVerification: (token: string) =>
     request('/api/auth/resend-verification', { method: 'POST', headers: jsonHeaders(token) }),
 

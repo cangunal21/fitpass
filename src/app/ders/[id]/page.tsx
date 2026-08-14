@@ -68,9 +68,17 @@ type DisplayClass = ReturnType<typeof mapSessionToDisplay> | (typeof mockClasses
 export default function DersDetay() {
   const { t, lang } = useT()
   const params = useParams()
+  const router = useRouter()
   const [cls, setCls] = useState<DisplayClass | null>(null)
   const [loading, setLoading] = useState(true)
   const [showBooking, setShowBooking] = useState(false)
+  // BEKLEME LİSTESİ — web'de bu akış HİÇ YOKTU. Dolu seansta yalnız devre dışı bir "Seans Dolu"
+  // butonu vardı: kullanıcı listeye giremiyor, girdiyse çıkamıyor ve zaten listede olduğunu
+  // göremediği için ana sayfadaki butona tekrar basınca "Zaten bekleme listesindesiniz." hatası
+  // alıyordu. Backend üç ucu da sunuyor, mobil üçünü de kullanıyordu.
+  const [listede, setListede] = useState(false)
+  const [listeYukleniyor, setListeYukleniyor] = useState(false)
+  const [listeHata, setListeHata] = useState('')
 
   useEffect(() => {
     async function fetchSession() {
@@ -91,6 +99,30 @@ export default function DersDetay() {
     }
     fetchSession().finally(() => setLoading(false))
   }, [params.id])
+
+  const listeyeGirCik = async () => {
+    const token = getToken()
+    if (!token) { router.push(`/giris?redirect=/ders/${params.id}`); return }
+    if (!cls?.isRealSession) return   // demo ders — sunucuda karşılığı yok
+    setListeYukleniyor(true)
+    setListeHata('')
+    const id = Number(params.id)
+    const r = listede ? await api.leaveWaitlist(token, id) : await api.joinWaitlist(token, id)
+    setListeYukleniyor(false)
+    // Sunucunun gerekçesi GÖSTERİLİR (doğrulanmamış e-posta, geçmiş seans, zaten listede…).
+    // Yutulursa buton hiçbir şey yapmıyormuş gibi görünür.
+    if (r?.error) { setListeHata(r.error); return }
+    setListede(!listede)
+  }
+
+  // Zaten listede miyim? Bilinmezse kullanıcı "Katıl"a basıp hata alıyordu.
+  useEffect(() => {
+    const token = getToken()
+    if (!token || !cls?.isRealSession) return
+    api.getWaitlistStatus(token, Number(params.id))
+      .then(r => setListede(!!r?.onWaitlist))
+      .catch(() => { /* durum bilinmiyorsa buton "Katıl" kalır; sunucu yine de doğru davranır */ })
+  }, [params.id, cls?.isRealSession])
 
   if (loading || !cls) {
     return (
@@ -289,15 +321,34 @@ export default function DersDetay() {
                 </div>
               </div>
 
-              <button
-                onClick={() => { if (cls.spots > 0) setShowBooking(true) }}
-                disabled={cls.spots === 0}
-                style={{ width: '100%', padding: '15px', borderRadius: 14, border: 'none', background: cls.spots === 0 ? '#D1D5DB' : '#4F46E5', color: cls.spots === 0 ? '#9CA3AF' : '#fff', fontSize: 15, fontWeight: 700, cursor: cls.spots === 0 ? 'not-allowed' : 'pointer', marginBottom: 14, transition: 'background 0.15s' }}
-                onMouseEnter={e => { if (cls.spots > 0) (e.currentTarget as HTMLButtonElement).style.background = '#4338CA' }}
-                onMouseLeave={e => { if (cls.spots > 0) (e.currentTarget as HTMLButtonElement).style.background = '#4F46E5' }}
-              >
-                {cls.spots === 0 ? t('cls.sessionFull') : t('cls.bookNow')}
-              </button>
+              {cls.spots === 0 ? (
+                /* DOLU SEANS → çıkmaz sokak değil, bekleme listesi. Mobilde bu vardı. */
+                <>
+                  <button
+                    onClick={listeyeGirCik}
+                    disabled={listeYukleniyor || !cls.isRealSession}
+                    style={{ width: '100%', padding: '15px', borderRadius: 14, border: 'none', background: listede ? '#FFFBEB' : '#F59E0B', color: listede ? '#B45309' : '#fff', boxShadow: listede ? 'inset 0 0 0 1.5px #F59E0B' : 'none', fontSize: 15, fontWeight: 700, cursor: listeYukleniyor || !cls.isRealSession ? 'not-allowed' : 'pointer', marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                  >
+                    <Clock size={16} />
+                    {listeYukleniyor ? t('common.loading') : listede ? t('cls.waitlistLeave') : t('cls.waitlistJoin')}
+                  </button>
+                  {listeHata && (
+                    <p style={{ textAlign: 'center', fontSize: 13, color: '#DC2626', marginBottom: 10 }}>{listeHata}</p>
+                  )}
+                  <p style={{ textAlign: 'center', fontSize: 12, color: '#999', marginBottom: 14 }}>
+                    {listede ? t('cls.waitlistOn') : t('cls.waitlistHint')}
+                  </p>
+                </>
+              ) : (
+                <button
+                  onClick={() => setShowBooking(true)}
+                  style={{ width: '100%', padding: '15px', borderRadius: 14, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', marginBottom: 14, transition: 'background 0.15s' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#4338CA' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#4F46E5' }}
+                >
+                  {t('cls.bookNow')}
+                </button>
+              )}
 
               <p style={{ textAlign: 'center', fontSize: 12, color: '#bbb', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><ShieldCheck size={14} /> {t('cls.freeCancel')}</p>
 

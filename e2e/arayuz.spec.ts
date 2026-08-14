@@ -29,15 +29,23 @@ test.describe('Kapasite / kalan yer', () => {
     await expect(page.getByText(/10 yer kaldı/)).toHaveCount(0)
   })
 
-  test('dolu seansta rezervasyon butonu kapanır ve "0 yer kaldı" uyarısı çıkmaz', async ({ page }) => {
+  /**
+   * GÜNCELLENDİ (13 Ağu 2026) — testin ESKİ hâli devre dışı bir "Seans Dolu" butonu bekliyordu.
+   * O buton kaldırıldı: dolu seans artık çıkmaz sokak değil, BEKLEME LİSTESİ sunuyor (mobilde
+   * zaten böyleydi; parite denetimi web'deki eksiği buldu). Testin ASIL amacı korunuyor:
+   *   • dolu seansta rezervasyon TEKLİF EDİLMEMELİ
+   *   • "0 yer kaldı" uyarısı ÇIKMAMALI (kalan yer gerçekten 0 olabildiği için anlamsızdı)
+   * Bekleme listesi akışının kendi testi ayrı: e2e/beklemelistesi.spec.ts
+   */
+  test('dolu seansta rezervasyon teklif edilmez, "0 yer kaldı" uyarısı çıkmaz', async ({ page }) => {
     await diliAyarla(page, 'tr')
     await apiKur(page, { session: seans({ spotsLeft: 0, availableSpots: 0, capacity: 10 }) })
     await page.goto('/ders/501')
 
-    const buton = page.getByRole('button', { name: /Seans Dolu/i })
-    await expect(buton).toBeVisible()
-    await expect(buton).toBeDisabled()
-    // Kalan yer artık gerçekten 0 olabildiği için bu uyarı anlamsızdı; kaldırılmıştı.
+    // Rezervasyon butonu HİÇ olmamalı (eskiden "kapalı buton" olarak duruyordu)
+    await expect(page.getByRole('button', { name: /Hemen Rezervasyon|Rezervasyon Yap/i })).toHaveCount(0)
+    // Yerine bekleme listesi teklif edilmeli
+    await expect(page.getByRole('button', { name: /Bekleme Listesine Katıl/i })).toBeVisible()
     await expect(page.getByText(/0 yer kaldı/)).toHaveCount(0)
   })
 

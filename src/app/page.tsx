@@ -599,13 +599,10 @@ export default function Home() {
                               e.preventDefault()
                               const token = localStorage.getItem('fitpass_token')
                               if (!token) { router.push(`/giris?redirect=/`); return }
-                              const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-                              const res = await fetch(`${API_URL}/api/waitlist/sessions/${item.sessionId || item.id}`, {
-                                method: 'POST',
-                                headers: { Authorization: `Bearer ${token}` }
-                              })
-                              const data = await res.json()
-                              if (data.error) { alert(data.error); return }
+                              // Sarmalayıcı üzerinden: ham fetch, sessiz jeton yenilemeyi ve
+                              // JSON-dışı yanıt korumasını atlıyordu (bu blok tek başına kalmıştı).
+                              const data = await api.joinWaitlist(token, Number(item.sessionId || item.id))
+                              if (data?.error) { alert(data.error); return }
                               alert(t('home.waitlistAdded'))
                             }}
                             style={{ position: 'relative', zIndex: 2, padding: '9px 18px', borderRadius: 12, border: '1.5px solid #F59E0B', background: '#FFFBEB', color: '#D97706', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}

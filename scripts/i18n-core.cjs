@@ -22,7 +22,7 @@ const crypto = require('crypto')
 
 // Bu satır dosyanın geri kalanının SHA-256 ön ekidir. Çekirdeği değiştirdiysen:
 //   1) ikiz repodaki kopyayı da güncelle,  2) buradaki damgayı yenile (hata mesajı doğrusunu yazar).
-const CEKIRDEK_SURUMU = 'c4338fb6d5d3'
+const CEKIRDEK_SURUMU = 'a658aa0f6d46'
 
 function surumDogrula() {
   const ham = fs.readFileSync(__filename, 'utf8')
@@ -101,22 +101,39 @@ function isTurkish(s) {
 }
 
 // ── YARDIMCILAR ──────────────────────────────────────────────────────────────────────────────
-// Satır sonu `//` yorumunu ayıkla — tırnak/şablon içindeki `//` (URL'ler) korunur.
-// Bu ayıklama MOBİL KOPYADA YOKTU: kodun arkasına yazılmış Türkçe açıklamalar "çevrilmemiş
-// metin" sanılıyor ve CI kırmızı kalıyordu.
+/**
+ * Satır içi yorumları ayıkla — tırnak/şablon içindeki `//` (URL'ler) ve `/*` KORUNUR.
+ *
+ * İki ayrı boşluk kapatıldı:
+ *  1) `// ...` satır sonu yorumu — MOBİL KOPYADA YOKTU; kodun arkasına yazılmış Türkçe
+ *     açıklamalar "çevrilmemiş metin" sanılıyor ve CI kırmızı kalıyordu.
+ *  2) SATIR ORTASINDAKİ `/* ... *\/` yorumu — blok-yorum tespiti yalnız satır BAŞINDAKİ `/*`
+ *     için çalışıyordu. `.catch(() => { /* buton "Katıl" kalır *\/ })` gibi bir satırda
+ *     yorumun içindeki tırnaklı Türkçe, gerçek bir string literal sanılıyordu. Yaşandı.
+ */
 function stripLineComment(line) {
   let q = null // aktif tırnak: ' " `
+  let out = ''
   for (let i = 0; i < line.length; i++) {
     const ch = line[i]
     if (q) {
-      if (ch === '\\') { i++; continue }
+      out += ch
+      if (ch === '\\') { out += line[i + 1] ?? ''; i++; continue }
       if (ch === q) q = null
       continue
     }
-    if (ch === "'" || ch === '"' || ch === '`') { q = ch; continue }
-    if (ch === '/' && line[i + 1] === '/') return line.slice(0, i)
+    if (ch === "'" || ch === '"' || ch === '`') { q = ch; out += ch; continue }
+    if (ch === '/' && line[i + 1] === '/') return out          // satır sonu yorumu
+    if (ch === '/' && line[i + 1] === '*') {                    // satır içi blok yorumu
+      const kapanis = line.indexOf('*/', i + 2)
+      if (kapanis === -1) return out                            // satır sonuna kadar yorum
+      out += ' '
+      i = kapanis + 1
+      continue
+    }
+    out += ch
   }
-  return line
+  return out
 }
 
 /** Çeviri helper'ları ve teknik dizgiler maskelenir → geriye YALNIZ şüpheli metin kalır. */
