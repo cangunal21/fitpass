@@ -2,7 +2,7 @@
 // Eskiden bu üç metin SABİT TÜRKÇE idi; EN kullanıcısı offline/timeout durumunda Türkçe görüyordu.
 import { tSync } from './i18n'
 // API SÖZLEŞMESİ — üç repoda birebir aynı dosya (bkz. scripts/tip-damgasi.cjs).
-import type { ApiResult, SessionListResponse, SessionDetailResponse, ForYouResponse } from '@/types/api'
+import type { ApiResult, SessionListResponse, SessionDetailResponse, ForYouResponse, VenueReviewsResponse, FavoritesResponse } from '@/types/api'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
@@ -272,6 +272,19 @@ export const api = {
   // da, jeton yenileme/zaman aşımı korumasını da atlıyordu.
   getForYouSessions: (token: string) =>
     request<ApiResult<ForYouResponse>>(`/api/public/for-you`, { headers: authHeaders(token) }),
+
+  // Salon yorumları + puan özeti. Salon sayfası bunu HAM `fetch` ile çağırıyordu ve yanıttaki
+  // `ratingBreakdown` yerine SABİT KODLU bir dağılım çiziyordu.
+  getVenueReviews: (venueId: number) =>
+    request<ApiResult<VenueReviewsResponse>>(`/api/reviews/venue/${venueId}`),
+
+  // Favoriler. Profil sayfası bu iki ucu HAM `fetch` ile çağırıyordu: `.catch` yoktu (ağ hatası
+  // yakalanmıyordu), yükleniyor durumu yoktu ve `private` bayrağı hiç okunmuyordu.
+  getMyFavorites: (token: string) =>
+    request<ApiResult<FavoritesResponse>>('/api/favorites/my', { headers: authHeaders(token) }),
+
+  getUserFavorites: (username: string) =>
+    request<ApiResult<FavoritesResponse>>(`/api/favorites/user/${encodeURIComponent(username)}`),
 
   getVenues: () =>
     request('/api/public/venues'),

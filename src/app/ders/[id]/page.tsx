@@ -443,6 +443,14 @@ function BookingModal({ cls, onClose }: { cls: DisplayClass, onClose: () => void
         })
         const data = await res.json()
         if (!res.ok) {
+          // E-POSTA DOĞRULAMA KAPISI: sunucu 403 ile birlikte makine-okunur `code` gönderiyor
+          // (requireVerified). Bu kod okunmadığında kullanıcı ham Türkçe hata metni görüyordu —
+          // İngilizce arayüzde bile — ve ne yapması gerektiğini anlamıyordu. Kodu okuyup
+          // doğrulama ekranına yönlendiriyoruz; oradan dönünce rezervasyonuna devam edebilir.
+          if (data?.code === 'EMAIL_NOT_VERIFIED') {
+            router.push(`/dogrula?next=${encodeURIComponent(window.location.pathname)}`)
+            return
+          }
           setError(data?.error || data?.message || t('common.error'))
           return
         }

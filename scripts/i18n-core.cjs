@@ -22,7 +22,7 @@ const crypto = require('crypto')
 
 // Bu satır dosyanın geri kalanının SHA-256 ön ekidir. Çekirdeği değiştirdiysen:
 //   1) ikiz repodaki kopyayı da güncelle,  2) buradaki damgayı yenile (hata mesajı doğrusunu yazar).
-const CEKIRDEK_SURUMU = 'a658aa0f6d46'
+const CEKIRDEK_SURUMU = '53c0969aebb2'
 
 function surumDogrula() {
   const ham = fs.readFileSync(__filename, 'utf8')
@@ -70,7 +70,12 @@ const TR_STEMS = new RegExp(
   '\\b(' + [
     'bildirim', 'gizlilik', 'gizli', 'destek', 'ayar', 'aktivite', 'etkinlik',
     'davet', 'sporcu', 'rezervasyon', 'eposta', 'hatirlat', 'dogrula', 'yorum',
-    'salon', 'egitmen', 'kullanici', 'sikayet', 'degerlendir', 'katil', 'favori',
+    'salon', 'egitmen', 'kullanici', 'sikayet', 'degerlendir', 'katil',
+    // `favori` İNGİLİZCE "favorite/favorites" ile de eşleşiyordu ve `favoritesError`,
+    // `favoriteCount` gibi DEĞİŞKEN ADLARINI "çevrilmemiş Türkçe metin" sanıyordu.
+    // Türkçe çekimlerin hiçbiri "favorite" olmaz (favori/favoriler/favoriye/favorilerim),
+    // bu yüzden yalnız İngilizce "-te" ekini dışlıyoruz.
+    'favori(?!te)',
     'seviye', 'rozet', 'ilce', 'mahalle', 'antren', 'uyelik',
   ].join('|') + ')', 'i'
 )

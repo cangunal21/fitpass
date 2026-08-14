@@ -183,9 +183,29 @@ export default function ProfilPage() {
   // Real user data for own profile
   const [meData, setMeData] = useState<any>(null)
   const [bookings, setBookings] = useState<any[]>([])
+  // ŞU AN HER ZAMAN BOŞ — bilinçli. Bu liste `data.dropInParticipations`tan dolduruluyordu ama
+  // /api/bookings/my o alanı HİÇ göndermiyor (o alan /api/public/users/:username yanıtında).
+  // Yanlış uçtan kopyalanmış bir alan adıydı; okuma kaldırıldı. Drop-in kayıtları zaten
+  // `bookings[]` içinde `dropInSlot` dolu olarak geliyor — drop-in bu lansmanın kapsamında
+  // olmadığı için web'in drop-in çizimi ayrı bir iş olarak bırakıldı (setDropIns korunuyor).
+  const [simdiMs, setSimdiMs] = useState(0)
+  // Şimdi'yi montajda oku ve dakikada bir tazele (bkz. checkInAcikMi).
+  useEffect(() => {
+    setSimdiMs(Date.now())
+    const t = setInterval(() => setSimdiMs(Date.now()), 60_000)
+    return () => clearInterval(t)
+  }, [])
+  const [favoritesLoading, setFavoritesLoading] = useState(false)
+  const [favoritesPrivate, setFavoritesPrivate] = useState(false)
+  const [favoritesError, setFavoritesError] = useState(false)
   const [dropIns, setDropIns] = useState<any[]>([])
   const [loadingMe, setLoadingMe] = useState(true)      // ilk render sunucu/istemci aynı olsun diye sabit
   const [loadingBookings, setLoadingBookings] = useState(true)
+  // HATA ile BOŞ AYRIMI: `request()` asla fırlatmaz — ağ hatası/500'de `{ error }` döner ve
+  // `.catch` HİÇ çalışmaz. Bu yüzden hata durumunda bookings [] kalıyor ve kullanıcıya
+  // "Henüz rezervasyonun yok" gösteriliyordu: rezervasyonu duran biri onu KAYBOLMUŞ sanıyordu.
+  // Mobil bu ayrımı yapıyordu (MyBookingsScreen `loadError`), web yapmıyordu — ikiz sürüklenmesi.
+  const [bookingsError, setBookingsError] = useState(false)
   const [cancelConfirm, setCancelConfirm] = useState<number | null>(null)
   const [cancelError, setCancelError] = useState<string | null>(null)
   const [transferFor, setTransferFor] = useState<number | null>(null)
@@ -300,11 +320,14 @@ export default function ProfilPage() {
       if (data.neighborhoods) setNeighborhoods(data.neighborhoods)
     }).catch(() => {})
 
+    // NOT: `dropInParticipations` BURADAN OKUNMUYOR — bu uç onu hiç göndermiyor (o alan
+    // /api/public/users/:username yanıtında var, başka bir uç). Yıllardır okunan ölü bir daldı;
+    // drop-in kayıtları zaten `bookings[]` içinde `dropInSlot` dolu olarak geliyor.
     api.getMyBookings(token).then((data: any) => {
+      if (data?.error) { setBookingsError(true); setLoadingBookings(false); return }
       if (data.bookings) setBookings(data.bookings)
-      if (data.dropInParticipations) setDropIns(data.dropInParticipations)
       setLoadingBookings(false)
-    }).catch(() => setLoadingBookings(false))
+    }).catch(() => { setBookingsError(true); setLoadingBookings(false) })
   }, [isOwnProfile, username])
 
   const handleCancel = async (bookingId: number) => {
@@ -405,6 +428,34 @@ export default function ProfilPage() {
     if (days === 1) return t('common.yesterday')
     if (days < 7) return t('time.daysAgo').replace('{n}', String(days))
     return trDateShort(date, dateLocale())
+  }
+
+  // SEKME SINIRI = DERSİN BİTİŞİ, başlangıcı DEĞİL. Eskiden `startsAt` kullanılıyordu: ders
+  // başladığı ANDA rezervasyon "Geçmiş"e düşüyor ve check-in QR'ı ekrandan kayboluyordu — yani
+  // kullanıcı tam salona vardığı, QR'a en çok ihtiyaç duyduğu anda onu bulamıyordu. Sunucunun
+  // check-in penceresi ise çok daha geniş: başlangıç−1sa .. bitiş+3sa (bookingController).
+  const bitisAni = (b: any): Date => {
+    const s = b?.session?.startsAt ?? b?.dropInSlot?.startsAt
+    const e = b?.session?.endsAt ?? b?.dropInSlot?.endsAt
+    return new Date(e ?? s ?? b?.createdAt)
+  }
+  // Sunucunun kabul ettiği check-in aralığı — istemci daha dar davranırsa QR'ı haksız yere gizler.
+  //
+  // `simdiMs` RENDER SIRASINDA OKUNMAZ, state'te durur. İki sebep:
+  //  1. Render sırasında `Date.now()` okumak saf değildir (React Compiler kuralı) ve sunucu ile
+  //     istemci farklı değer üretip hidrasyon uyuşmazlığı çıkarabilir.
+  //  2. Yan fayda: dakikada bir tazelendiği için, profil ekranı AÇIKKEN check-in penceresi
+  //     açıldığında QR kendiliğinden beliriyor — kullanıcı sayfayı yenilemek zorunda kalmıyor.
+  //
+  // Başlangıç 0: ilk render'da (sunucuda da) aynı değer → uyuşmazlık yok. O anda `loadingBookings`
+  // zaten true olduğu için 0 hiçbir karta yansımaz.
+  const checkInAcikMi = (b: any): boolean => {
+    const s = b?.session?.startsAt ?? b?.dropInSlot?.startsAt
+    const e = b?.session?.endsAt ?? b?.dropInSlot?.endsAt
+    if (!s || !simdiMs) return false
+    const bas = new Date(s).getTime() - 60 * 60_000
+    const son = e ? new Date(e).getTime() + 180 * 60_000 : new Date(s).getTime() + 180 * 60_000
+    return simdiMs >= bas && simdiMs <= son
   }
 
   // Kendi profilinde gerçek aktivite listesi (booking + drop-in birleşik, en yeni önce)
@@ -691,16 +742,26 @@ export default function ProfilPage() {
               onClick={() => {
                 setActiveTab(tab.key as any)
                 if (tab.key === 'favoriler') {
-                  if (isOwnProfile) {
-                    const token = localStorage.getItem('fitpass_token')
-                    if (token) {
-                      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/favorites/my`, {
-                        headers: { Authorization: `Bearer ${token}` }
-                      }).then(r => r.json()).then(d => setFavorites(d.favorites || []))
-                    }
-                  } else {
-                    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/favorites/user/${username}`)
-                      .then(r => r.json()).then(d => setFavorites(d.favorites || []))
+                  // TİPLİ İSTEMCİ + HATA/GİZLİ AYRIMI. Eskiden ham `fetch` vardı: `.catch` yoktu
+                  // (ağ hatasında yakalanmamış promise reddi), yükleniyor durumu yoktu (sekmede
+                  // yanıp sönme) ve sunucunun `private: true` bayrağı hiç okunmuyordu — gizli
+                  // profil "favori salon yok" diye görünüyordu.
+                  const token = localStorage.getItem('fitpass_token')
+                  const istek = isOwnProfile
+                    ? (token ? api.getMyFavorites(token) : null)
+                    : api.getUserFavorites(username)
+                  if (istek) {
+                    setFavoritesLoading(true)
+                    setFavoritesPrivate(false)
+                    setFavoritesError(false)
+                    istek
+                      .then(d => {
+                        if (d?.error) { setFavoritesError(true); return }
+                        setFavoritesPrivate(!!d?.private)
+                        setFavorites(Array.isArray(d?.favorites) ? d.favorites : [])
+                      })
+                      .catch(() => setFavoritesError(true))
+                      .finally(() => setFavoritesLoading(false))
                   }
                 }
                 if (tab.key === 'arkadaşlar' && !socialLoaded) {
@@ -840,6 +901,13 @@ export default function ProfilPage() {
             )}
             {loadingBookings ? (
               <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '48px', textAlign: 'center', border: '1px solid #F0F0F0', color: '#999', fontSize: 14 }}>{t('prof.reservationsLoading')}</div>
+            ) : bookingsError ? (
+              // HATA ≠ BOŞ: burada "rezervasyonun yok" demek, rezervasyonu DURAN kullanıcıya
+              // kaybolmuş izlenimi verirdi. Mobildeki tekrar-dene deseninin web karşılığı.
+              <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '48px', textAlign: 'center', border: '1px solid #F0F0F0' }}>
+                <div style={{ fontSize: 14, color: '#888', marginBottom: 20 }}>{t('prof.loadError')}</div>
+                <button onClick={() => { setBookingsError(false); setLoadingBookings(true); window.location.reload() }} style={{ padding: '12px 28px', borderRadius: 14, background: '#4F46E5', color: '#fff', border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>{t('prof.retry')}</button>
+              </div>
             ) : bookings.length === 0 && dropIns.length === 0 ? (
               <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '48px', textAlign: 'center', border: '1px solid #F0F0F0' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}><Ticket size={52} color="#ccc" /></div>
@@ -853,7 +921,7 @@ export default function ProfilPage() {
                 const allActivities = [
                   ...bookings.map((b: any) => ({ type: 'booking', date: new Date(b.session?.startsAt || b.createdAt), data: b })),
                   ...dropIns.map((dp: any) => ({ type: 'dropin', date: new Date(dp.slot?.startsAt || dp.joinedAt), data: dp })),
-                ].filter(a => a.date > new Date()).sort((a, b) => a.date.getTime() - b.date.getTime())
+                ].filter(a => (a.type === 'booking' ? bitisAni(a.data) : a.date) > new Date()).sort((a, b) => a.date.getTime() - b.date.getTime())
 
                 if (allActivities.length === 0) {
                   return (
@@ -876,7 +944,8 @@ export default function ProfilPage() {
                         const startsAt = session?.startsAt ? new Date(session.startsAt) : null
                         const dateStr = startsAt ? trDateLong(startsAt, dateLocale()) : ''
                         const timeStr = startsAt ? trTime(startsAt, dateLocale()) : ''
-                        const isFuture = startsAt ? startsAt > new Date() : false
+                        // QR: sunucunun kabul ettiği pencereyle AYNI (bkz. checkInAcikMi).
+                        const isFuture = checkInAcikMi(b) || (startsAt ? startsAt > new Date() : false)
                         const isConfirmed = b.status === 'confirmed'
                         const isCancelled = b.status === 'cancelled'
                         const awaitingConfirm = cancelConfirm === b.id
@@ -994,12 +1063,18 @@ export default function ProfilPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {loadingBookings ? (
               <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '48px', textAlign: 'center', border: '1px solid #F0F0F0', color: '#999', fontSize: 14 }}>{t('common.loading')}</div>
+            ) : bookingsError ? (
+              // GEÇMİŞ sekmesinde de HATA ≠ BOŞ (bkz. yaklaşan sekmesi).
+              <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '48px', textAlign: 'center', border: '1px solid #F0F0F0' }}>
+                <div style={{ fontSize: 14, color: '#888', marginBottom: 20 }}>{t('prof.loadError')}</div>
+                <button onClick={() => { setBookingsError(false); setLoadingBookings(true); window.location.reload() }} style={{ padding: '12px 28px', borderRadius: 14, background: '#4F46E5', color: '#fff', border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>{t('prof.retry')}</button>
+              </div>
             ) : (
               (() => {
                 const pastActivities = [
                   ...bookings.map((b: any) => ({ type: 'booking', date: new Date(b.session?.startsAt || b.createdAt), data: b })),
                   ...dropIns.map((dp: any) => ({ type: 'dropin', date: new Date(dp.slot?.startsAt || dp.joinedAt), data: dp })),
-                ].filter(a => a.date <= new Date()).sort((a, b) => b.date.getTime() - a.date.getTime())
+                ].filter(a => (a.type === 'booking' ? bitisAni(a.data) : a.date) <= new Date()).sort((a, b) => b.date.getTime() - a.date.getTime())
 
                 if (pastActivities.length === 0) {
                   return (
@@ -1299,7 +1374,15 @@ export default function ProfilPage() {
         {/* Favori Salonlar */}
         {activeTab === 'favoriler' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {favorites.length === 0 ? (
+            {favoritesLoading ? (
+              <div style={{ textAlign: 'center', color: '#aaa', padding: '40px 0', fontSize: 14 }}>{t('common.loading')}</div>
+            ) : favoritesError ? (
+              // HATA ≠ BOŞ: ağ hatasında "favorisi yok" demek yanlış bilgi vermekti.
+              <div style={{ textAlign: 'center', color: '#888', padding: '40px 0', fontSize: 14 }}>{t('prof.favLoadError')}</div>
+            ) : favoritesPrivate ? (
+              // GİZLİ ≠ BOŞ: sunucu `private: true` diyor; kullanıcı favorilerini gizlemiş.
+              <div style={{ textAlign: 'center', color: '#aaa', padding: '40px 0', fontSize: 14 }}>{t('prof.favPrivate')}</div>
+            ) : favorites.length === 0 ? (
               <div style={{ textAlign: 'center', color: '#aaa', padding: '40px 0', fontSize: 14 }}>
                 {isOwnProfile ? t('prof.noFavoritesOwn') : t('prof.noFavoritesOther')}
               </div>
@@ -1314,8 +1397,14 @@ export default function ProfilPage() {
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 3 }}>{v.name}</div>
                     <div style={{ fontSize: 12, color: '#888' }}>{v.address}</div>
-                    <div style={{ fontSize: 12, color: '#F59E0B', fontWeight: 600, marginTop: 2 }}>
-                      ★ {v.avgRating?.toFixed(1) || '—'} · {v.totalReviews || 0} {t('cls.reviews')}
+                    {/* `avgRating?.toFixed(1) || '—'` YANLIŞTI: avgRating=0 iken toFixed "0.0"
+                        üretir ve o dizge truthy olduğu için '—' dalına ASLA girilmiyordu. Sonuç:
+                        hiç puan almamış salon "★ 0.0" görünüyordu — yani puansız salon, en kötü
+                        puanlı salonla aynı. `avgRating: 0` "puan yok" demektir. */}
+                    <div style={{ fontSize: 12, color: v.totalReviews > 0 ? '#F59E0B' : '#aaa', fontWeight: 600, marginTop: 2 }}>
+                      {v.totalReviews > 0
+                        ? `★ ${v.avgRating.toFixed(1)} · ${v.totalReviews} ${t('cls.reviews')}`
+                        : t('venue.noRatingYet')}
                     </div>
                   </div>
                   <span style={{ fontSize: 18, color: '#DC2626' }}>❤️</span>

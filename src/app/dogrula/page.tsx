@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { getToken, getUser } from '@/lib/api'
 import { useT } from '@/lib/i18n'
@@ -21,7 +21,23 @@ import DogrulamaKodu from '@/components/DogrulamaKodu'
  */
 export default function DogrulaPage() {
   const router = useRouter()
+  const aramaParam = useSearchParams()
   const { t } = useT()
+
+  /**
+   * Doğrulama bitince kullanıcının GELDİĞİ yere dön. Rezervasyon ekranından 403 alıp buraya
+   * yönlendirilen biri, doğruladıktan sonra ana sayfaya düşerse dersi yeniden bulmak zorunda
+   * kalıyordu.
+   *
+   * AÇIK YÖNLENDİRME KORUMASI: yalnız `/` ile başlayan ve `//` ile başlaMAYAN yollar kabul
+   * edilir. `//kotu-site.com` tarayıcıda protokol-göreli MUTLAK adrestir; süzgeçsiz bırakılsa
+   * saldırgan `?next=//...` ile kullanıcıyı kendi sitesine yollayabilirdi.
+   */
+  const donusYolu = (() => {
+    const ham = aramaParam.get('next')
+    if (!ham || !ham.startsWith('/') || ham.startsWith('//')) return '/'
+    return ham
+  })()
   const [oturum, setOturum] = useState<{ token: string; email: string } | null>(null)
   const [hazir, setHazir] = useState(false)
 
@@ -42,7 +58,7 @@ export default function DogrulaPage() {
       <div style={{ width: '100%', maxWidth: 420, background: '#fff', borderRadius: 24, padding: '40px 32px', border: '1px solid #F0F0F0' }}>
         {oturum ? (
           <>
-            <DogrulamaKodu token={oturum.token} email={oturum.email} onBasarili={() => router.push('/')} />
+            <DogrulamaKodu token={oturum.token} email={oturum.email} onBasarili={() => router.push(donusYolu)} />
             <div style={{ textAlign: 'center', marginTop: 24, paddingTop: 24, borderTop: '1px solid #F5F5F5' }}>
               <Link href="/" style={{ fontSize: 13, color: '#aaa', textDecoration: 'none', fontWeight: 500 }}>
                 {t('verify.later')}

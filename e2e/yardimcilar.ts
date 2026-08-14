@@ -67,6 +67,7 @@ export async function apiKur(page: Page, over: {
   venue?: unknown
   dropInSlot?: { status: number; body?: unknown }
   categories?: unknown[]
+  yorumlar?: unknown
 } = {}) {
   const json = (route: Route, body: unknown, status = 200) =>
     route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) })
@@ -89,6 +90,11 @@ export async function apiKur(page: Page, over: {
     }
     if (p === '/api/public/dropin') return json(route, { slots: [], hasMore: false })
     if (p === '/api/public/for-you') return json(route, { sessions: [] })
+    // Yorum + puan özeti. `ratingBreakdown` GERÇEK dağılımdır: web'de bu dağılım bir dönem
+    // sabit kodluydu (%75/%18/%5) ve avgRating ne olursa olsun aynı çubuklar çiziliyordu.
+    if (p.startsWith('/api/reviews/venue/')) {
+      return json(route, over.yorumlar ?? { reviews: [], avgRating: 4.6, totalReviews: 12, ratingBreakdown: { '1': 0, '2': 1, '3': 1, '4': 4, '5': 6 } })
+    }
 
     // Tanımlanmamış uç: boş ama BAŞARILI dönme — sessizce yanlış yorumlanmasın diye 404.
     return json(route, { error: `mock'lanmamış uç: ${p}` }, 404)
@@ -100,4 +106,25 @@ export async function diliAyarla(page: Page, lang: 'tr' | 'en') {
   await page.addInitScript((l) => {
     try { localStorage.setItem('fitpass_lang', l) } catch { /* yoksay */ }
   }, lang)
+}
+
+/**
+ * Salonun bir DERSİ (getVenueById → venue.classes[] elemanı).
+ *
+ * `sessions[0].id` KRİTİK: salon sayfasındaki ders kartı bu seansa link verir. Ders id'sine
+ * link vermek "çalışıyor gibi" görünüp yanlış kaydı açardı — /ders/[id] getSessionById çağırıyor.
+ */
+export function salonDersi(over: Record<string, unknown> = {}) {
+  return {
+    id: 9,
+    title: 'Sabah Yogası',
+    titleEn: 'Morning Yoga',
+    durationMinutes: 60,
+    basePrice: 200,
+    isActive: true,
+    sportCategory: { name: 'Yoga', colorHex: '#C4A882', iconUrl: null },
+    instructor: { id: 4, fullName: 'Ayşe Hoca' },
+    sessions: [{ id: 777, startsAt: '2030-08-12T16:00:00.000Z', endsAt: '2030-08-12T17:00:00.000Z', spotsLeft: 4, capacity: 10 }],
+    ...over,
+  }
 }

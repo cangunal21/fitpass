@@ -27,6 +27,8 @@ export default function VenuePage() {
   const [activeImage, setActiveImage] = useState<string | null>(null)
   const [reviews, setReviews] = useState<any[]>([])
   const [reviewsLoading, setReviewsLoading] = useState(false)
+  // Yıldız dağılımı SUNUCUDAN (her yıldız için yorum sayısı). `null` = henüz yüklenmedi.
+  const [ratingBreakdown, setRatingBreakdown] = useState<Record<'1' | '2' | '3' | '4' | '5', number> | null>(null)
   // Not: yorum GÖNDERME artık salon profilinden yapılmıyor — global RatingPrompt (ders sonrası,
   // check-in'li, salon+hoca çift puan) hallediyor. Burada yalnız yorum LİSTESİ + ortalama gösterilir.
 
@@ -72,9 +74,14 @@ export default function VenuePage() {
   useEffect(() => {
     if (activeTab === 'yorumlar' && venue?.id && !venue._isMock) {
       setReviewsLoading(true)
-      fetch(`${API_URL}/api/reviews/venue/${venue.id}`)
-        .then(r => r.json())
-        .then(d => setReviews(d.reviews || []))
+      // TİPLİ İSTEMCİ + GERÇEK DAĞILIM: aşağıdaki özet kutusu eskiden UYDURMA veri çiziyordu
+      // (sabit 5 dolu yıldız + sabit %75/%18/%5 çubukları). Dağılım artık sunucudan geliyor;
+      // istemcide `reviews` listesinden hesaplamak da yanlış olurdu çünkü o liste take:50.
+      api.getVenueReviews(venue.id)
+        .then(d => {
+          setReviews(d.reviews || [])
+          setRatingBreakdown(d.ratingBreakdown ?? null)
+        })
         .finally(() => setReviewsLoading(false))
     }
   }, [activeTab, venue])
@@ -368,10 +375,14 @@ export default function VenuePage() {
                 // KALAN yer (sunucu hesaplıyor); eskiden seans kapasitesi okunuyordu
                 const availableSpots = nextSession?.spotsLeft ?? nextSession?.availableSpots ?? null
 
-                return (
+                // TIKLANABİLİRLİK: gerçek ders kartları LİNKSİZDİ (`cursor: 'default'`), üstelik
+                // hover efekti çalıştığı için tıklanabilir GÖRÜNÜP hiçbir şey yapmıyorlardı —
+                // salon sayfasındaki ders listesi web'de çıkmaz sokaktı. Mobil aynı yerde
+                // seansa gidiyordu; bu, ikizi düzeltilmemiş bir kusurdu.
+                // Hedef DERS değil SEANS id'si: /ders/[id] sayfası getSessionById çağırıyor.
+                const kart = (
                   <div
-                    key={cls.id}
-                    style={{ backgroundColor: '#fff', borderRadius: 18, padding: '20px 24px', border: '1px solid #F0F0F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'default', transition: 'all 0.15s' }}
+                    style={{ backgroundColor: '#fff', borderRadius: 18, padding: '20px 24px', border: '1px solid #F0F0F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: nextSession ? 'pointer' : 'default', transition: 'all 0.15s' }}
                     onMouseEnter={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor = '#E0E0E0'; el.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)' }}
                     onMouseLeave={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor = '#F0F0F0'; el.style.boxShadow = 'none' }}
                   >
@@ -402,6 +413,16 @@ export default function VenuePage() {
                         </div>
                       )}
                     </div>
+                  </div>
+                )
+                // Yaklaşan seansı olmayan ders TIKLANAMAZ ve bunu SÖYLER (mobille aynı davranış):
+                // sessizce ölü bir kart bırakmak kullanıcıyı "tıkladım, olmadı"ya iter.
+                return nextSession ? (
+                  <Link key={cls.id} href={`/ders/${nextSession.id}`} style={{ textDecoration: 'none' }}>{kart}</Link>
+                ) : (
+                  <div key={cls.id}>
+                    {kart}
+                    <div style={{ fontSize: 12, color: '#999', padding: '6px 24px 0' }}>{t('venue.noUpcoming')}</div>
                   </div>
                 )
               })
@@ -467,24 +488,48 @@ export default function VenuePage() {
         {/* Yorumlar */}
         {activeTab === 'yorumlar' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {/* Rating summary */}
-            <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px 28px', border: '1px solid #F0F0F0', display: 'flex', gap: 32, alignItems: 'center' }}>
+            {/* Puan özeti — YALNIZ gerçekten yorum varsa. Hiç yorumu olmayan salonda kocaman bir
+                "0" ve altında yıldız satırı çizmek, salonu "sıfır puan almış" gibi gösteriyordu;
+                oysa `avgRating: 0` "henüz puan yok" demek. Mobil bu bloğu zaten gizliyordu
+                (VenueDetailScreen: `venue.avgRating > 0 &&`) — web'de ikizi düzeltilmemişti. */}
+            {totalReviews > 0 && (
+            <div data-testid="puan-ozeti" style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px 28px', border: '1px solid #F0F0F0', display: 'flex', gap: 32, alignItems: 'center' }}>
               <div style={{ textAlign: 'center', flexShrink: 0 }}>
                 <div style={{ fontSize: 52, fontWeight: 800, color: '#111', lineHeight: 1 }}>{avgRating}</div>
-                <div style={{ color: '#F59E0B', fontSize: 18, margin: '8px 0 4px' }}>★★★★★</div>
+                {/* Yıldızlar avgRating'e GÖRE: eskiden sabit "★★★★★" yazıyordu ve puanı 2.1 olan
+                    salon bile beş dolu yıldız gösteriyordu. */}
+                <div style={{ fontSize: 18, margin: '8px 0 4px', letterSpacing: 1 }} aria-label={`${avgRating} / 5`}>
+                  {/* `data-dolu`: yıldızın DOLU olup olmadığı testten görünsün. Metin üzerinden
+                      doğrulamak işe yaramaz — beş ayrı span'in kapsayıcısı yine "★★★★★" okunur
+                      ve "sabit beş yıldız" hatası testten kaçardı. */}
+                  {[1, 2, 3, 4, 5].map(y => (
+                    <span key={y} data-testid="yildiz" data-dolu={y <= Math.round(avgRating) ? '1' : '0'} style={{ color: y <= Math.round(avgRating) ? '#F59E0B' : '#E5E5E5' }}>★</span>
+                  ))}
+                </div>
                 <div style={{ fontSize: 12, color: '#999' }}>{totalReviews} {t('cls.reviews')}</div>
               </div>
               <div style={{ flex: 1 }}>
-                {[5, 4, 3, 2, 1].map(star => (
-                  <div key={star} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                    <span style={{ fontSize: 12, color: '#888', width: 12, textAlign: 'right' }}>{star}</span>
-                    <div style={{ flex: 1, height: 6, backgroundColor: '#F0F0F0', borderRadius: 100 }}>
-                      <div style={{ height: '100%', backgroundColor: '#F59E0B', borderRadius: 100, width: star === 5 ? '75%' : star === 4 ? '18%' : '5%', transition: 'width 0.3s' }} />
+                {[5, 4, 3, 2, 1].map(star => {
+                  // GERÇEK SAYI, sabit yüzde DEĞİL. Dağılım henüz yüklenmediyse çubuk boş kalır —
+                  // uydurma bir oran göstermektense hiçbir şey göstermemek doğru.
+                  const adet = ratingBreakdown?.[String(star) as '1' | '2' | '3' | '4' | '5'] ?? 0
+                  const toplam = ratingBreakdown
+                    ? Object.values(ratingBreakdown).reduce((a, b) => a + b, 0)
+                    : 0
+                  const oran = toplam > 0 ? (adet / toplam) * 100 : 0
+                  return (
+                    <div key={star} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                      <span style={{ fontSize: 12, color: '#888', width: 12, textAlign: 'right' }}>{star}</span>
+                      <div style={{ flex: 1, height: 6, backgroundColor: '#F0F0F0', borderRadius: 100 }}>
+                        <div style={{ height: '100%', backgroundColor: '#F59E0B', borderRadius: 100, width: `${oran}%`, transition: 'width 0.3s' }} />
+                      </div>
+                      <span style={{ fontSize: 12, color: '#999', width: 24 }}>{adet}</span>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
+            )}
 
             {/* Yorum gönderme: salon profilinden KALDIRILDI. Puanlama, ders sonrası global
                 RatingPrompt ile (check-in'li + salon+hoca çift puan) yapılır. Burada yalnız liste. */}
