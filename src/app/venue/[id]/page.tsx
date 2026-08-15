@@ -64,12 +64,19 @@ export default function VenuePage() {
     if (!token) { router.push(`/giris?redirect=/venue/${id}`); return }
     setFavLoading(true)
     const method = isFavorite ? 'DELETE' : 'POST'
-    const res = await fetch(`${API_URL}/api/favorites/${venue.id}`, {
-      method,
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    if (res.ok) setIsFavorite(!isFavorite)
-    setFavLoading(false)
+    try {
+      const res = await fetch(`${API_URL}/api/favorites/${venue.id}`, {
+        method,
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (res.ok) setIsFavorite(!isFavorite)
+    } catch {
+      // Ağ hatası: durumu DEĞİŞTİRME (sunucuda ne olduğunu bilmiyoruz) ama butonu da
+      // kilitli bırakma. `try` yokken `fetch` fırlıyor, `setFavLoading(false)` hiç
+      // çalışmıyor ve favori butonu KALICI devre dışı kalıyordu.
+    } finally {
+      setFavLoading(false)
+    }
   }
 
   useEffect(() => {

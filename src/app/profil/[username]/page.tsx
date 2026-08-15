@@ -550,11 +550,20 @@ export default function ProfilPage() {
                   onUpload={async (url) => {
                     const token = localStorage.getItem('fitpass_token')
                     if (!token) return
-                    await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/auth/profile`, {
-                      method: 'PUT',
-                      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                      body: JSON.stringify({ avatarUrl: url }),
-                    })
+                    // SUNUCUYA KAYIT SONUCU KONTROL EDİLİYOR. Görsel Cloudinary'ye yüklenmiş
+                    // olabilir ama profile YAZILAMAMIŞ olabilir (ağ hatası, 4xx/5xx). Sonuç
+                    // okunmadığında ekranda yeni fotoğraf görünüyor, kullanıcı "oldu" sanıyor,
+                    // sayfayı yenileyince ESKİ fotoğraf geri geliyordu — sessiz başarısızlık.
+                    let kaydedildi = false
+                    try {
+                      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/auth/profile`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                        body: JSON.stringify({ avatarUrl: url }),
+                      })
+                      kaydedildi = res.ok
+                    } catch { kaydedildi = false }
+                    if (!kaydedildi) { alert(t('avatar.saveError')); return }
                     setMeData((prev: any) => prev ? { ...prev, avatarUrl: url } : prev)
                   }}
                 />
