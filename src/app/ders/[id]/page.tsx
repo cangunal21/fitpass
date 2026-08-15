@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { mockClasses, mockVenues, mockInstructors } from '@/lib/mockData'
@@ -117,21 +117,31 @@ export default function DersDetay() {
     // Sunucunun gerekçesi GÖSTERİLİR (doğrulanmamış e-posta, geçmiş seans, zaten listede…).
     // Yutulursa buton hiçbir şey yapmıyormuş gibi görünür.
     if (r?.error) { setListeHata(r.error); return }
+    // İyimser güncelleme + SUNUCUDAN TAZELEME. İyimser kısım butonu anında değiştirir
+    // (kullanıcı beklemesin), tazeleme gerçek sırayı getirir.
     setListede(!listede)
-    setSira(null) // katılma/çıkma sonrası sıra bilgisi bayatlar; bir sonraki durum sorgusu tazeler
+    setSira(null)
+    void durumuTazele()
   }
 
   // Zaten listede miyim? Bilinmezse kullanıcı "Katıl"a basıp hata alıyordu.
-  useEffect(() => {
+  //
+  // AYRI FONKSİYON, çünkü KATILMA/ÇIKMA SONRASI DA çağrılmalı. Önceden yalnız montajda
+  // koşuyordu ve katılmadan hemen sonra `sira` null kalıyordu: kullanıcı listeye girdiği an —
+  // yani sırasını en çok merak ettiği an — genel "Bekleme listesindesin" metnini görüyor,
+  // kaçıncı olduğunu ancak sayfayı YENİLEYİNCE öğreniyordu. (Kodda "bir sonraki durum sorgusu
+  // tazeler" diye bir yorum vardı; öyle bir sorgu YOKTU.)
+  const durumuTazele = useCallback(async () => {
     const token = getToken()
     if (!token || !cls?.isRealSession) return
-    api.getWaitlistStatus(token, Number(params.id))
-      .then(r => {
-        setListede(!!r?.onWaitlist)
-        setSira(r?.onWaitlist && typeof r.totalWaiting === 'number' ? { position: r.position ?? null, totalWaiting: r.totalWaiting } : null)
-      })
-      .catch(() => { /* durum bilinmiyorsa buton "Katıl" kalır; sunucu yine de doğru davranır */ })
+    try {
+      const r = await api.getWaitlistStatus(token, Number(params.id))
+      setListede(!!r?.onWaitlist)
+      setSira(r?.onWaitlist && typeof r.totalWaiting === 'number' ? { position: r.position ?? null, totalWaiting: r.totalWaiting } : null)
+    } catch { /* durum bilinmiyorsa buton "Katıl" kalır; sunucu yine de doğru davranır */ }
   }, [params.id, cls?.isRealSession])
+
+  useEffect(() => { void durumuTazele() }, [durumuTazele])
 
   if (loading || !cls) {
     return (

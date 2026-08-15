@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Building2, Clock, BookOpen, Calendar, Ticket, AlertCircle, User, Check, ChevronDown, ChevronUp, Plus, Trash2, BadgeCheck, Users, ClipboardList, Zap, QrCode, BarChart3, TrendingUp, Star, Image as ImageIcon, Settings, CreditCard } from 'lucide-react'
 import AvatarUpload from '@/components/AvatarUpload'
 import { getInitialsAvatar, uploadToCloudinary } from '@/lib/cloudinary'
+import { request } from '@/lib/api'
 import { trYmd, trTime, trDateFull, trDateNumeric, trDateLong } from '@/lib/trTime'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
@@ -45,7 +46,8 @@ export default function SalonPaneliPage() {
   const [classSuccess, setClassSuccess] = useState('')
 
   // Session forms
-  const [sessionForms, setSessionForms] = useState<Record<number, { date: string; time: string; capacity: string; instructorId: string }>>({})
+  // NOT: `instructorId` YOK — seans bazlı hoca diye bir şey sistemde mevcut değil (bkz. formdaki not).
+  const [sessionForms, setSessionForms] = useState<Record<number, { date: string; time: string; capacity: string }>>({})
   const [sessionSuccess, setSessionSuccess] = useState<Record<number, string>>({})
   const [sessionError, setSessionError] = useState<Record<number, string>>({})
   const [sessionMode, setSessionMode] = useState<Record<number, 'tek' | 'tekrarlayan'>>({})
@@ -237,13 +239,21 @@ export default function SalonPaneliPage() {
     if (!venue?.id) return
     setReviewsLoading(true)
     const token = localStorage.getItem('fitpass_venue_token')!
-    // SAHİP ucu (/api/venue/reviews) — public uç (/api/reviews/venue/:id) `hidePrivateReply`
-    // uyguladığı için salon KENDİ yazdığı ÖZEL yanıtı bile göremiyordu (yanıt yazınca kaybolurdu).
-    const res = await fetch(`${API_URL}/api/venue/reviews`, { headers: { Authorization: `Bearer ${token}` } })
-    if (res.status === 401) return venueSessionExpired()
-    const data = await res.json()
-    setReviews(data.reviews || [])
-    setReviewsLoading(false)
+    try {
+      // SAHİP ucu (/api/venue/reviews) — public uç (/api/reviews/venue/:id) `hidePrivateReply`
+      // uyguladığı için salon KENDİ yazdığı ÖZEL yanıtı bile göremiyordu (yanıt yazınca kaybolurdu).
+      const res = await fetch(`${API_URL}/api/venue/reviews`, { headers: { Authorization: `Bearer ${token}` } })
+      if (res.status === 401) return venueSessionExpired()
+      const data = await res.json()
+      setReviews(data.reviews || [])
+    } catch {
+      // Ağ hatası: liste boş kalır ama EKRAN KİLİTLENMEZ. Eskiden `fetch` fırlayınca
+      // `setReviewsLoading(false)` hiç çalışmıyor ve yorumlar sekmesi sonsuz "yükleniyor"
+      // durumunda kalıyordu — salon sahibi sayfayı yenilemek zorundaydı.
+      setReviews([])
+    } finally {
+      setReviewsLoading(false)
+    }
   }
 
   const handleReply = async (reviewId: number) => {
@@ -253,17 +263,26 @@ export default function SalonPaneliPage() {
     const token = localStorage.getItem('fitpass_venue_token')!
     // GÖRÜNÜRLÜK: backend `visibility` alanını zaten kabul ediyordu (reviewController) ama panel
     // hiç GÖNDERMİYORDU → her yanıt zorunlu olarak herkese açık oluyordu. Varsayılan yine 'public'.
-    const res = await fetch(`${API_URL}/api/reviews/${reviewId}/reply`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ reply, visibility: replyPrivate[reviewId] ? 'private' : 'public' }),
-    })
-    if (res.ok) {
-      setReplyTexts(t => ({ ...t, [reviewId]: '' }))
-      setReplyPrivate(p => ({ ...p, [reviewId]: false }))
-      fetchReviews()
+    try {
+      const res = await fetch(`${API_URL}/api/reviews/${reviewId}/reply`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ reply, visibility: replyPrivate[reviewId] ? 'private' : 'public' }),
+      })
+      if (res.ok) {
+        setReplyTexts(t => ({ ...t, [reviewId]: '' }))
+        setReplyPrivate(p => ({ ...p, [reviewId]: false }))
+        fetchReviews()
+      } else {
+        alert('Yanıt kaydedilemedi. Lütfen tekrar deneyin.')
+      }
+    } catch {
+      // Ağ hatası: ham `fetch` FIRLATIR ve `setReplyLoading(null)` hiç çalışmazdı →
+      // yanıt butonu kalıcı kilitli kalıyordu.
+      alert('Bağlantı hatası. Yanıt kaydedilemedi.')
+    } finally {
+      setReplyLoading(null)
     }
-    setReplyLoading(null)
   }
 
   const handleDeleteReply = async (reviewId: number) => {
@@ -279,13 +298,21 @@ export default function SalonPaneliPage() {
     e.preventDefault()
     setProfileError(''); setProfileSuccess('')
     const token = localStorage.getItem('fitpass_venue_token')!
-    const res = await fetch(`${API_URL}/api/venue/profile`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify(profileForm),
-    })
-    const data = await res.json()
-    if (data.error) { setProfileError(data.error); return }
+    let data: any
+    try {
+      // AĞ HATASI YOLU: ham `fetch` ağ koptuğunda FIRLATIR ve aşağıdaki hiçbir satır
+      // çalışmaz — kullanıcıya ne hata ne başarı görünür, buton/bayrak asılı kalır.
+      const res = await fetch(`${API_URL}/api/venue/profile`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(profileForm),
+      })
+      data = await res.json()
+    } catch {
+      setProfileError('Bağlantı hatası. Bilgiler kaydedilemedi.')
+      return
+    }
+    if (data?.error) { setProfileError(data.error); return }
     setProfileSuccess('Bilgiler güncellendi!')
     setVenue((v: any) => ({ ...v, ...data.venue }))
     setTimeout(() => setProfileSuccess(''), 3000)
@@ -296,13 +323,21 @@ export default function SalonPaneliPage() {
     setPwError(''); setPwSuccess('')
     if (pwForm.newPassword !== pwForm.newPassword2) { setPwError('Yeni şifreler eşleşmiyor.'); return }
     const token = localStorage.getItem('fitpass_venue_token')!
-    const res = await fetch(`${API_URL}/api/venue/change-password`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ currentPassword: pwForm.currentPassword, newPassword: pwForm.newPassword }),
-    })
-    const data = await res.json()
-    if (data.error) { setPwError(data.error); return }
+    let data: any
+    try {
+      // AĞ HATASI YOLU: ham `fetch` ağ koptuğunda FIRLATIR ve aşağıdaki hiçbir satır
+      // çalışmaz — kullanıcıya ne hata ne başarı görünür, buton/bayrak asılı kalır.
+      const res = await fetch(`${API_URL}/api/venue/change-password`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ currentPassword: pwForm.currentPassword, newPassword: pwForm.newPassword }),
+      })
+      data = await res.json()
+    } catch {
+      setPwError('Bağlantı hatası. Şifre değiştirilemedi.')
+      return
+    }
+    if (data?.error) { setPwError(data.error); return }
     setPwSuccess('Şifre değiştirildi!')
     setPwForm({ currentPassword: '', newPassword: '', newPassword2: '' })
     setTimeout(() => setPwSuccess(''), 3000)
@@ -527,7 +562,7 @@ export default function SalonPaneliPage() {
       setTimeout(() => setSessionError(prev => ({ ...prev, [classId]: '' })), 5000)
     } else {
       setSessionSuccess(prev => ({ ...prev, [classId]: `${formatSessionDate(form.date)} saat ${form.time} — ${form.capacity} kişi kapasiteli seans eklendi!` }))
-      setSessionForms(prev => ({ ...prev, [classId]: { date: '', time: '', capacity: '', instructorId: '' } }))
+      setSessionForms(prev => ({ ...prev, [classId]: { date: '', time: '', capacity: '' } }))
       fetchVenue(token)
       setTimeout(() => setSessionSuccess(prev => ({ ...prev, [classId]: '' })), 3000)
     }
@@ -784,7 +819,6 @@ export default function SalonPaneliPage() {
                 <button onClick={() => setShowClassForm(true)} style={{ padding: '12px 24px', borderRadius: 14, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>+ İlk Dersi Ekle</button>
               </div>
             ) : venue.classes.map((cls: any) => {
-              const needsInstructor = !NO_INSTRUCTOR_CATEGORIES.includes(cls.category)
               return (
                 <div key={cls.id} style={{ backgroundColor: '#fff', borderRadius: 20, padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
@@ -823,8 +857,12 @@ export default function SalonPaneliPage() {
                     </div>
 
                     {/* TEK SEFERLİK FORM */}
+                    {/* Izgara ARTIK KOŞULSUZ 4 kolon: tarih · saat · kontenjan · buton.
+                        Önceden kategoriye göre beşinci bir kolon açılıyordu; o kolondaki hoca
+                        seçimi kaldırıldı (hiçbir şey yapmıyordu, bkz. aşağıdaki not) ve koşul
+                        kalsaydı ekranda BOŞ bir kolon kalırdı. */}
                     {(sessionMode[cls.id] || 'tek') === 'tek' && (
-                      <div style={{ display: 'grid', gridTemplateColumns: needsInstructor ? '1.2fr 1fr 1fr 1fr auto' : '1.4fr 1fr 1fr auto', gap: 12, alignItems: 'end' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr auto', gap: 12, alignItems: 'end' }}>
                         <div>
                           <label style={{ fontSize: 11, color: '#888', display: 'block', marginBottom: 4 }}>Tarih</label>
                           <input type="date" value={sessionForms[cls.id]?.date || ''} onChange={e => setSessionForms(prev => ({ ...prev, [cls.id]: { ...prev[cls.id], date: e.target.value } }))} style={{ width: '100%', padding: '9px 10px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', boxSizing: 'border-box' as const, backgroundColor: '#fff' }} />
@@ -840,17 +878,17 @@ export default function SalonPaneliPage() {
                           <label style={{ fontSize: 11, color: '#888', display: 'block', marginBottom: 4 }}>Kontenjan</label>
                           <input type="number" placeholder="15" value={sessionForms[cls.id]?.capacity || ''} onChange={e => setSessionForms(prev => ({ ...prev, [cls.id]: { ...prev[cls.id], capacity: e.target.value } }))} style={{ width: '100%', padding: '9px 10px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', boxSizing: 'border-box' as const, backgroundColor: '#fff' }} />
                         </div>
-                        {needsInstructor && (
-                          <div>
-                            <label style={{ fontSize: 11, color: '#888', display: 'block', marginBottom: 4 }}>Hoca</label>
-                            <select value={sessionForms[cls.id]?.instructorId || ''} onChange={e => setSessionForms(prev => ({ ...prev, [cls.id]: { ...prev[cls.id], instructorId: e.target.value } }))} style={{ width: '100%', padding: '9px 10px', borderRadius: 10, border: '1.5px solid #e5e5e5', fontSize: 13, outline: 'none', boxSizing: 'border-box' as const, backgroundColor: '#fff' }}>
-                              <option value="">Seçin</option>
-                              {instructors.map((inst: any) => (
-                                <option key={inst.id} value={inst.id}>{inst.fullName}</option>
-                              ))}
-                            </select>
-                          </div>
-                        )}
+                        {/* SEANS BAZLI HOCA SEÇİMİ KALDIRILDI — HİÇBİR ŞEY YAPMIYORDU.
+                            `Class_Session` modelinde `instructorId` KOLONU YOK ve `createSession`
+                            gövdeden yalnız `{ date, time, capacity, price }` okuyor; seçilen hoca
+                            sessizce düşüyordu. Salon sahibi bir seansa yedek hoca atadığını
+                            SANIYOR, sistemde hiçbir karşılığı olmuyordu — yapmadığı bir şeyi
+                            yapıyormuş gibi gösteren bir kontrol, hiç olmayandan kötüdür.
+
+                            Hoca DERS seviyesinde çalışıyor (`createClass` `instructorId` okuyor ve
+                            hocanın bu salona ait olduğunu doğruluyor) — yukarıdaki ders formunda.
+                            Seans bazlı yedek-hoca isteniyorsa bu bir ÖZELLİK işi: şemaya kolon,
+                            uca okuma ve istemcilerde gösterim gerekir. */}
                         <button onClick={() => handleAddSession(cls.id)} style={{ padding: '9px 18px', borderRadius: 10, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' as const, alignSelf: 'end' }}>Ekle</button>
                       </div>
                     )}
@@ -1864,37 +1902,52 @@ function CheckInScanner({ venueId }: { venueId: number }) {
     setLoading(true)
     setResult(null)
     const token = localStorage.getItem('fitpass_venue_token')!
-    // Önce class check-in dene, hata alırsa drop-in check-in dene
-    const res = await fetch(`${API_URL}/api/bookings/checkin`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ code: code.trim().toUpperCase() }),
-    })
-    let data = await res.json()
-    if (data.error) {
-      const res2 = await fetch(`${API_URL}/api/bookings/dropin-checkin`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ code: code.trim().toUpperCase() }),
-      })
-      const data2 = await res2.json()
-      if (!data2.error) data = data2
+    const kod = code.trim().toUpperCase()
+    const gonder = (yol: string) =>
+      request<{ error?: string; success?: boolean; alreadyCheckedIn?: boolean; message?: string; booking?: unknown; participant?: unknown }>(
+        yol,
+        { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ code: kod }) },
+      )
+    try {
+      // HAM `fetch` DEĞİL, PAYLAŞILAN `request()`. Eskiden ham fetch vardı ve `try/catch` YOKTU:
+      // ağ koptuğunda `fetch` fırlıyor, `setLoading(false)` HİÇ ÇALIŞMIYOR ve buton
+      // (`disabled={loading || ...}`) KALICI OLARAK KİLİTLENİYORDU — salon sahibi gişede,
+      // sıra beklerken, sayfayı yenilemek zorunda kalıyordu. `res.json()` de 502 gibi
+      // HTML yanıtlarda ayrıca fırlıyordu. `request()` zaman aşımı + tek biçimli hata gövdesi
+      // + sessiz jeton yenilemesi getiriyor.
+      // Önce ders check-in'i dene, hata alırsa drop-in check-in'i dene.
+      let data = await gonder('/api/bookings/checkin')
+      if (data.error) {
+        const data2 = await gonder('/api/bookings/dropin-checkin')
+        if (!data2.error) data = data2
+      }
+      setResult(data.error ? { success: false, message: data.error } : { ...data, message: data.message ?? '' })
+      if (!data.error) setCode('')
+    } catch {
+      // `request()` normalde fırlatmaz; buraya düşülüyorsa beklenmedik bir durum var.
+      // Yine de kullanıcıya bir şey söyle — sessiz kalmak butonu kilitli bırakmakla aynı şey.
+      setResult({ success: false, message: 'Bağlantı hatası. Lütfen tekrar deneyin.' })
+    } finally {
+      // HER DURUMDA: hata da olsa buton yeniden basılabilir olmalı.
+      setLoading(false)
     }
-    setResult(data.error ? { success: false, message: data.error } : data)
-    setLoading(false)
-    if (!data.error) setCode('')
   }
 
   return (
     <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.08)', marginBottom: 8 }}>
       <h4 style={{ fontSize: 16, fontWeight: 800, color: '#1a1a1a', margin: '0 0 16px' }}>Check-in Yap</h4>
       <form onSubmit={handleCheckIn} style={{ display: 'flex', gap: 10 }}>
+        {/* KOD 12 HANE, 8 DEĞİL. Sunucu `crypto.randomBytes(6).toString('hex')` üretiyor =
+            12 karakter (bookingController). Bu kutu `maxLength={8}` ile kesiyordu ve sunucu
+            TAM EŞLEŞME aradığı için (`where: { checkInCode: code }`) kesilen kod ASLA
+            bulunamıyordu: web salon panelinden HİÇ KİMSE check-in yapılamıyordu.
+            Placeholder da yanlış örnek veriyordu ve salon sahibini "kod eksik" sanmaya itiyordu. */}
         <input
           type="text"
-          placeholder="8 haneli kod (örn: A1B2C3D4)"
+          placeholder="12 haneli kod (örn: A1B2C3D4E5F6)"
           value={code}
           onChange={e => { setCode(e.target.value.toUpperCase()); setResult(null) }}
-          maxLength={8}
+          maxLength={12}
           style={{ flex: 1, padding: '12px 16px', borderRadius: 12, border: '1.5px solid #E5E7EB', fontSize: 15, fontWeight: 700, letterSpacing: 3, fontFamily: 'monospace', outline: 'none', textTransform: 'uppercase' }}
         />
         <button type="submit" disabled={loading || code.length < 4} style={{ padding: '12px 20px', borderRadius: 12, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', opacity: loading || code.length < 4 ? 0.6 : 1 }}>

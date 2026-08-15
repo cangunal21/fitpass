@@ -127,7 +127,13 @@ export default function EgitmenPortalPage() {
     e.preventDefault()
     if (!checkinCode.trim()) return
     setCheckinBusy(true); setCheckinResult(null)
-    const res = await fetch(`${API_URL}/api/instructor/checkin`, { method: 'POST', headers: jsonAuth, body: JSON.stringify({ code: checkinCode.trim() }) }).then(x => x.json())
+    // `.catch` ZORUNLU — yoksa ağ koptuğunda `setCheckinBusy(false)` HİÇ çalışmaz ve buton
+    // kalıcı '...' kalır: eğitmen kapıda, öğrenci beklerken sayfayı yenilemek zorunda kalır.
+    // (Aynı dosyadaki handleReply/handleDeleteReply bu korumayı KULLANIYORDU; kapı akışı olan
+    // bu handler atlanmıştı — kardeş yol kalıbı.)
+    const res = await fetch(`${API_URL}/api/instructor/checkin`, { method: 'POST', headers: jsonAuth, body: JSON.stringify({ code: checkinCode.trim() }) })
+      .then(x => x.json())
+      .catch(() => ({ error: 'Bağlantı hatası. Lütfen tekrar deneyin.' }))
     setCheckinBusy(false); setCheckinResult(res)
     if (res.success || res.alreadyCheckedIn) setCheckinCode('')
   }
@@ -268,9 +274,9 @@ export default function EgitmenPortalPage() {
         {tab === 'checkin' && (
           <div style={{ background: '#fff', borderRadius: 18, padding: '24px 28px', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}><QrCode size={20} color="#4F46E5" /><span style={{ fontSize: 16, fontWeight: 800 }}>Öğrenci Check-in</span></div>
-            <p style={{ fontSize: 13, color: '#888', marginBottom: 16 }}>Öğrencinin uygulamadaki 8 haneli check-in kodunu gir. Yalnızca kendi derslerindeki öğrencileri onaylayabilirsin.</p>
+            <p style={{ fontSize: 13, color: '#888', marginBottom: 16 }}>Öğrencinin uygulamadaki 12 haneli check-in kodunu gir. Yalnızca kendi derslerindeki öğrencileri onaylayabilirsin.</p>
             <form onSubmit={doCheckin} style={{ display: 'flex', gap: 8 }}>
-              <input value={checkinCode} onChange={e => setCheckinCode(e.target.value.toUpperCase())} placeholder="ÖRN: A1B2C3D4" maxLength={12} style={{ ...inp, flex: 1, letterSpacing: 2, fontWeight: 700, textTransform: 'uppercase' }} />
+              <input value={checkinCode} onChange={e => setCheckinCode(e.target.value.toUpperCase())} placeholder="ÖRN: A1B2C3D4E5F6" maxLength={12} style={{ ...inp, flex: 1, letterSpacing: 2, fontWeight: 700, textTransform: 'uppercase' }} />
               <button type="submit" disabled={checkinBusy} style={{ ...primaryBtn, width: 'auto', padding: '12px 24px' }}>{checkinBusy ? '...' : 'Onayla'}</button>
             </form>
             {checkinResult && (

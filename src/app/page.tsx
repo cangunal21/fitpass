@@ -10,7 +10,7 @@ import { Search, LayoutGrid, Map, Flame, Clock, Timer, X } from 'lucide-react'
 import { SportIcon, SportIconBox, getIconKeyForCategory, getColorForCategory } from '@/lib/sportIcons'
 import { SkeletonCardGrid } from '@/components/Skeleton'
 import { useT, translateCategory, localizeText } from '@/lib/i18n'
-import { trToday, trAddDays, trInstant, trWeekday, trTime, trDateFull } from '@/lib/trTime'
+import { trToday, trAddDays, trInstant, trWeekday, trTime, trDateFull, haftaSonuAraligi } from '@/lib/trTime'
 import type { SessionSummary } from '@/types/api'
 
 const dateLocale = () => (typeof window !== 'undefined' && localStorage.getItem('fitpass_lang') === 'en') ? 'en-US' : 'tr-TR'
@@ -148,9 +148,19 @@ export default function Home() {
     if (filter === 'today') return { dateFrom: dayStart(today), dateTo: dayStart(trAddDays(today, 1)) }
     if (filter === 'week') return { dateFrom: dayStart(today), dateTo: dayStart(trAddDays(today, 7)) }
     if (filter === 'weekend') {
-      const daysUntilSat = (6 - trWeekday(new Date()) + 7) % 7 || 7
-      const sat = trAddDays(today, daysUntilSat)
-      return { dateFrom: dayStart(sat), dateTo: dayStart(trAddDays(sat, 2)) }
+      // "Hafta sonu" = İÇİNDE BULUNULAN ya da BİR SONRAKİ hafta sonu.
+      //
+      // Eskiden `... % 7 || 7` yazıyordu ve `||` sıfırı da yakaladığı için CUMARTESİ GÜNÜ
+      // sonuç 7 oluyordu: kullanıcı cumartesi sabahı "Hafta sonu" filtresine bastığında
+      // O GÜNKÜ dersler gizleniyor, bir HAFTA SONRASI gösteriliyordu. Pazar günü de aynı
+      // şekilde içinde bulunulan hafta sonu atlanıyordu.
+      //
+      // Doğru davranış:
+      //   Pzt–Cum → gelecek Cmt 00:00 .. Paz 23:59
+      //   Cmt     → bugün 00:00 .. yarın (Paz) 23:59
+      //   Paz     → bugün 00:00 .. bugün 23:59   (hafta sonu bitiyor; bugünü gizleme)
+      const { baslangic, bitis } = haftaSonuAraligi(trWeekday(new Date()), today)
+      return { dateFrom: dayStart(baslangic), dateTo: dayStart(bitis) }
     }
     return {}
   }

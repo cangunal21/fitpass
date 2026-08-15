@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { api, saveToken, saveUser, saveRefreshToken } from '@/lib/api'
 import { AlertCircle } from 'lucide-react'
 import { useT } from '@/lib/i18n'
+import { guvenliDonusYolu } from '@/lib/donusYolu'
 
 function GirisForm() {
   const router = useRouter()
@@ -35,11 +36,12 @@ function GirisForm() {
       // Kayıt yarım kalmışsa (kod hiç girilmemiş) doğrulama ekranına götür. Aksi halde kullanıcı
       // içeri girer ama rezervasyon/yorum denediğinde sebebini anlamadan 403 alır.
       if (res.requiresEmailVerification) { router.push('/dogrula'); return }
-      // Open-redirect önlemi: yalnızca site-içi mutlak yolu kabul et. '//evil.com' ve '/\evil'
-      // tarayıcıda çapraz-origin çözülür; tek '/' ile başlayıp ardından '/' veya '\' gelmeyen değere izin ver.
-      const raw = searchParams.get('redirect')
-      const safe = raw && /^\/(?![/\\])/.test(raw) ? raw : '/'
-      router.push(safe)
+      // Open-redirect önlemi ORTAK YARDIMCIDA: bu sayfa kendi regex kopyasını taşıyordu.
+      // Güvenlik kontrolünün iki kopyası, bu projenin defalarca bedelini ödediği "ikiz
+      // sürüklenmesi" kalıbının en pahalı hâli — biri güncellenip diğeri unutulursa açık
+      // sessizce geri gelir. (Ortak süzgeç ayrıca kontrol karakterlerini de eliyor; buradaki
+      // kopya elemiyordu.) Yardımcının 7 birim testi var.
+      router.push(guvenliDonusYolu(searchParams.get('redirect')))
     } catch {
       setError(t('common.connectionError'))
       setLoading(false)

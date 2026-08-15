@@ -33,6 +33,27 @@ export const trWeekday = (d: Date | string | number): number => {
   return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(wd)
 }
 
+/**
+ * "Hafta sonu" filtresinin tarih aralığı — İÇİNDE BULUNULAN ya da BİR SONRAKİ hafta sonu.
+ *
+ * BEDELİ ÖDENMİŞ: web'de `(6 - gun + 7) % 7 || 7` yazıyordu ve `||` sıfırı da yakaladığı için
+ * CUMARTESİ GÜNÜ sonuç 7 oluyordu — kullanıcı cumartesi sabahı "Hafta sonu"na bastığında o
+ * günün dersleri gizlenip BİR HAFTA SONRASI gösteriliyordu. Mobilde ayrı bir kopya vardı ve
+ * o da PAZAR gününü atlıyordu; üstelik hesabı cihaz saat diliminde yapıyordu.
+ *
+ * Doğru davranış:
+ *   Pzt–Cum → gelecek Cmt 00:00 .. Paz sonu
+ *   Cmt     → bugün 00:00 .. Paz sonu
+ *   Paz     → bugün 00:00 .. bugün sonu   (hafta sonu bitiyor; bugünü gizleme)
+ *
+ * `bitis` DIŞLAYICIDIR (dateTo): aralığın son gününün ertesi günü 00:00.
+ */
+export const haftaSonuAraligi = (gun: number, bugunYmd: string): { baslangic: string; bitis: string } => {
+  const baslangic = gun === 0 || gun === 6 ? bugunYmd : trAddDays(bugunYmd, (6 - gun) % 7)
+  const gunSayisi = gun === 0 ? 1 : 2
+  return { baslangic, bitis: trAddDays(baslangic, gunSayisi) }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // GÖSTERİM YARDIMCILARI — ders/seans/slot saatleri EKRANDA da İstanbul olmalı.
 //

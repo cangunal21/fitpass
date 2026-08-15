@@ -945,7 +945,15 @@ export default function ProfilPage() {
                         const dateStr = startsAt ? trDateLong(startsAt, dateLocale()) : ''
                         const timeStr = startsAt ? trTime(startsAt, dateLocale()) : ''
                         // QR: sunucunun kabul ettiği pencereyle AYNI (bkz. checkInAcikMi).
-                        const isFuture = checkInAcikMi(b) || (startsAt ? startsAt > new Date() : false)
+                        // İKİ AYRI KAVRAM — bir dönem tek bayrakla yönetiliyordu ve check-in
+                        // penceresi genişletilince İPTAL/DEĞİŞTİR butonları da ders devam ederken
+                        // görünür oldu. Sunucu ikisini de reddediyor (iptal penceresi son 12 saatte
+                        // kapanır), yani kullanıcı basıyor ve hata yiyordu.
+                        //   · qrGoster       → check-in QR'ı: sunucunun kabul ettiği pencere
+                        //   · degistirilebilir → iptal/transfer: ders HENÜZ BAŞLAMAMIŞ olmalı
+                        const qrGoster = checkInAcikMi(b)
+                        const degistirilebilir = startsAt ? startsAt > new Date() : false
+                        const isFuture = qrGoster || degistirilebilir
                         const isConfirmed = b.status === 'confirmed'
                         const isCancelled = b.status === 'cancelled'
                         const awaitingConfirm = cancelConfirm === b.id
@@ -975,9 +983,10 @@ export default function ProfilPage() {
                                   <span style={{ fontSize: 12, color: '#10B981', fontWeight: 600, backgroundColor: '#F0FDF4', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Check size={12} /> {t('prof.confirmed')}</span>
                                   {isConfirmed && isFuture && (
                                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-                                      {b.checkInCode && (
+                                      {qrGoster && b.checkInCode && (
                                         <CheckInQR code={b.checkInCode} />
                                       )}
+                                      {degistirilebilir && (
                                       <div style={{ display: 'flex', gap: 6 }}>
                                         {awaitingConfirm ? (
                                           <button onClick={() => handleCancel(b.id)} style={{ fontSize: 12, color: '#fff', fontWeight: 600, background: '#EF4444', border: 'none', borderRadius: 100, padding: '4px 12px', cursor: 'pointer' }}>{t('prof.confirmCancel')}</button>
@@ -989,9 +998,12 @@ export default function ProfilPage() {
                                         )}
                                         {awaitingConfirm && <button onClick={() => setCancelConfirm(null)} style={{ fontSize: 12, color: '#888', fontWeight: 600, background: 'none', border: '1px solid #E0E0E0', borderRadius: 100, padding: '3px 10px', cursor: 'pointer' }}>{t('prof.giveUp')}</button>}
                                       </div>
-                                      <div style={{ fontSize: 11, color: '#888', textAlign: 'right' }}>
-                                        {t('prof.refundPolicy')}
-                                      </div>
+                                      )}
+                                      {degistirilebilir && (
+                                        <div style={{ fontSize: 11, color: '#888', textAlign: 'right' }}>
+                                          {t('prof.refundPolicy')}
+                                        </div>
+                                      )}
                                       {transferFor === b.id && (
                                         <div style={{ marginTop: 8, width: 280, backgroundColor: '#F8F9FF', border: '1px solid #E0E7FF', borderRadius: 12, padding: 12, textAlign: 'left' }}>
                                           <div style={{ fontSize: 12, fontWeight: 700, color: '#4F46E5', marginBottom: 8 }}>{t('prof.transferTitle')}</div>

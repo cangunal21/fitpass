@@ -515,13 +515,16 @@ export default function VenuePage() {
                 <div style={{ fontSize: 12, color: '#999' }}>{totalReviews} {t('cls.reviews')}</div>
               </div>
               <div style={{ flex: 1 }}>
-                {[5, 4, 3, 2, 1].map(star => {
-                  // GERÇEK SAYI, sabit yüzde DEĞİL. Dağılım henüz yüklenmediyse çubuk boş kalır —
-                  // uydurma bir oran göstermektense hiçbir şey göstermemek doğru.
-                  const adet = ratingBreakdown?.[String(star) as '1' | '2' | '3' | '4' | '5'] ?? 0
-                  const toplam = ratingBreakdown
-                    ? Object.values(ratingBreakdown).reduce((a, b) => a + b, 0)
-                    : 0
+                {/* DAĞILIM YÜKLENMEDİYSE HİÇ ÇİZME. Önceden `ratingBreakdown` null iken beş
+                    çubuk da 0 görünüyordu ve hemen yanında "12 yorum" yazıyordu — kullanıcıya
+                    KENDİ İÇİNDE ÇELİŞEN bir ekran. Yüklenirken/gelmezse yalnız ortalama ve
+                    yorum sayısı gösterilir; uydurma da yok, çelişki de. */}
+                {!ratingBreakdown ? (
+                  <div style={{ fontSize: 12, color: '#bbb' }}>{reviewsLoading ? t('common.loading') : ''}</div>
+                ) : [5, 4, 3, 2, 1].map(star => {
+                  // GERÇEK SAYI, sabit yüzde DEĞİL.
+                  const adet = ratingBreakdown[String(star) as '1' | '2' | '3' | '4' | '5'] ?? 0
+                  const toplam = Object.values(ratingBreakdown).reduce((a, b) => a + b, 0)
                   const oran = toplam > 0 ? (adet / toplam) * 100 : 0
                   return (
                     <div key={star} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
