@@ -24,7 +24,7 @@ function KayitForm() {
   // yorum ve sosyal yazma uçları 403 döner (backend middlewares/requireVerified.ts).
   // Jetonu bu adımda zaten saklıyoruz — kod ucu jetonla korunuyor ve kullanıcı "kodu tekrar
   // gönder" diyebilmeli. Yarım kalan kayıt, girişte kod ekranına düşer.
-  const [dogrulama, setDogrulama] = useState<{ token: string; email: string } | null>(null)
+  const [dogrulama, setDogrulama] = useState<{ token: string; email: string; postaGonderildi: boolean } | null>(null)
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([])
   const [neighborhoods, setNeighborhoods] = useState<{ id: number; name: string }[]>([])
   const [selectedSports, setSelectedSports] = useState<string[]>([])
@@ -69,7 +69,9 @@ function KayitForm() {
       saveUser(res.user)
 
       if (res.requiresEmailVerification) {
-        setDogrulama({ token: res.token, email: form.email })
+        // emailVerificationSent: sunucu postanın GERÇEKTEN gidip gitmediğini bildiriyor. Bu alan
+        // hiçbir istemcide okunmuyordu; posta gitmese de kod ekranı açılıyordu.
+        setDogrulama({ token: res.token, email: form.email, postaGonderildi: res.emailVerificationSent !== false })
         setLoading(false)
         return
       }
@@ -107,6 +109,7 @@ function KayitForm() {
           <DogrulamaKodu
             token={dogrulama.token}
             email={dogrulama.email}
+            postaGonderildi={dogrulama.postaGonderildi}
             onBasarili={() => router.push('/')}
           />
         ) : (

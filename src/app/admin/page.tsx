@@ -40,40 +40,63 @@ export default function AdminPage() {
 
   const getHeaders = () => ({ 'Content-Type': 'application/json', 'x-admin-secret': password })
 
+  // ── OKUMA YOLLARI: "boş" ile "yüklenemedi" AYRILIR ────────────────────────────────────────
+  // Dokuz okuma yolu da `.then(r => r.json())` + `data.x || []` kalıbındaydı. Hata gövdesi
+  // ({error:...}) beklenen alanı taşımadığı için sonuç HER ZAMAN boş dizi oluyordu ve ekranda
+  // "Açık şikayet yok." yazıyordu. Yani 429/401/500 durumunda moderatör kuyruğu BOŞ görüyordu —
+  // bekleyen şikayet varken. Sessiz yutmanın en pahalı biçimi: yanlış ama inandırıcı ekran.
+  const [yuklemeHatasi, setYuklemeHatasi] = useState<string | null>(null)
+
+  const adminOku = async <T,>(url: string, ayikla: (d: any) => T): Promise<T | null> => {
+    try {
+      const res = await fetch(url, { headers: getHeaders() })
+      let d: any = null
+      try { d = await res.json() } catch { /* govde JSON degil */ }
+      if (!res.ok) {
+        setYuklemeHatasi(
+          res.status === 429
+            ? 'Cok fazla istek (429) — bir dakika bekleyip sayfayi yenileyin.'
+            : (d?.error || `Veri yuklenemedi (HTTP ${res.status}).`)
+        )
+        return null
+      }
+      setYuklemeHatasi(null)
+      return ayikla(d)
+    } catch {
+      setYuklemeHatasi('Baglanti hatasi — veri yuklenemedi. Liste GUNCEL DEGIL.')
+      return null
+    }
+  }
+
   useEffect(() => {
     if (!authed) return
-    fetch(`${API_URL}/api/admin/stats`, { headers: getHeaders() }).then(r => r.json()).then(d => setStats(d.stats))
-    fetch(`${API_URL}/api/admin/venues`, { headers: getHeaders() }).then(r => r.json()).then(d => setVenues(d.venues || []))
+    adminOku(`${API_URL}/api/admin/stats`, d => d.stats).then(v => { if (v) setStats(v) })
+    adminOku(`${API_URL}/api/admin/venues`, d => d.venues || []).then(v => { if (v) setVenues(v) })
   }, [authed])
 
   const fetchUsers = async () => {
-    const res = await fetch(`${API_URL}/api/admin/users`, { headers: getHeaders() })
-    const data = await res.json()
-    setUsers(data.users || [])
+    const v = await adminOku(`${API_URL}/api/admin/users`, d => d.users || [])
+    if (v) setUsers(v)   // null = okuma BASARISIZ; eski liste korunur, bant hatayi gosterir
   }
 
   const fetchBookings = async () => {
-    const res = await fetch(`${API_URL}/api/admin/bookings`, { headers: getHeaders() })
-    const data = await res.json()
-    setBookings(data.bookings || [])
+    const v = await adminOku(`${API_URL}/api/admin/bookings`, d => d.bookings || [])
+    if (v) setBookings(v)   // null = okuma BASARISIZ; eski liste korunur, bant hatayi gosterir
   }
 
   const fetchCoupons = async () => {
-    const res = await fetch(`${API_URL}/api/admin/coupons`, { headers: getHeaders() })
-    const data = await res.json()
-    setCoupons(data.coupons || [])
+    const v = await adminOku(`${API_URL}/api/admin/coupons`, d => d.coupons || [])
+    if (v) setCoupons(v)   // null = okuma BASARISIZ; eski liste korunur, bant hatayi gosterir
   }
 
   const fetchCategories = async () => {
-    const res = await fetch(`${API_URL}/api/admin/categories`, { headers: getHeaders() })
-    const data = await res.json()
-    setCategories(data.categories || [])
+    const v = await adminOku(`${API_URL}/api/admin/categories`, d => d.categories || [])
+    if (v) setCategories(v)   // null = okuma BASARISIZ; eski liste korunur, bant hatayi gosterir
   }
 
   const fetchPendingImages = async () => {
-    const res = await fetch(`${API_URL}/api/admin/venue-images/pending`, { headers: getHeaders() })
-    const data = await res.json()
-    setPendingImages(data.venues || [])
+    const v = await adminOku(`${API_URL}/api/admin/venue-images/pending`, d => d.venues || [])
+    if (v) setPendingImages(v)   // null = okuma BASARISIZ; eski liste korunur, bant hatayi gosterir
   }
 
   // TEK NOKTADAN admin istegi: HTTP durumunu VE govdedeki hata mesajini kontrol eder.
@@ -82,6 +105,21 @@ export default function AdminPage() {
   // Ornek: kullanimda olan kategoriyi silmeye calisirken backend aciklamali 400 donuyor, arayuz
   // kategoriyi listeden siliyordu; ya da resim onayinda 409 gelse bile satir kaybolup admin
   // "yayinlandi" saniyordu.
+  // BAN ONAYI TEK KAYNAKTAN. Eskiden uyarı metni yalnız Kullanıcılar sekmesindeki handleBanUser'ın
+  // İÇİNDE gömülüydü; şikayet kuyruğundaki "Kullanıcıyı Banla" AYNI yıkıcı ucu ONAYSIZ çağırıyordu
+  // (admin/page.tsx:432 → PUT /api/admin/reports/:id/resolve {action:'ban'} → applyUserBan).
+  // Backend'de iki yol da tek transaction'da: refreshToken iptali + purgeUserReviews (gerçek deleteMany
+  // + salon avgRating yeniden hesabı) + purgeUserComments. Ban KALDIRILSA BİLE içerik geri gelmez.
+  // Üstelik şikayet yolu, o kullanıcının TÜM açık şikayetlerini de kapatıyor — moderatör kuyruğu
+  // sessizce boşalıyor. Metin artık ortak; bir yolda güncellenip diğerinde eskimesi mümkün değil.
+  const banOnayi = (ekBilgi?: string): boolean =>
+    confirm(
+      'Bu kullaniciyi banlamak, yazdigi TUM yorumlari ve feed yorumlarini KALICI olarak siler ' +
+      '(ban kaldirilsa bile geri gelmez) ve salon puanlarini yeniden hesaplar.' +
+      (ekBilgi ? '\n\n' + ekBilgi : '') +
+      '\n\nDevam edilsin mi?'
+    )
+
   const adminAction = async (url: string, init: RequestInit): Promise<boolean> => {
     try {
       const res = await fetch(url, init)
@@ -104,22 +142,19 @@ export default function AdminPage() {
   }
 
   const fetchReports = async () => {
-    const res = await fetch(`${API_URL}/api/admin/reports`, { headers: getHeaders() })
-    const data = await res.json()
-    setReports(data.reports || [])
+    const v = await adminOku(`${API_URL}/api/admin/reports`, d => d.reports || [])
+    if (v) setReports(v)   // null = okuma BASARISIZ; eski liste korunur, bant hatayi gosterir
   }
 
   const handleResolveReport = async (reportId: number, action: 'remove_avatar' | 'ban' | 'dismiss') => {
-    const res = await fetch(`${API_URL}/api/admin/reports/${reportId}/resolve`, {
+    if (action === 'ban' && !banOnayi('Ayrica bu kullaniciyla ilgili TUM acik sikayetler kapatilir.')) return
+    if (action === 'remove_avatar' && !confirm('Bu kullanicinin profil fotografi kaldirilsin mi?')) return
+    if (!await adminAction(`${API_URL}/api/admin/reports/${reportId}/resolve`, {
       method: 'PUT',
       headers: getHeaders(),
       body: JSON.stringify({ action }),
-    })
-    if (res.ok) {
-      fetchReports()
-    } else {
-      alert('İşlem başarısız.')
-    }
+    })) return
+    fetchReports()
   }
 
   const handleAddCategory = async (e: React.FormEvent) => {
@@ -201,10 +236,8 @@ export default function AdminPage() {
   }
 
   const handleBanUser = async (id: number, ban: boolean) => {
-    // ONAY ZORUNLU: ban yalnizca erisimi kesmiyor -> kullanicinin YAZDIGI TUM yorumlari (Review) ve
-    // feed yorumlarini (ActivityComment) KALICI SILIYOR ve salon/egitmen puanlarini yeniden hesapliyor.
-    // Ban kaldirilsa bile o icerik GERI GELMEZ; yani yanlis tiklama geri alinamaz veri kaybi.
-    if (ban && !confirm('Bu kullaniciyi banlamak, yazdigi TUM yorumlari ve feed yorumlarini KALICI olarak siler (ban kaldirilsa bile geri gelmez) ve salon puanlarini yeniden hesaplar.\n\nDevam edilsin mi?')) return
+    // ONAY ZORUNLU (metin icin bkz. banOnayi — sikayet kuyrugundaki esiyle ORTAK kaynak).
+    if (ban && !banOnayi()) return
     if (!await adminAction(`${API_URL}/api/admin/users/${id}/ban`, {
       method: 'PUT', headers: getHeaders(), body: JSON.stringify({ ban }),
     })) return
@@ -218,9 +251,8 @@ export default function AdminPage() {
   }
 
   const fetchInstructors = async () => {
-    const res = await fetch(`${API_URL}/api/admin/instructors`, { headers: getHeaders() })
-    const data = await res.json()
-    setInstructors(data.instructors || [])
+    const v = await adminOku(`${API_URL}/api/admin/instructors`, d => d.instructors || [])
+    if (v) setInstructors(v)   // null = okuma BASARISIZ; eski liste korunur, bant hatayi gosterir
   }
 
   const handleVerifyInstructor = async (id: number, verified: boolean) => {
@@ -231,9 +263,8 @@ export default function AdminPage() {
   }
 
   const fetchComplaints = async () => {
-    const res = await fetch(`${API_URL}/api/admin/complaints`, { headers: getHeaders() })
-    const data = await res.json()
-    setComplaints(data.complaints || [])
+    const v = await adminOku(`${API_URL}/api/admin/complaints`, d => d.complaints || [])
+    if (v) setComplaints(v)   // null = okuma BASARISIZ; eski liste korunur, bant hatayi gosterir
   }
 
   const handleResolveComplaint = async (id: number) => {
@@ -267,6 +298,14 @@ export default function AdminPage() {
       </nav>
 
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: '32px 24px' }}>
+        {/* Okuma hatası bandı — YAPIŞKAN ve kırmızı. Bu olmadan başarısız okuma "kayıt yok" gibi
+            görünüyordu; moderatör dolu kuyruğu boş sanabiliyordu. */}
+        {yuklemeHatasi && (
+          <div style={{ marginBottom: 16, padding: '12px 16px', borderRadius: 10, background: '#FEF2F2', border: '1px solid #FECACA', color: '#991B1B', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span>⚠️</span>
+            <span>{yuklemeHatasi} — <strong>aşağıdaki listeler eksik ya da eski olabilir.</strong></span>
+          </div>
+        )}
 
         {/* İstatistikler */}
         {stats && (

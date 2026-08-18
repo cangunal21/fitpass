@@ -27,10 +27,14 @@ export default function DogrulamaKodu({
   token,
   email,
   onBasarili,
+  postaGonderildi = true,
 }: {
   token: string
   email: string
   onBasarili: () => void
+  // Sunucu kayıt yanıtında `emailVerificationSent` döndürüyor. Bu bayrak EKRANA hiç yansımıyordu:
+  // posta hiç gitmese bile kullanıcı "kodu gir" ekranında gelmeyecek bir kodu bekliyordu.
+  postaGonderildi?: boolean
 }) {
   const { t } = useT()
   const [kod, setKod] = useState('')
@@ -78,6 +82,10 @@ export default function DogrulamaKodu({
     setBilgi('')
     try {
       const res = await api.resendVerification(token)
+      // SUNUCU HATASINI YUTMA: uç artık posta gerçekten gidemezse 502 + {error} dönüyor.
+      // Eskiden `res?.message || t('verify.resent')` ile her durumda "yeni kod gönderildi"
+      // yazıyordu — kullanıcı gelmeyen kodu beklerken sayaç da yeniden başlıyordu.
+      if (res?.error) { setHata(res.error); return }
       setBilgi(res?.message || t('verify.resent'))
       setKalan(TEKRAR_SANIYE)
     } catch {
@@ -92,6 +100,11 @@ export default function DogrulamaKodu({
       </div>
 
       <h1 style={{ fontSize: 26, fontWeight: 800, color: '#111', marginBottom: 8 }}>{t('verify.title')}</h1>
+      {!postaGonderildi && (
+        <div style={{ margin: '0 0 12px', padding: '10px 14px', borderRadius: 10, background: '#FEF3C7', border: '1px solid #FDE68A', color: '#92400E', fontSize: 13, fontWeight: 600 }}>
+          {t('verify.sendFailed')}
+        </div>
+      )}
       <p style={{ fontSize: 15, color: '#666', lineHeight: 1.6, marginBottom: 4 }}>{t('verify.subtitle')}</p>
       <p style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 28, wordBreak: 'break-all' }}>{email}</p>
 

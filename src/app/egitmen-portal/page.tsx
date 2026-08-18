@@ -94,13 +94,24 @@ export default function EgitmenPortalPage() {
   }
   const toggleSpec = (s: string) => setPSpecs(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])
 
-  const putMe = async (body: any) => fetch(`${API_URL}/api/instructor/me`, { method: 'PUT', headers: jsonAuth, body: JSON.stringify(body) }).then(x => x.json())
+  // `.catch` ZORUNLU — aynı dosyadaki doCheckin/handleReply'de gerekçesi yazılı ("kardeş yol kalıbı"),
+  // ama bu üç kardeş (putMe/addClass/addSession) korumasız kalmıştı. Ağ koptuğunda `.json()` fırlıyor,
+  // saveProfile'daki `setSavingProfile(false)` HİÇ çalışmıyor ve buton kalıcı "Kaydediliyor…" kalıyordu.
+  const jsonYaz = async (url: string, init: RequestInit): Promise<any> =>
+    fetch(url, init).then(x => x.json()).catch(() => ({ error: 'Bağlantı hatası. Lütfen tekrar deneyin.' }))
+
+  const putMe = async (body: any) => jsonYaz(`${API_URL}/api/instructor/me`, { method: 'PUT', headers: jsonAuth, body: JSON.stringify(body) })
 
   const saveProfile = async () => {
     setSavingProfile(true); setProfileMsg('')
-    const res = await putMe({ fullName: pName, specialty: pSpecs.join(' · '), bio: pBio })
-    setSavingProfile(false)
-    if (res.error) { setProfileMsg(res.error); return }
+    // try/finally: bayrağın düşmesi hiçbir dala bağlı OLMAMALI (buton disabled={savingProfile}).
+    let res: any
+    try {
+      res = await putMe({ fullName: pName, specialty: pSpecs.join(' · '), bio: pBio })
+    } finally {
+      setSavingProfile(false)
+    }
+    if (res?.error) { setProfileMsg(res.error); return }
     applyMe(res.instructor); setProfileMsg('Profil kaydedildi ✓')
     setTimeout(() => setProfileMsg(''), 2500)
   }
@@ -108,8 +119,8 @@ export default function EgitmenPortalPage() {
   const addClass = async (e: React.FormEvent) => {
     e.preventDefault(); setClassMsg('')
     if (!classForm.category) { setClassMsg('Branş seçin.'); return }
-    const res = await fetch(`${API_URL}/api/instructor/classes`, { method: 'POST', headers: jsonAuth, body: JSON.stringify(classForm) }).then(x => x.json())
-    if (res.error) { setClassMsg(res.error); return }
+    const res = await jsonYaz(`${API_URL}/api/instructor/classes`, { method: 'POST', headers: jsonAuth, body: JSON.stringify(classForm) })
+    if (res?.error) { setClassMsg(res.error); return }
     setClassForm({ title: '', category: '', basePrice: '', duration: '60', capacity: '' })
     setClassMsg('Ders eklendi ✓'); loadClasses()
     setTimeout(() => setClassMsg(''), 2500)
@@ -118,8 +129,8 @@ export default function EgitmenPortalPage() {
   const addSession = async () => {
     if (!sessionForm) return
     const { classId, date, time, capacity } = sessionForm
-    const res = await fetch(`${API_URL}/api/instructor/classes/${classId}/sessions`, { method: 'POST', headers: jsonAuth, body: JSON.stringify({ date, time, capacity }) }).then(x => x.json())
-    if (res.error) { alert(res.error); return }
+    const res = await jsonYaz(`${API_URL}/api/instructor/classes/${classId}/sessions`, { method: 'POST', headers: jsonAuth, body: JSON.stringify({ date, time, capacity }) })
+    if (res?.error) { alert(res.error); return }
     setSessionForm(null); loadClasses()
   }
 
