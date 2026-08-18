@@ -462,7 +462,7 @@ export default function AdminPage() {
                       {r.reportedUser?.fullName} <span style={{ color: '#888', fontWeight: 400 }}>@{r.reportedUser?.username}</span>
                       {r.reportedUser?.banned && <span style={{ marginLeft: 8, fontSize: 11, color: '#DC2626', fontWeight: 600 }}>(banlı)</span>}
                     </div>
-                    <div style={{ fontSize: 12, color: '#888' }}>Şikayet eden: @{r.reporter?.username} · {new Date(r.createdAt).toLocaleDateString('tr-TR')}</div>
+                    <div style={{ fontSize: 12, color: '#888' }}>Şikayet eden: {r.reporter?.username ? `@${r.reporter.username}` : 'silinmiş hesap'} · {new Date(r.createdAt).toLocaleDateString('tr-TR')}</div>
                     {r.reason && <div style={{ fontSize: 12, color: '#555', marginTop: 4, fontStyle: 'italic' }}>&quot;{r.reason}&quot;</div>}
                   </div>
                 </div>

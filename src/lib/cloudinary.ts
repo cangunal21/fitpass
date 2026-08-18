@@ -30,7 +30,19 @@ async function imzaAl(token: string, realm: YuklemeRealm): Promise<Imza> {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
   })
-  if (!res.ok) throw new Error('Yükleme izni alınamadı.')
+  // DURUM KODUNU VE code ALANINI OKU. Eskiden her başarısızlık aynı jenerik mesaja iniyordu:
+  // sunucu doğrulanmamış e-posta için 403 + { code: 'EMAIL_NOT_VERIFIED' } döndürüyor (requireVerified),
+  // ama kullanıcı "Yükleme izni alınamadı." görüyor ve NEDEN olduğunu anlamıyordu — üstelik kayıt
+  // akışı jetonu doğrulama ekranından ÖNCE sakladığı için doğrulanmamış kullanıcı bu yola ulaşabiliyor.
+  if (!res.ok) {
+    let d: any = null
+    try { d = await res.json() } catch { /* govde JSON degil */ }
+    if (res.status === 403 && d?.code === 'EMAIL_NOT_VERIFIED') {
+      throw new Error('Fotoğraf yükleyebilmek için önce e-posta adresini doğrulaman gerekiyor.')
+    }
+    if (res.status === 401) throw new Error('Oturumun sona ermiş. Lütfen tekrar giriş yap.')
+    throw new Error(d?.error || `Yükleme izni alınamadı (HTTP ${res.status}).`)
+  }
   return res.json()
 }
 

@@ -435,11 +435,19 @@ export default function SalonPaneliPage() {
 
   const saveVenueImages = async (images: string[], cover?: string) => {
     const token = localStorage.getItem('fitpass_venue_token')!
-    await fetch(`${API_URL}/api/venue/images`, {
+    // SONUCU OKU: eskiden yanıt HİÇ incelenmiyordu → 401/413/500 gelse bile arayüz
+    // "admin onayına gitti" diyordu; salon fotoğrafını yükledim sanıp bekliyordu.
+    const res = await fetch(`${API_URL}/api/venue/images`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ images, coverImageUrl: cover ?? coverImage }),
-    })
+    }).catch(() => null)
+    if (!res || !res.ok) {
+      let mesaj = 'Görseller kaydedilemedi. Lütfen tekrar deneyin.'
+      try { const d = await res?.json(); if (d?.error) mesaj = d.error } catch { /* govde JSON degil */ }
+      alert(mesaj)
+      return
+    }
     // Yüklenen resimler artık admin onayına gider
     setImagesPendingReview(true)
   }
