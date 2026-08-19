@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { mockClasses, mockDropInSlots } from '@/lib/mockData'
@@ -106,7 +106,7 @@ export default function Home() {
   // Online modda konum kavramı YOK: şehir/ilçe filtreleri ve "bana yakın" sıralaması gizlenir.
   // ÜÇ SEKME. 'in_person'/'online' teslim biçimi, 'instructors' ise AYRI bir keşif nesnesi
   // (ders değil, eğitmen listesi). Tek state tutuluyor çünkü kullanıcı için hepsi aynı anahtar.
-  const [mode, setMode] = useState<'in_person' | 'online' | 'instructors'>('in_person')
+  const [mode, setMode] = useState<'in_person' | 'online' | 'instructors' | 'venues'>('in_person')
   const [instructors, setInstructors] = useState<any[]>([])
   const [instructorsLoading, setInstructorsLoading] = useState(false)
   // Online modda yalnız uygun branşlar listelenir (yüzme/binicilik/deniz sporları/tenis/dövüş
@@ -119,6 +119,8 @@ export default function Home() {
   // fetchSessions'a giden değer: 'instructors' bir TESLİM BİÇİMİ değil; o sekmede ders sorgusu
   // zaten yapılmıyor ama parametre tipi daralmış kalsın diye burada indirgeniyor.
   const dersModu = (m: typeof mode): 'in_person' | 'online' => (m === 'online' ? 'online' : 'in_person')
+
+
   const [neighborhoods, setNeighborhoods] = useState<{ id: number; name: string }[]>([])
   const [cities, setCities] = useState<{ id: number; name: string }[]>([])
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -128,6 +130,24 @@ export default function Home() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [venueResults, setVenueResults] = useState<any[]>([])
   const [allVenues, setAllVenues] = useState<any[]>([])
+
+  // SALON LİSTESİ — ana sayfanın KENDİ filtre çubuğundan besleniyor (arama/il/ilçe/branş).
+  // /salonlar sayfasının süzme mantığı BURAYA KOPYALANMADI: iki kopya kural, denetimlerde
+  // tekrar tekrar yakalanan "kopya-kural sürüklenmesi" sınıfının ta kendisi. Burası hızlı
+  // keşif; derin filtreleme (sıralama vb.) için kullanıcı /salonlar'a gider.
+  const salonListesi = useMemo(() => {
+    const q = (filters.search || '').trim().toLowerCase()
+    return allVenues.filter(v => {
+      if (q && !`${v.name || ''} ${v.address || ''} ${v.neighborhood?.name || ''}`.toLowerCase().includes(q)) return false
+      if (filters.cityId && String(v.cityId ?? v.neighborhood?.cityId ?? '') !== filters.cityId) return false
+      if (filters.neighborhoodId && String(v.neighborhood?.id ?? v.neighborhoodId ?? '') !== filters.neighborhoodId) return false
+      if (filters.category) {
+        const cats = (v.sportCategories || []).map((sc: any) => sc?.sportCategory?.name)
+        if (!cats.includes(filters.category)) return false
+      }
+      return true
+    })
+  }, [allVenues, filters.search, filters.cityId, filters.neighborhoodId, filters.category])
   const [forYouItems, setForYouItems] = useState<DisplayItem[]>([])
   // ONLINE ŞERİDİ — yüz yüze modda ana akışın üstünde duran küçük vitrin. Bilerek AYRI bir
   // istek: ana listeyi karıştırmak konum filtreleriyle ve mesafe sıralamasıyla çelişirdi
@@ -423,6 +443,7 @@ export default function Home() {
             { key: 'in_person' as const, label: t('home.modeInPerson') },
             { key: 'online' as const, label: t('home.modeOnline') },
             { key: 'instructors' as const, label: t('home.modeInstructors') },
+            { key: 'venues' as const, label: t('home.modeVenues') },
           ]).map(m => (
             <button
               key={m.key}
@@ -494,7 +515,7 @@ export default function Home() {
 
           {/* KONUM FİLTRELERİ yalnız yüz yüze modda. Online derste şehir/ilçe kavramı yok;
               gösterilirse kullanıcı seçer ve liste sessizce boşalır. */}
-          {mode === 'in_person' && (
+          {(mode === 'in_person' || mode === 'venues') && (
           <select
             value={filters.cityId}
             onChange={e => setFilters(f => ({ ...f, cityId: e.target.value, neighborhoodId: '' }))}
@@ -507,7 +528,7 @@ export default function Home() {
           </select>
           )}
 
-          {mode === 'in_person' && (
+          {(mode === 'in_person' || mode === 'venues') && (
           <select
             value={filters.neighborhoodId}
             onChange={e => setFilters(f => ({ ...f, neighborhoodId: e.target.value }))}
@@ -521,13 +542,18 @@ export default function Home() {
           </select>
           )}
 
+          {(mode === 'in_person' || mode === 'online') && (
           <input
             type="date"
             value={filters.date}
             onChange={e => setFilters(f => ({ ...f, date: e.target.value }))}
             style={{ padding: '9px 12px', borderRadius: 10, border: '1.5px solid #E5E5E5', fontSize: 13, color: filters.date ? '#1a1a1a' : '#888', outline: 'none', cursor: 'pointer', background: '#fff' }}
           />
+          )}
 
+          {/* Sıralama ders listesine ait; eğitmen/salon sekmelerinde bu seçenekler hiçbir şey
+              yapmazdı — görünen ama etkisiz filtre, bu repoda tekrar tekrar yakalanan sınıf. */}
+          {(mode === 'in_person' || mode === 'online') && (
           <div className="filter-sort" style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
             <span style={{ fontSize: 13, color: '#888', fontWeight: 500, whiteSpace: 'nowrap' }}>{t('common.sortBy')}</span>
             <select
@@ -541,6 +567,7 @@ export default function Home() {
               {mode === 'in_person' && <option value="nearby">{t('sort.nearby')}</option>}
             </select>
           </div>
+          )}
 
           {hasActiveFilter && (
             <button
@@ -708,6 +735,35 @@ export default function Home() {
                       <div style={{ fontSize: 13, fontWeight: 700, color: '#F59E0B' }}>★ {(ins.avgRating ?? 0).toFixed(1)}</div>
                       <div style={{ fontSize: 11, color: '#bbb' }}>({ins.totalReviews || 0})</div>
                       <div style={{ fontSize: 11, color: '#999', marginTop: 4 }}>{t('home.instructorClasses').replace('{n}', String(ins.classCount ?? 0))}</div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )
+        ) : mode === 'venues' ? (
+          salonListesi.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '60px 20px', color: '#888', fontSize: 14 }}>{t('home.noResults')}</div>
+          ) : (
+            <div className="cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
+              {salonListesi.map((v: any) => (
+                <Link key={'v-' + v.id} href={`/venue/${v.id}`} style={{ textDecoration: 'none' }}>
+                  <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '18px 20px', border: '1px solid #F0F0F0', display: 'flex', gap: 14, alignItems: 'center' }}>
+                    <div style={{ width: 56, height: 56, borderRadius: 14, backgroundColor: '#EEF2FF', color: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 20, flexShrink: 0 }}>
+                      {v.name?.[0]?.toUpperCase() || '?'}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: '#111', display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.name}</span>
+                        {v.isVerified && <BadgeCheck size={15} color="#2563EB" />}
+                      </div>
+                      <div style={{ fontSize: 12.5, color: '#888', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {v.neighborhood?.name || v.address || ''}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#F59E0B' }}>★ {(v.avgRating ?? 0).toFixed(1)}</div>
+                      <div style={{ fontSize: 11, color: '#bbb' }}>({v.totalReviews || 0})</div>
                     </div>
                   </div>
                 </Link>
