@@ -34,6 +34,7 @@ function mapSessionToDisplay(session: any) {
     venueId: session.venueId,
     venue: session.venueName,
     venueAddress: session.venueAddress || '',
+    deliveryMode: session.deliveryMode as 'in_person' | 'online' | undefined,
     neighborhood: session.neighborhood,
     category: session.category,
     icon: categoryIconMap[session.category] || 'hiit',
@@ -166,6 +167,8 @@ export default function DersDetay() {
   const venueName = isReal ? (cls as ReturnType<typeof mapSessionToDisplay>).venue : venue?.name || ''
   const venueAddress = isReal ? (cls as ReturnType<typeof mapSessionToDisplay>).venueAddress : venue?.address || ''
   const venueId = cls.venueId
+  const isOnline = (cls as any).deliveryMode === 'online'
+  const onlineInstructor = (cls as any).instructorName as string | null | undefined
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#FAFAFA', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
@@ -187,17 +190,34 @@ export default function DersDetay() {
                   <div style={{ flex: 1 }}>
                     <div style={{ marginBottom: 14 }}><SportIconBox name={cls.icon} bgColor={cls.color + '20'} iconColor={cls.color} boxSize={64} borderRadius={18} size={30} /></div>
                     <h1 style={{ fontSize: 30, fontWeight: 800, color: '#111', marginBottom: 6, letterSpacing: -0.5 }}>{lang === 'en' && (cls as any).titleEn ? String((cls as any).titleEn) : cls.title}</h1>
+                    {/* MEKÂNSIZ HOCA DERSİ: salon linki yok, kimlik EĞİTMENDİR. `venueName`
+                        null geldiği için eski hâl BOŞ bir satır çiziyordu. */}
                     {venueId ? (
                       <Link href={`/venue/${venueId}`} style={{ fontSize: 15, color: '#4F46E5', textDecoration: 'none', fontWeight: 600 }}>{venueName}</Link>
                     ) : (
-                      <span style={{ fontSize: 15, color: '#4F46E5', fontWeight: 600 }}>{venueName}</span>
+                      <span style={{ fontSize: 15, color: '#4F46E5', fontWeight: 600 }}>{venueName || onlineInstructor || ''}</span>
                     )}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10, flexWrap: 'wrap' }}>
+                      {isOnline && (
+                        <span style={{ fontSize: 12, fontWeight: 800, color: '#4F46E5', background: '#EEF2FF', padding: '3px 10px', borderRadius: 100 }}>
+                          {t('home.onlineBadge')}
+                        </span>
+                      )}
                       <span style={{ fontSize: 14, color: '#F59E0B', fontWeight: 700 }}>★ {cls.rating}</span>
                       <span style={{ fontSize: 13, color: '#999' }}>({cls.totalReviews} {t('cls.reviews')})</span>
-                      <span style={{ fontSize: 13, color: '#bbb' }}>·</span>
-                      <span style={{ fontSize: 13, color: '#888', display: 'inline-flex', alignItems: 'center', gap: 4 }}><MapPin size={14} /> {cls.neighborhood}</span>
+                      {/* Konum satırı online derste ANLAMSIZ — mahalle yok, harita yok. */}
+                      {!isOnline && cls.neighborhood && (
+                        <>
+                          <span style={{ fontSize: 13, color: '#bbb' }}>·</span>
+                          <span style={{ fontSize: 13, color: '#888', display: 'inline-flex', alignItems: 'center', gap: 4 }}><MapPin size={14} /> {cls.neighborhood}</span>
+                        </>
+                      )}
                     </div>
+                    {isOnline && (
+                      <div style={{ marginTop: 12, background: '#F8FAFF', border: '1px solid #E0E7FF', borderRadius: 12, padding: '10px 14px', fontSize: 12.5, color: '#4338CA', lineHeight: 1.5, maxWidth: 460 }}>
+                        {t('cls.onlineHint')}
+                      </div>
+                    )}
                   </div>
                   <div style={{ background: cls.color, color: '#fff', borderRadius: 16, padding: '14px 20px', textAlign: 'center', flexShrink: 0, marginLeft: 20 }}>
                     <div style={{ fontSize: 26, fontWeight: 800 }}>₺{cls.basePrice}</div>

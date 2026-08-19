@@ -34,7 +34,10 @@ export default function EgitmenPortalPage() {
   // DB de bunu zorluyor. Salona bağlı hoca ikisini de açabildiği için seçim gösteriliyor.
   const [classForm, setClassForm] = useState({ title: '', category: '', basePrice: '', duration: '60', capacity: '', deliveryMode: 'in_person', meetingUrl: '' })
   const [classMsg, setClassMsg] = useState('')
-  const [sessionForm, setSessionForm] = useState<{ classId: number; date: string; time: string; capacity: string } | null>(null)
+  // meetingUrl SEANS BAZLI: boş bırakılırsa dersin varsayılan bağlantısı kullanılır. İki seviye
+  // gerekiyor çünkü tekrarlayan Zoom/Meet toplantısı tek link üretir (ders seviyesi yeter) ama
+  // tek seferlik toplantı her seans için ayrı link üretir.
+  const [sessionForm, setSessionForm] = useState<{ classId: number; date: string; time: string; capacity: string; meetingUrl: string } | null>(null)
 
   // Check-in
   const [checkinCode, setCheckinCode] = useState('')
@@ -138,8 +141,8 @@ export default function EgitmenPortalPage() {
 
   const addSession = async () => {
     if (!sessionForm) return
-    const { classId, date, time, capacity } = sessionForm
-    const res = await jsonYaz(`${API_URL}/api/instructor/classes/${classId}/sessions`, { method: 'POST', headers: jsonAuth, body: JSON.stringify({ date, time, capacity }) })
+    const { classId, date, time, capacity, meetingUrl } = sessionForm
+    const res = await jsonYaz(`${API_URL}/api/instructor/classes/${classId}/sessions`, { method: 'POST', headers: jsonAuth, body: JSON.stringify({ date, time, capacity, meetingUrl: meetingUrl.trim() || undefined }) })
     if (res?.error) { alert(res.error); return }
     setSessionForm(null); loadClasses()
   }
@@ -306,9 +309,12 @@ export default function EgitmenPortalPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a' }}>{c.title}</div>
-                    <div style={{ fontSize: 12, color: '#888' }}>{c.category} · ₺{c.basePrice} · {c.durationMinutes}dk · {c.capacity} kişi</div>
+                    <div style={{ fontSize: 12, color: '#888' }}>
+                      {c.deliveryMode === 'online' && <span style={{ color: '#4F46E5', fontWeight: 800 }}>Online · </span>}
+                      {c.category} · ₺{c.basePrice} · {c.durationMinutes}dk · {c.capacity} kişi
+                    </div>
                   </div>
-                  <button onClick={() => setSessionForm({ classId: c.id, date: '', time: '', capacity: String(c.capacity) })} style={{ padding: '7px 14px', borderRadius: 10, border: 'none', background: '#EEF2FF', color: '#4F46E5', fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>+ Seans</button>
+                  <button onClick={() => setSessionForm({ classId: c.id, date: '', time: '', capacity: String(c.capacity), meetingUrl: '' })} style={{ padding: '7px 14px', borderRadius: 10, border: 'none', background: '#EEF2FF', color: '#4F46E5', fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>+ Seans</button>
                 </div>
                 {(c.sessions || []).length > 0 && (
                   <div style={{ marginTop: 10, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -324,6 +330,12 @@ export default function EgitmenPortalPage() {
                     <div><label style={lbl}>Tarih</label><input type="date" value={sessionForm.date} onChange={e => setSessionForm(sf => sf ? { ...sf, date: e.target.value } : sf)} style={{ ...inp, width: 150 }} /></div>
                     <div><label style={lbl}>Saat</label><input type="time" value={sessionForm.time} onChange={e => setSessionForm(sf => sf ? { ...sf, time: e.target.value } : sf)} style={{ ...inp, width: 110 }} /></div>
                     <div><label style={lbl}>Kapasite</label><input type="number" value={sessionForm.capacity} onChange={e => setSessionForm(sf => sf ? { ...sf, capacity: e.target.value } : sf)} style={{ ...inp, width: 90 }} /></div>
+                    {c.deliveryMode === 'online' && (
+                      <div style={{ flex: '1 1 260px' }}>
+                        <label style={lbl}>Bu seansın bağlantısı <span style={{ color: '#aaa', fontWeight: 500 }}>(boşsa dersin linki)</span></label>
+                        <input value={sessionForm.meetingUrl} onChange={e => setSessionForm(sf => sf ? { ...sf, meetingUrl: e.target.value } : sf)} placeholder="https://..." style={{ ...inp, width: '100%' }} />
+                      </div>
+                    )}
                     <button onClick={addSession} style={{ ...primaryBtn, width: 'auto', padding: '10px 18px' }}>Ekle</button>
                     <button onClick={() => setSessionForm(null)} style={{ padding: '10px 14px', borderRadius: 10, border: '1px solid #eee', background: '#fff', fontSize: 13, cursor: 'pointer' }}>Vazgeç</button>
                   </div>
