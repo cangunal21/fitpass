@@ -111,7 +111,13 @@ export default function EgitmenGirisPage() {
                 Şifremi Unuttum
               </button>
               <p style={{ fontSize: 12, color: '#aaa', textAlign: 'center', lineHeight: 1.5, marginTop: 4 }}>
-                Henüz girişin yok mu? Salonun seni eğitmen olarak ekleyip davet göndermeli.
+                Salona bağlı eğitmensen: salonun seni ekleyip davet göndermeli.
+              </p>
+              {/* Mekânsız (bireysel) hoca kanadının giriş kapısı — bu bağlantı olmadan kayıt
+                  sayfası keşfedilemez olurdu. */}
+              <p style={{ fontSize: 12.5, color: '#666', textAlign: 'center', lineHeight: 1.5 }}>
+                Kendi online derslerini satmak istiyorsan{' '}
+                <Link href="/egitmen-kayit" style={{ color: '#4F46E5', fontWeight: 700, textDecoration: 'none' }}>eğitmen başvurusu yap</Link>.
               </p>
             </form>
           )}

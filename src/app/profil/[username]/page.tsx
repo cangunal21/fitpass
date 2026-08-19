@@ -845,7 +845,16 @@ export default function ProfilPage() {
                             <SportIconBox name={icon} bgColor={color + '18'} iconColor={color} boxSize={50} borderRadius={14} size={22} />
                             <div style={{ flex: 1 }}>
                               <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 3 }}>{lang === 'en' && classObj?.titleEn ? classObj.titleEn : (classObj?.title || t('prof.classFallback'))}</div>
-                              <div style={{ fontSize: 13, color: '#aaa', marginBottom: 2 }}>{venue?.name || ''}</div>
+                              {/* MEKÂNSIZ HOCA DERSİ: salon yok → kimlik satırı EĞİTMEN. Salon adına
+                                  bakan eski hâl online rezervasyonda boş bir satır bırakıyordu. */}
+                              <div style={{ fontSize: 13, color: '#aaa', marginBottom: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                {classObj?.deliveryMode === 'online' && (
+                                  <span style={{ background: '#EEF2FF', color: '#4F46E5', fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 100 }}>
+                                    {t('home.onlineBadge')}
+                                  </span>
+                                )}
+                                <span>{venue?.name || classObj?.instructor?.fullName || ''}</span>
+                              </div>
                               <div style={{ fontSize: 12, color: '#bbb' }}>{dateStr}{timeStr ? ` · ${timeStr}` : ''}</div>
                             </div>
                             <span style={{ fontSize: 12, color: '#10B981', fontWeight: 600, backgroundColor: '#F0FDF4', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Check size={12} /> {t('prof.confirmed')}</span>
@@ -992,9 +1001,21 @@ export default function ProfilPage() {
                                   <span style={{ fontSize: 12, color: '#10B981', fontWeight: 600, backgroundColor: '#F0FDF4', padding: '3px 10px', borderRadius: 100, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Check size={12} /> {t('prof.confirmed')}</span>
                                   {isConfirmed && isFuture && (
                                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-                                      {qrGoster && b.checkInCode && (
+                                      {/* ONLINE DERS: QR yok — katılım hoca portalinden işaretleniyor.
+                                          Bağlantıyı sunucu YALNIZ onaylı rezervasyonda döndürüyor
+                                          (iptal edende null), yani burada ayrıca kapı gerekmiyor. */}
+                                      {b.meetingUrl ? (
+                                        <a
+                                          href={b.meetingUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: '#4F46E5', padding: '7px 14px', borderRadius: 100, textDecoration: 'none', whiteSpace: 'nowrap' }}
+                                        >
+                                          {t('prof.joinOnline')}
+                                        </a>
+                                      ) : qrGoster && b.checkInCode ? (
                                         <CheckInQR code={b.checkInCode} />
-                                      )}
+                                      ) : null}
                                       {degistirilebilir && (
                                       <div style={{ display: 'flex', gap: 6 }}>
                                         {awaitingConfirm ? (

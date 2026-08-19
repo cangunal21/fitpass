@@ -30,7 +30,9 @@ export default function EgitmenPortalPage() {
 
   // Dersler
   const [classes, setClasses] = useState<any[]>([])
-  const [classForm, setClassForm] = useState({ title: '', category: '', basePrice: '', duration: '60', capacity: '' })
+  // deliveryMode/meetingUrl: mekânsız (salonsuz) hoca YALNIZ online ders açabilir — sunucu da
+  // DB de bunu zorluyor. Salona bağlı hoca ikisini de açabildiği için seçim gösteriliyor.
+  const [classForm, setClassForm] = useState({ title: '', category: '', basePrice: '', duration: '60', capacity: '', deliveryMode: 'in_person', meetingUrl: '' })
   const [classMsg, setClassMsg] = useState('')
   const [sessionForm, setSessionForm] = useState<{ classId: number; date: string; time: string; capacity: string } | null>(null)
 
@@ -116,12 +118,20 @@ export default function EgitmenPortalPage() {
     setTimeout(() => setProfileMsg(''), 2500)
   }
 
+  // Salonu OLMAYAN hoca = mekânsız (bireysel). Kapısı salonun onayı değil KENDİ onayı.
+  const mekansiz = me != null && !me.venue
+  const onayBekliyor = mekansiz && me?.isApproved === false
+
   const addClass = async (e: React.FormEvent) => {
     e.preventDefault(); setClassMsg('')
     if (!classForm.category) { setClassMsg('Branş seçin.'); return }
-    const res = await jsonYaz(`${API_URL}/api/instructor/classes`, { method: 'POST', headers: jsonAuth, body: JSON.stringify(classForm) })
+    const gonderilecek = mekansiz ? { ...classForm, deliveryMode: 'online' } : classForm
+    if (gonderilecek.deliveryMode === 'online' && !gonderilecek.meetingUrl.trim()) {
+      setClassMsg('Online ders için katılım bağlantısı gerekli (https ile başlamalı).'); return
+    }
+    const res = await jsonYaz(`${API_URL}/api/instructor/classes`, { method: 'POST', headers: jsonAuth, body: JSON.stringify(gonderilecek) })
     if (res?.error) { setClassMsg(res.error); return }
-    setClassForm({ title: '', category: '', basePrice: '', duration: '60', capacity: '' })
+    setClassForm({ title: '', category: '', basePrice: '', duration: '60', capacity: '', deliveryMode: mekansiz ? 'online' : 'in_person', meetingUrl: '' })
     setClassMsg('Ders eklendi ✓'); loadClasses()
     setTimeout(() => setClassMsg(''), 2500)
   }
@@ -229,6 +239,15 @@ export default function EgitmenPortalPage() {
         {/* ---- DERSLERİM ---- */}
         {tab === 'dersler' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {onayBekliyor && (
+              <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 12, padding: '14px 16px' }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: '#92400E', marginBottom: 4 }}>Başvurunuz inceleniyor</div>
+                <div style={{ fontSize: 12.5, color: '#92400E', lineHeight: 1.5 }}>
+                  Profilinizi şimdi tamamlayabilirsiniz; onaylandığında ders ekleyip yayına
+                  çıkabileceksiniz.{me?.rejectionReason ? ` Not: ${me.rejectionReason}` : ''}
+                </div>
+              </div>
+            )}
             <form onSubmit={addClass} style={{ background: '#fff', borderRadius: 16, padding: '20px 22px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
               <div style={{ fontSize: 15, fontWeight: 800, color: '#1a1a1a', marginBottom: 14 }}>Yeni Ders Ekle</div>
               <label style={lbl}>Ders Adı</label>
@@ -238,6 +257,39 @@ export default function EgitmenPortalPage() {
                 <option value="">Branş seçin</option>
                 {categories.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
+              {/* TESLİM BİÇİMİ. Mekânsız hocada seçim YOK: adresi olmadığı için yüz yüze ders
+                  açamaz (sunucu 400 döner, DB'de CHECK kısıtı var). Seçim göstermek yerine
+                  durumu açıkça yazıyoruz — tıklanamayan bir seçenek göstermek kafa karıştırır. */}
+              {mekansiz ? (
+                <div style={{ marginTop: 12, background: '#EEF2FF', borderRadius: 10, padding: '10px 12px', fontSize: 12.5, color: '#4338CA', fontWeight: 600 }}>
+                  Salona bağlı olmadığınız için dersleriniz <b>online</b> olarak yayınlanır.
+                </div>
+              ) : (
+                <>
+                  <label style={{ ...lbl, marginTop: 12 }}>Teslim biçimi</label>
+                  <select value={classForm.deliveryMode} onChange={e => setClassForm({ ...classForm, deliveryMode: e.target.value, meetingUrl: e.target.value === 'online' ? classForm.meetingUrl : '' })} style={inp}>
+                    <option value="in_person">Yüz yüze (salonda)</option>
+                    <option value="online">Online (canlı)</option>
+                  </select>
+                </>
+              )}
+
+              {(mekansiz || classForm.deliveryMode === 'online') && (
+                <>
+                  <label style={{ ...lbl, marginTop: 12 }}>Katılım bağlantısı</label>
+                  <input
+                    value={classForm.meetingUrl}
+                    onChange={e => setClassForm({ ...classForm, meetingUrl: e.target.value })}
+                    placeholder="https://zoom.us/j/..."
+                    style={inp}
+                  />
+                  <div style={{ fontSize: 11.5, color: '#888', marginTop: 5 }}>
+                    Zoom, Meet, Teams — fark etmez; <b>https</b> ile başlamalı. Bu bağlantı yalnızca
+                    rezervasyon yapan kişilere gösterilir, herkese açık sayfalarda görünmez.
+                  </div>
+                </>
+              )}
+
               <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
                 <div style={{ flex: 1 }}><label style={lbl}>Fiyat (₺)</label><input type="number" value={classForm.basePrice} onChange={e => setClassForm({ ...classForm, basePrice: e.target.value })} required style={inp} /></div>
                 <div style={{ flex: 1 }}><label style={lbl}>Süre (dk)</label><input type="number" value={classForm.duration} onChange={e => setClassForm({ ...classForm, duration: e.target.value })} required style={inp} /></div>

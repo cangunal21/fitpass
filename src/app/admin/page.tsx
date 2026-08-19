@@ -262,6 +262,16 @@ export default function AdminPage() {
     setInstructors(prev => prev.map(i => i.id === id ? { ...i, verified } : i))
   }
 
+  // MEKÂNSIZ (bireysel) hocanın YAYIN onayı — `verify` (mavi tik) ile AYRI şey.
+  // verify = kalite işareti, görünürlüğü etkilemez. approve = dersleri yayına çıkar.
+  const handleApproveInstructor = async (id: number, approved: boolean) => {
+    const reason = approved ? undefined : (prompt('Ret gerekçesi (eğitmene gösterilir, boş bırakılabilir):') || undefined)
+    if (!await adminAction(`${API_URL}/api/admin/instructors/${id}/approve`, {
+      method: 'PUT', headers: getHeaders(), body: JSON.stringify({ approved, reason }),
+    })) return
+    setInstructors(prev => prev.map(i => i.id === id ? { ...i, isApproved: approved, rejectionReason: approved ? null : (reason ?? null) } : i))
+  }
+
   const fetchComplaints = async () => {
     const v = await adminOku(`${API_URL}/api/admin/complaints`, d => d.complaints || [])
     if (v) setComplaints(v)   // null = okuma BASARISIZ; eski liste korunur, bant hatayi gosterir
@@ -616,10 +626,27 @@ export default function AdminPage() {
                     {inst.fullName}
                     {inst.verified && <BadgeCheck size={16} color="#2563EB" />}
                   </div>
-                  <div style={{ fontSize: 12, color: '#888' }}>{inst.specialty || '—'} · {inst.venue?.name || 'Salon yok'}</div>
+                  <div style={{ fontSize: 12, color: '#888' }}>
+                    {inst.specialty || '—'} · {inst.venue?.name || 'Bağımsız (online)'}
+                    {inst.venueId == null && inst.email ? ` · ${inst.email}` : ''}
+                  </div>
+                  {inst.venueId == null && !inst.isApproved && (
+                    <div style={{ fontSize: 11.5, color: '#92400E', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8, padding: '4px 8px', marginTop: 5, display: 'inline-block', fontWeight: 700 }}>
+                      Onay bekliyor
+                    </div>
+                  )}
                   <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{inst._count?.classes || 0} ders · ⭐ {(inst.avgRating ?? 0).toFixed(1)} ({inst.totalReviews || 0})</div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                  {/* YAYIN ONAYI yalnız MEKÂNSIZ hocada anlamlı: salona bağlı eğitmenin
+                      görünürlüğü salonun onayına tabidir ve sunucu bu uçta 400 döner. */}
+                  {inst.venueId == null && (
+                    inst.isApproved ? (
+                      <button onClick={() => handleApproveInstructor(inst.id, false)} style={{ padding: '5px 12px', borderRadius: 8, border: 'none', background: '#F59E0B', color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Yayından Kaldır</button>
+                    ) : (
+                      <button onClick={() => handleApproveInstructor(inst.id, true)} style={{ padding: '5px 12px', borderRadius: 8, border: 'none', background: '#16A34A', color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Onayla</button>
+                    )
+                  )}
                   {inst.verified ? (
                     <>
                       <span style={{ fontSize: 12, backgroundColor: '#EFF6FF', color: '#2563EB', padding: '3px 10px', borderRadius: 100, fontWeight: 600 }}>Doğrulanmış</span>
