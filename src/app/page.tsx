@@ -138,15 +138,18 @@ export default function Home() {
   // Online şeridi: yalnız yüz yüze moddayken çekilir (online moddayken ana liste zaten online).
   useEffect(() => {
     if (mode !== 'in_person') { setOnlineItems([]); return }
-    let iptal = false
+    // Değişken adı bilerek İNGİLİZCE: i18n tarayıcısı bu dosyada `iptal`i JSX metin düğümü sanıp
+    // "çevrilmemiş Türkçe" diye işaretliyordu (CI'da kırmızı, yerelde de tekrarlanabilir).
+    // Tarayıcıyı gevşetmek yanlış olurdu — gerçek çevrilmemiş metni de görmez hâle gelirdi.
+    let aborted = false
     api.getSessions({ mode: 'online', limit: '8' })
       .then(d => {
-        if (iptal) return
+        if (aborted) return
         if (Array.isArray(d?.sessions) && d.sessions.length > 0) setOnlineItems(d.sessions.map(mapSessionToItem))
         else setOnlineItems([])
       })
-      .catch(() => { if (!iptal) setOnlineItems([]) })
-    return () => { iptal = true }
+      .catch(() => { if (!aborted) setOnlineItems([]) })
+    return () => { aborted = true }
   }, [mode])
 
   // Fetch neighborhoods + categories on mount
