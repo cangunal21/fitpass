@@ -262,7 +262,7 @@ export const api = {
   cancelBooking: (token: string, bookingId: number) =>
     request(`/api/bookings/${bookingId}/cancel`, { method: 'PUT', headers: authHeaders(token) }),
 
-  getSessions: (params?: { category?: string; date?: string; dateFrom?: string; dateTo?: string; neighborhoodId?: string; cityId?: string; search?: string; sort?: string; userNeighborhoodId?: string }) =>
+  getSessions: (params?: { category?: string; date?: string; dateFrom?: string; dateTo?: string; neighborhoodId?: string; cityId?: string; search?: string; sort?: string; userNeighborhoodId?: string; /** 'in_person' | 'online' — verilmezse SUNUCU in_person varsayar (online opt-in). */ mode?: string; limit?: string; page?: string }) =>
     request<ApiResult<SessionListResponse>>(`/api/public/sessions${qsOf(params)}`),
 
   getSessionById: (id: number) =>

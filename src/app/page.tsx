@@ -28,6 +28,8 @@ function mapSessionToItem(session: SessionSummary) {
     titleEn: session.titleEn || null,
     venueId: session.venueId,
     venue: session.venueName,
+    deliveryMode: session.deliveryMode,
+    instructorName: session.instructorName,
     neighborhood: session.neighborhood,
     category: session.category,
     icon: getIconKeyForCategory(session.category),
@@ -51,8 +53,14 @@ function mapSessionToItem(session: SessionSummary) {
 interface DisplayItem {
   id: number
   title: string
-  venueId?: number
-  venue?: string
+  // MEKÂNSIZ (bireysel) HOCA DERSİ: salon YOK → ikisi de `null`. Kartta salon satırı
+  // çizilmemeli, yerine eğitmen gösterilmeli (sözleşme: venueId === null ⇒ online).
+  venueId?: number | null
+  venue?: string | null
+  /** 'online' = programlı canlı ders. Online kartta mesafe/harita/adres gösterilmez. */
+  deliveryMode?: 'in_person' | 'online'
+  /** Mekânsız hoca dersinde kartın kimlik satırı SALON değil EĞİTMEN olur. */
+  instructorName?: string | null
   // `string | null` — SUNUCU GERÇEĞİ: mahallesi atanmamış salon için `null` geliyor.
   // Burada `string` yazıyordu ve `any` sayesinde kimse fark etmiyordu; sonuç, aşağıdaki
   // kartlarda boşta kalan bir "·" ayracıydı (React `null`'ı hiç basmaz, ayraç kalır).
@@ -93,6 +101,10 @@ export default function Home() {
   const [filters, setFilters] = useState({ category: '', date: '', neighborhoodId: '', cityId: '', search: '' })
   const [timeFilter, setTimeFilter] = useState<'all' | 'today' | 'week' | 'weekend'>('all')
   const [sort, setSort] = useState<'latest' | 'rating' | 'nearby'>('latest')
+  // TESLİM MODU — 'Yüz yüze' | 'Online'. Sunucunun varsayılanı da in_person (mode gönderilmezse
+  // online karışmaz), burada AÇIKÇA gönderiyoruz ki niyet okunur olsun.
+  // Online modda konum kavramı YOK: şehir/ilçe filtreleri ve "bana yakın" sıralaması gizlenir.
+  const [mode, setMode] = useState<'in_person' | 'online'>('in_person')
   const [neighborhoods, setNeighborhoods] = useState<{ id: number; name: string }[]>([])
   const [cities, setCities] = useState<{ id: number; name: string }[]>([])
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -103,6 +115,10 @@ export default function Home() {
   const [venueResults, setVenueResults] = useState<any[]>([])
   const [allVenues, setAllVenues] = useState<any[]>([])
   const [forYouItems, setForYouItems] = useState<DisplayItem[]>([])
+  // ONLINE ŞERİDİ — yüz yüze modda ana akışın üstünde duran küçük vitrin. Bilerek AYRI bir
+  // istek: ana listeyi karıştırmak konum filtreleriyle ve mesafe sıralamasıyla çelişirdi
+  // (online dersin mahallesi yok). Şerit, online'ı sekmeye gömmeden görünür kılıyor.
+  const [onlineItems, setOnlineItems] = useState<DisplayItem[]>([])
 
   // Kişiselleştirilmiş "Senin için" seansları (giriş yapılmışsa)
   useEffect(() => {
@@ -118,6 +134,20 @@ export default function Home() {
       })
       .catch(() => {})
   }, [])
+
+  // Online şeridi: yalnız yüz yüze moddayken çekilir (online moddayken ana liste zaten online).
+  useEffect(() => {
+    if (mode !== 'in_person') { setOnlineItems([]); return }
+    let iptal = false
+    api.getSessions({ mode: 'online', limit: '8' })
+      .then(d => {
+        if (iptal) return
+        if (Array.isArray(d?.sessions) && d.sessions.length > 0) setOnlineItems(d.sessions.map(mapSessionToItem))
+        else setOnlineItems([])
+      })
+      .catch(() => { if (!iptal) setOnlineItems([]) })
+    return () => { iptal = true }
+  }, [mode])
 
   // Fetch neighborhoods + categories on mount
   useEffect(() => {
@@ -165,7 +195,7 @@ export default function Home() {
     return {}
   }
 
-  const fetchSessions = useCallback(async (activeFilters: typeof filters, activeSortParam?: string, activeTimeFilter?: string, pageNum = 1, append = false) => {
+  const fetchSessions = useCallback(async (activeFilters: typeof filters, activeSortParam?: string, activeTimeFilter?: string, pageNum = 1, append = false, activeModeParam?: 'in_person' | 'online') => {
     if (append) setLoadingMore(true); else setLoading(true)
     try {
       const params: Record<string, string> = { page: String(pageNum), limit: '24' }
@@ -174,6 +204,7 @@ export default function Home() {
       if (activeFilters.neighborhoodId) params.neighborhoodId = activeFilters.neighborhoodId
       if (activeFilters.cityId) params.cityId = activeFilters.cityId
       if (activeFilters.search) params.search = activeFilters.search
+      params.mode = activeModeParam ?? mode
       const sortParam = activeSortParam ?? sort
       if (sortParam && sortParam !== 'latest') params.sort = sortParam
       if (sortParam === 'nearby') {
@@ -228,12 +259,15 @@ export default function Home() {
     }
   }, [])
 
-  const loadMore = () => fetchSessions(filters, sort, timeFilter, page + 1, true)
+  // mode AÇIKÇA geçiliyor: fetchSessions boş bağımlılık dizisiyle sarmalandığı için içindeki
+  // `mode` İLK render'ın değerinde donar — anahtarı çevirmek hiçbir şey yapmazdı (sessiz kusur).
+  // filters/sort/timeFilter de tam bu yüzden parametre olarak geçiliyor.
+  const loadMore = () => fetchSessions(filters, sort, timeFilter, page + 1, true, mode)
 
   useEffect(() => {
-    fetchSessions(filters, sort, timeFilter)
+    fetchSessions(filters, sort, timeFilter, 1, false, mode)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.category, filters.date, filters.neighborhoodId, filters.cityId, sort, timeFilter])
+  }, [filters.category, filters.date, filters.neighborhoodId, filters.cityId, sort, timeFilter, mode])
 
   // İl'e göre ilçeleri getir (il yoksa İstanbul — geriye uyum). İl değişince ilçe seçimi sıfırlanır (onChange'de).
   useEffect(() => {
@@ -247,7 +281,7 @@ export default function Home() {
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
     searchDebounceRef.current = setTimeout(() => {
       setFilters(f => ({ ...f, search: searchInput }))
-      fetchSessions({ ...filters, search: searchInput }, sort, timeFilter)
+      fetchSessions({ ...filters, search: searchInput }, sort, timeFilter, 1, false, mode)
       const s = searchInput.trim().toLowerCase()
       if (s) {
         setVenueResults(allVenues.filter(v =>
@@ -280,7 +314,7 @@ export default function Home() {
     const catName = catId ? categories.find(x => x.id === catId)?.name || '' : ''
     const newFilters = { ...filters, category: catName }
     setFilters(newFilters)
-    fetchSessions(newFilters)
+    fetchSessions(newFilters, sort, timeFilter, 1, false, mode)
   }
 
   const handleCardBookingClick = (e: React.MouseEvent, item: DisplayItem) => {
@@ -346,6 +380,42 @@ export default function Home() {
         </div>
       </div>
 
+      {/* TESLİM MODU ANAHTARI — filtre barının ÜSTÜNDE, çünkü altındaki filtrelerin hangileri
+          anlamlı olduğunu bu belirliyor: online modda şehir/ilçe ve "bana yakın" yok. */}
+      <div style={{ backgroundColor: '#fff', padding: '14px 24px 0' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', gap: 6, background: '#F3F4F6', borderRadius: 12, padding: 4, width: 'fit-content' }}>
+          {([
+            { key: 'in_person' as const, label: t('home.modeInPerson') },
+            { key: 'online' as const, label: t('home.modeOnline') },
+          ]).map(m => (
+            <button
+              key={m.key}
+              onClick={() => {
+                if (m.key === mode) return
+                setMode(m.key)
+                // Online'a geçerken konum filtrelerini ve "bana yakın" sıralamasını DÜŞÜR:
+                // aksi halde seçili bir ilçe online listeyi sunucuda tamamen boşaltır
+                // (online dersin mahallesi yok) ve kullanıcı "hiç ders yok" sanır.
+                if (m.key === 'online') {
+                  setFilters(f => ({ ...f, cityId: '', neighborhoodId: '' }))
+                  setSort(prev => (prev === 'nearby' ? 'latest' : prev))
+                }
+              }}
+              aria-pressed={mode === m.key}
+              style={{
+                padding: '8px 20px', borderRadius: 9, border: 'none', cursor: 'pointer',
+                background: mode === m.key ? '#fff' : 'transparent',
+                color: mode === m.key ? '#4F46E5' : '#666',
+                fontSize: 14, fontWeight: 600,
+                boxShadow: mode === m.key ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+              }}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Filter Bar */}
       <div style={{ backgroundColor: '#fff', borderBottom: '1px solid #F0F0F0', padding: '12px 24px 0' }}>
         <div className="filter-bar" style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', paddingBottom: 12 }}>
@@ -368,7 +438,7 @@ export default function Home() {
               setActiveCategory(cat ? cat.id : null)
               const newFilters = { ...filters, category: catName }
               setFilters(newFilters)
-              fetchSessions(newFilters)
+              fetchSessions(newFilters, sort, timeFilter, 1, false, mode)
             }}
             style={{ padding: '9px 12px', borderRadius: 10, border: '1.5px solid #E5E5E5', fontSize: 13, color: filters.category ? '#1a1a1a' : '#888', outline: 'none', cursor: 'pointer', background: '#fff' }}
           >
@@ -378,6 +448,9 @@ export default function Home() {
             ))}
           </select>
 
+          {/* KONUM FİLTRELERİ yalnız yüz yüze modda. Online derste şehir/ilçe kavramı yok;
+              gösterilirse kullanıcı seçer ve liste sessizce boşalır. */}
+          {mode === 'in_person' && (
           <select
             value={filters.cityId}
             onChange={e => setFilters(f => ({ ...f, cityId: e.target.value, neighborhoodId: '' }))}
@@ -388,7 +461,9 @@ export default function Home() {
               <option key={c.id} value={String(c.id)}>{c.name}</option>
             ))}
           </select>
+          )}
 
+          {mode === 'in_person' && (
           <select
             value={filters.neighborhoodId}
             onChange={e => setFilters(f => ({ ...f, neighborhoodId: e.target.value }))}
@@ -400,6 +475,7 @@ export default function Home() {
               <option key={n.id} value={String(n.id)}>{n.name}</option>
             ))}
           </select>
+          )}
 
           <input
             type="date"
@@ -417,7 +493,8 @@ export default function Home() {
             >
               <option value="latest">{t('sort.date')}</option>
               <option value="rating">{t('sort.rating')}</option>
-              <option value="nearby">{t('sort.nearby')}</option>
+              {/* "Bana yakın" online modda anlamsız — mesafe hesabı salonun mahallesinden gelir. */}
+              {mode === 'in_person' && <option value="nearby">{t('sort.nearby')}</option>}
             </select>
           </div>
 
@@ -429,7 +506,8 @@ export default function Home() {
                 setActiveCategory(null)
                 setTimeFilter('all')
                 setSort('latest')
-                fetchSessions({ category: '', date: '', neighborhoodId: '', cityId: '', search: '' }, 'latest', 'all')
+                // Mod BİLEREK sıfırlanmıyor: "temizle" filtreleri temizler, sekmeyi değiştirmez.
+                fetchSessions({ category: '', date: '', neighborhoodId: '', cityId: '', search: '' }, 'latest', 'all', 1, false, mode)
               }}
               style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '9px 14px', borderRadius: 10, border: '1.5px solid #EEE', background: '#F5F5F5', fontSize: 13, color: '#666', cursor: 'pointer', fontWeight: 500 }}
             >
@@ -526,6 +604,30 @@ export default function Home() {
           </div>
         )}
 
+        {mode === 'in_person' && onlineItems.length > 0 && (
+          <div style={{ marginBottom: 28 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 800, color: '#111', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>💻 {t('home.onlineStrip')}</h2>
+            <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 6 }}>
+              {onlineItems.map(item => (
+                <Link key={'on-' + item.id} href={`/ders/${item.id}`} style={{ textDecoration: 'none', flex: '0 0 240px' }}>
+                  <div style={{ backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden', border: '1px solid #F0F0F0' }}>
+                    <div style={{ background: item.color, padding: '16px 16px 14px' }}>
+                      <SportIconBox name={item.icon} bgColor='rgba(255,255,255,0.2)' iconColor='#fff' boxSize={40} borderRadius={12} size={18} />
+                      <h3 style={{ fontSize: 15, fontWeight: 700, color: '#fff', margin: '10px 0 2px', lineHeight: 1.3 }}>{lang === 'en' && item.titleEn ? String(item.titleEn) : item.title}</h3>
+                      {/* Online kartta salon/mahalle YOK — kimlik satırı eğitmendir. */}
+                      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)' }}>{item.instructorName || ''}</p>
+                    </div>
+                    <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 12, color: '#666', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Clock size={14} /> {'time' in item ? localizeText(item.time as string, lang) : ''}</span>
+                      <span style={{ fontSize: 15, fontWeight: 800, color: '#4F46E5' }}>₺{item.basePrice}</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
         {loading ? (
           <SkeletonCardGrid count={6} />
         ) : activeView === 'list' ? (
@@ -579,14 +681,22 @@ export default function Home() {
                         <SportIconBox name={item.icon} bgColor='rgba(255,255,255,0.2)' iconColor='#fff' boxSize={48} borderRadius={14} size={22} />
                       </div>
                       <h3 style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 3, lineHeight: 1.3 }}>{lang === 'en' && item.titleEn ? String(item.titleEn) : item.title}</h3>
-                      <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', fontWeight: 500 }}>
+                      <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        {item.deliveryMode === 'online' && (
+                          <span style={{ background: 'rgba(255,255,255,0.22)', color: '#fff', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 100, letterSpacing: 0.2 }}>
+                            {t('home.onlineBadge')}
+                          </span>
+                        )}
+                        {/* MEKÂNSIZ HOCA DERSİ: salon yok → kimlik satırı eğitmenin adı. Eskiden
+                            burası salon adına bakıyordu ve online kartta BOŞ bir satır kalırdı. */}
                         {'venueId' in item && item.venueId ? (
                           <Link href={`/venue/${item.venueId}`} onClick={e => e.stopPropagation()} style={{ position: 'relative', zIndex: 2, color: 'rgba(255,255,255,0.9)', textDecoration: 'underline', fontWeight: 600 }}>
                             {'venue' in item && typeof item.venue === 'string' ? item.venue : ''}
                           </Link>
                         ) : (
-                          'venue' in item && typeof item.venue === 'string' ? item.venue : ''
-                        )}{item.neighborhood ? ` · ${item.neighborhood}` : ''}
+                          <span>{item.instructorName || ('venue' in item && typeof item.venue === 'string' ? item.venue : '')}</span>
+                        )}
+                        {item.neighborhood ? <span>· {item.neighborhood}</span> : null}
                       </p>
                     </div>
 
