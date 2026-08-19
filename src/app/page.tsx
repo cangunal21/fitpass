@@ -16,7 +16,7 @@ import type { SessionSummary } from '@/types/api'
 const dateLocale = () => (typeof window !== 'undefined' && localStorage.getItem('fitpass_lang') === 'en') ? 'en-US' : 'tr-TR'
 
 // Kategoriler API'dan dinamik olarak yüklenir
-interface Category { id: number; name: string; icon: string; color: string; onlineAllowed: boolean }
+interface Category { id: number; name: string; icon: string; color: string; onlineAllowed?: boolean }
 
 // PARAMETRE ARTIK `any` DEĞİL: sunucu sözleşmesine bağlı (src/types/api.ts). `any` iken bu
 // fonksiyon sözleşmenin bittiği yerdi — alan adı yanlış yazılsa ya da sunucudan kalksa tsc
@@ -111,7 +111,11 @@ export default function Home() {
   const [instructorsLoading, setInstructorsLoading] = useState(false)
   // Online modda yalnız uygun branşlar listelenir (yüzme/binicilik/deniz sporları/tenis/dövüş
   // fiziksel ya da içerik olarak online'a uymuyor). Kaynağı sunucu, burada sadece süzüyoruz.
-  const gorunenKategoriler = mode === 'online' ? categories.filter(c => c.onlineAllowed) : categories
+  // ⚠️ `!== false` — "truthy ise göster" DEĞİL. Mobilde bunun bedeli ödendi: istemci bu süzgeçle
+  // yayına çıktığında `onlineAllowed` alanını ekleyen backend HENÜZ DEPLOY OLMAMIŞTI; alan
+  // `undefined` gelince süzgeç TÜM kategorileri eledi ve filtre tamamen kayboldu. İstemci,
+  // sunucudan gelmeyen bir alanı "hayır" saymamalı — kapı zaten sunucuda.
+  const gorunenKategoriler = mode === 'online' ? categories.filter(c => c.onlineAllowed !== false) : categories
   // fetchSessions'a giden değer: 'instructors' bir TESLİM BİÇİMİ değil; o sekmede ders sorgusu
   // zaten yapılmıyor ama parametre tipi daralmış kalsın diye burada indirgeniyor.
   const dersModu = (m: typeof mode): 'in_person' | 'online' => (m === 'online' ? 'online' : 'in_person')
@@ -176,7 +180,9 @@ export default function Home() {
           color: c.colorHex || getColorForCategory(c.name),
           // ONLINE UYGUNLUĞU SUNUCUDAN gelir (SportCategory.onlineAllowed) — istemcide sabit
           // liste tutmuyoruz; iki istemcide çiftlenir ve ilkinde bayatlardı.
-          onlineAllowed: !!c.onlineAllowed,
+          // `undefined` KORUNUYOR: `!!` ile false'a çevirmek, alanı henüz döndürmeyen bir
+          // backend'e karşı "bu kategori online'a kapalı" demek olurdu (bkz. süzgeçteki not).
+          onlineAllowed: c.onlineAllowed,
         })))
       }
     }).catch(() => {})
@@ -433,7 +439,7 @@ export default function Home() {
                   // yerde ("Yüzme") takılı kalır, liste boş döner ve kullanıcı sebebini göremez —
                   // seçenek listeden kalktığı için geri de alamaz.
                   const secili = categories.find(c => c.name === filters.category)
-                  if (secili && !secili.onlineAllowed) {
+                  if (secili && secili.onlineAllowed === false) {
                     setFilters(f => ({ ...f, cityId: '', neighborhoodId: '', category: '' }))
                     setActiveCategory(null)
                   }
