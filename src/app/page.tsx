@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { mockClasses, mockDropInSlots } from '@/lib/mockData'
 import Navbar from '@/components/Navbar'
 import { api, getToken, getUser, saveUser } from '@/lib/api'
-import { Search, LayoutGrid, Map, Flame, Clock, Timer, X } from 'lucide-react'
+import { Search, LayoutGrid, Map, Flame, Clock, Timer, X, BadgeCheck } from 'lucide-react'
 import { SportIcon, SportIconBox, getIconKeyForCategory, getColorForCategory } from '@/lib/sportIcons'
 import { SkeletonCardGrid } from '@/components/Skeleton'
 import { useT, translateCategory, localizeText } from '@/lib/i18n'
@@ -16,7 +16,7 @@ import type { SessionSummary } from '@/types/api'
 const dateLocale = () => (typeof window !== 'undefined' && localStorage.getItem('fitpass_lang') === 'en') ? 'en-US' : 'tr-TR'
 
 // Kategoriler API'dan dinamik olarak yüklenir
-interface Category { id: number; name: string; icon: string; color: string }
+interface Category { id: number; name: string; icon: string; color: string; onlineAllowed: boolean }
 
 // PARAMETRE ARTIK `any` DEĞİL: sunucu sözleşmesine bağlı (src/types/api.ts). `any` iken bu
 // fonksiyon sözleşmenin bittiği yerdi — alan adı yanlış yazılsa ya da sunucudan kalksa tsc
@@ -104,7 +104,17 @@ export default function Home() {
   // TESLİM MODU — 'Yüz yüze' | 'Online'. Sunucunun varsayılanı da in_person (mode gönderilmezse
   // online karışmaz), burada AÇIKÇA gönderiyoruz ki niyet okunur olsun.
   // Online modda konum kavramı YOK: şehir/ilçe filtreleri ve "bana yakın" sıralaması gizlenir.
-  const [mode, setMode] = useState<'in_person' | 'online'>('in_person')
+  // ÜÇ SEKME. 'in_person'/'online' teslim biçimi, 'instructors' ise AYRI bir keşif nesnesi
+  // (ders değil, eğitmen listesi). Tek state tutuluyor çünkü kullanıcı için hepsi aynı anahtar.
+  const [mode, setMode] = useState<'in_person' | 'online' | 'instructors'>('in_person')
+  const [instructors, setInstructors] = useState<any[]>([])
+  const [instructorsLoading, setInstructorsLoading] = useState(false)
+  // Online modda yalnız uygun branşlar listelenir (yüzme/binicilik/deniz sporları/tenis/dövüş
+  // fiziksel ya da içerik olarak online'a uymuyor). Kaynağı sunucu, burada sadece süzüyoruz.
+  const gorunenKategoriler = mode === 'online' ? categories.filter(c => c.onlineAllowed) : categories
+  // fetchSessions'a giden değer: 'instructors' bir TESLİM BİÇİMİ değil; o sekmede ders sorgusu
+  // zaten yapılmıyor ama parametre tipi daralmış kalsın diye burada indirgeniyor.
+  const dersModu = (m: typeof mode): 'in_person' | 'online' => (m === 'online' ? 'online' : 'in_person')
   const [neighborhoods, setNeighborhoods] = useState<{ id: number; name: string }[]>([])
   const [cities, setCities] = useState<{ id: number; name: string }[]>([])
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -164,6 +174,9 @@ export default function Home() {
           name: c.name,
           icon: getIconKeyForCategory(c.name),
           color: c.colorHex || getColorForCategory(c.name),
+          // ONLINE UYGUNLUĞU SUNUCUDAN gelir (SportCategory.onlineAllowed) — istemcide sabit
+          // liste tutmuyoruz; iki istemcide çiftlenir ve ilkinde bayatlardı.
+          onlineAllowed: !!c.onlineAllowed,
         })))
       }
     }).catch(() => {})
@@ -207,7 +220,7 @@ export default function Home() {
       if (activeFilters.neighborhoodId) params.neighborhoodId = activeFilters.neighborhoodId
       if (activeFilters.cityId) params.cityId = activeFilters.cityId
       if (activeFilters.search) params.search = activeFilters.search
-      params.mode = activeModeParam ?? mode
+      params.mode = activeModeParam ?? 'in_person'
       const sortParam = activeSortParam ?? sort
       if (sortParam && sortParam !== 'latest') params.sort = sortParam
       if (sortParam === 'nearby') {
@@ -265,10 +278,23 @@ export default function Home() {
   // mode AÇIKÇA geçiliyor: fetchSessions boş bağımlılık dizisiyle sarmalandığı için içindeki
   // `mode` İLK render'ın değerinde donar — anahtarı çevirmek hiçbir şey yapmazdı (sessiz kusur).
   // filters/sort/timeFilter de tam bu yüzden parametre olarak geçiliyor.
-  const loadMore = () => fetchSessions(filters, sort, timeFilter, page + 1, true, mode)
+  const loadMore = () => fetchSessions(filters, sort, timeFilter, page + 1, true, dersModu(mode))
+
+  // Eğitmen listesi — kendi ucundan, ders sorgusundan bağımsız.
+  useEffect(() => {
+    if (mode !== 'instructors') return
+    let aborted = false
+    setInstructorsLoading(true)
+    api.getInstructors({ ...(filters.category ? { category: filters.category } : {}), ...(filters.search ? { search: filters.search } : {}), limit: '48' })
+      .then(d => { if (!aborted) setInstructors(Array.isArray(d?.instructors) ? d.instructors : []) })
+      .catch(() => { if (!aborted) setInstructors([]) })
+      .finally(() => { if (!aborted) setInstructorsLoading(false) })
+    return () => { aborted = true }
+  }, [mode, filters.category, filters.search])
 
   useEffect(() => {
-    fetchSessions(filters, sort, timeFilter, 1, false, mode)
+    if (mode === 'instructors') return
+    fetchSessions(filters, sort, timeFilter, 1, false, dersModu(mode))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.category, filters.date, filters.neighborhoodId, filters.cityId, sort, timeFilter, mode])
 
@@ -284,7 +310,7 @@ export default function Home() {
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
     searchDebounceRef.current = setTimeout(() => {
       setFilters(f => ({ ...f, search: searchInput }))
-      fetchSessions({ ...filters, search: searchInput }, sort, timeFilter, 1, false, mode)
+      fetchSessions({ ...filters, search: searchInput }, sort, timeFilter, 1, false, dersModu(mode))
       const s = searchInput.trim().toLowerCase()
       if (s) {
         setVenueResults(allVenues.filter(v =>
@@ -317,7 +343,7 @@ export default function Home() {
     const catName = catId ? categories.find(x => x.id === catId)?.name || '' : ''
     const newFilters = { ...filters, category: catName }
     setFilters(newFilters)
-    fetchSessions(newFilters, sort, timeFilter, 1, false, mode)
+    fetchSessions(newFilters, sort, timeFilter, 1, false, dersModu(mode))
   }
 
   const handleCardBookingClick = (e: React.MouseEvent, item: DisplayItem) => {
@@ -369,7 +395,7 @@ export default function Home() {
             >
               {t('time.all')}
             </button>
-            {categories.map(cat => (
+            {gorunenKategoriler.map(cat => (
               <button
                 key={cat.id}
                 onClick={() => handleCategoryTabClick(activeCategory === cat.id ? null : cat.id)}
@@ -390,6 +416,7 @@ export default function Home() {
           {([
             { key: 'in_person' as const, label: t('home.modeInPerson') },
             { key: 'online' as const, label: t('home.modeOnline') },
+            { key: 'instructors' as const, label: t('home.modeInstructors') },
           ]).map(m => (
             <button
               key={m.key}
@@ -402,6 +429,14 @@ export default function Home() {
                 if (m.key === 'online') {
                   setFilters(f => ({ ...f, cityId: '', neighborhoodId: '' }))
                   setSort(prev => (prev === 'nearby' ? 'latest' : prev))
+                  // Seçili branş online'a uygun değilse TEMİZLE. Aksi halde filtre görünmez bir
+                  // yerde ("Yüzme") takılı kalır, liste boş döner ve kullanıcı sebebini göremez —
+                  // seçenek listeden kalktığı için geri de alamaz.
+                  const secili = categories.find(c => c.name === filters.category)
+                  if (secili && !secili.onlineAllowed) {
+                    setFilters(f => ({ ...f, cityId: '', neighborhoodId: '', category: '' }))
+                    setActiveCategory(null)
+                  }
                 }
               }}
               aria-pressed={mode === m.key}
@@ -441,12 +476,12 @@ export default function Home() {
               setActiveCategory(cat ? cat.id : null)
               const newFilters = { ...filters, category: catName }
               setFilters(newFilters)
-              fetchSessions(newFilters, sort, timeFilter, 1, false, mode)
+              fetchSessions(newFilters, sort, timeFilter, 1, false, dersModu(mode))
             }}
             style={{ padding: '9px 12px', borderRadius: 10, border: '1.5px solid #E5E5E5', fontSize: 13, color: filters.category ? '#1a1a1a' : '#888', outline: 'none', cursor: 'pointer', background: '#fff' }}
           >
             <option value="">{t('common.category')}</option>
-            {categories.map(cat => (
+            {gorunenKategoriler.map(cat => (
               <option key={cat.id} value={cat.name}>{translateCategory(cat.name, lang)}</option>
             ))}
           </select>
@@ -510,7 +545,7 @@ export default function Home() {
                 setTimeFilter('all')
                 setSort('latest')
                 // Mod BİLEREK sıfırlanmıyor: "temizle" filtreleri temizler, sekmeyi değiştirmez.
-                fetchSessions({ category: '', date: '', neighborhoodId: '', cityId: '', search: '' }, 'latest', 'all', 1, false, mode)
+                fetchSessions({ category: '', date: '', neighborhoodId: '', cityId: '', search: '' }, 'latest', 'all', 1, false, dersModu(mode))
               }}
               style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '9px 14px', borderRadius: 10, border: '1.5px solid #EEE', background: '#F5F5F5', fontSize: 13, color: '#666', cursor: 'pointer', fontWeight: 500 }}
             >
@@ -631,7 +666,49 @@ export default function Home() {
           </div>
         )}
 
-        {loading ? (
+        {mode === 'instructors' ? (
+          instructorsLoading ? (
+            <SkeletonCardGrid count={6} />
+          ) : instructors.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '60px 20px', color: '#888', fontSize: 14 }}>{t('home.noInstructors')}</div>
+          ) : (
+            <div className="cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
+              {instructors.map((ins: any) => (
+                <Link key={'ins-' + ins.id} href={`/instructor/${ins.id}`} style={{ textDecoration: 'none' }}>
+                  <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '18px 20px', border: '1px solid #F0F0F0', display: 'flex', gap: 14, alignItems: 'center' }}>
+                    {ins.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={ins.avatarUrl} alt="" style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                    ) : (
+                      <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#EEF2FF', color: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 800, flexShrink: 0 }}>
+                        {(ins.fullName || '?').trim().charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: '#111', display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ins.fullName}</span>
+                        {ins.verified && <BadgeCheck size={15} color="#2563EB" />}
+                      </div>
+                      {/* Mekânsız hocada salon YOK — "Bağımsız eğitmen" yazıyoruz; boş satır
+                          bırakmak kartı kırık gösterirdi. */}
+                      <div style={{ fontSize: 12.5, color: '#888', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {ins.venueName || t('home.instructorIndependent')}{ins.neighborhood ? ` · ${ins.neighborhood}` : ''}
+                      </div>
+                      <div style={{ fontSize: 12, color: '#aaa', marginTop: 4 }}>
+                        {lang === 'en' && ins.specialtyEn ? ins.specialtyEn : (ins.specialty || '')}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#F59E0B' }}>★ {(ins.avgRating ?? 0).toFixed(1)}</div>
+                      <div style={{ fontSize: 11, color: '#bbb' }}>({ins.totalReviews || 0})</div>
+                      <div style={{ fontSize: 11, color: '#999', marginTop: 4 }}>{t('home.instructorClasses').replace('{n}', String(ins.classCount ?? 0))}</div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )
+        ) : loading ? (
           <SkeletonCardGrid count={6} />
         ) : activeView === 'list' ? (
           <>

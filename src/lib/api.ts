@@ -292,6 +292,13 @@ export const api = {
   getVenueById: (id: number) =>
     request<ApiResult<VenueDetailResponse>>(`/api/public/venues/${id}`),
 
+  /**
+   * EĞİTMEN LİSTESİ (keşif). Kapı sunucuda: salona bağlı eğitmende salonun durumu, mekânsız
+   * eğitmende kendi onayı. `mode='online'` verilirse yalnız online dersi olan eğitmenler döner.
+   */
+  getInstructors: (params?: { search?: string; category?: string; mode?: string; page?: string; limit?: string }) =>
+    request<ApiResult<{ instructors: any[]; hasMore: boolean; page: number; pageSize: number }>>(`/api/public/instructors${qsOf(params)}`),
+
   getCategories: () =>
     request('/api/public/categories'),
 
