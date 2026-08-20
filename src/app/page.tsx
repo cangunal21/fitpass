@@ -745,6 +745,14 @@ export default function Home() {
           salonListesi.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 20px', color: '#888', fontSize: 14 }}>{t('home.noResults')}</div>
           ) : (
+            <>
+            {/* /salonlar ÖKSÜZ KALMASIN: navbar bağlantısı kaldırıldı (aynı şeye iki giriş
+                noktası vardı), ama derin filtreleme ve sıralama hâlâ orada. Tek giriş burası. */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+              <Link href="/salonlar" style={{ fontSize: 13, fontWeight: 700, color: '#4F46E5', textDecoration: 'none' }}>
+                {t('home.allVenues')} →
+              </Link>
+            </div>
             <div className="cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
               {salonListesi.map((v: any) => (
                 <Link key={'v-' + v.id} href={`/venue/${v.id}`} style={{ textDecoration: 'none' }}>
@@ -769,6 +777,7 @@ export default function Home() {
                 </Link>
               ))}
             </div>
+            </>
           )
         ) : loading ? (
           <SkeletonCardGrid count={6} />

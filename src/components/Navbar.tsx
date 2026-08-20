@@ -92,9 +92,11 @@ export default function Navbar() {
       </div>
 
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-        <Link href="/salonlar" style={{ fontSize: compact ? 14 : 16, fontWeight: 800, color: '#4F46E5', textDecoration: 'none', padding: compact ? '5px 7px' : '6px 12px', borderRadius: 8, letterSpacing: -0.3 }}>
-          {t('nav.venues')}
-        </Link>
+        {/* "Salonlar" navbar'dan KALDIRILDI: artık ana sayfadaki sekme anahtarında
+            (Yüz yüze | Online | Eğitmenler | Salonlar). Aynı şeye iki giriş noktası, ikisi
+            farklı davrandığı için (biri sekme, diğeri ayrı sayfa) kafa karıştırıyordu.
+            /salonlar sayfası DURUYOR — sekmenin içinden "tümünü gör" ile erişiliyor;
+            derin filtreleme ve sıralama orada. */}
         <Link href="/sosyal" style={{ fontSize: compact ? 14 : 16, fontWeight: 800, color: '#4F46E5', textDecoration: 'none', padding: compact ? '5px 7px' : '6px 12px', borderRadius: 8, letterSpacing: -0.3 }}>
           {t('nav.social')}
         </Link>
