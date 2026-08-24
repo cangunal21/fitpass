@@ -41,7 +41,7 @@ export default function SalonPaneliPage() {
 
   // Inline class form state
   const [showClassForm, setShowClassForm] = useState(false)
-  const [classForm, setClassForm] = useState({ title: '', description: '', category: '', basePrice: '', duration: '60', capacity: '', instructorId: '' })
+  const [classForm, setClassForm] = useState({ title: '', description: '', category: '', basePrice: '', duration: '60', capacity: '', instructorId: '', deliveryMode: 'in_person', meetingUrl: '' })
   const [classError, setClassError] = useState('')
   const [classSuccess, setClassSuccess] = useState('')
 
@@ -123,7 +123,7 @@ export default function SalonPaneliPage() {
     return trDateFull(date)
   }
 
-  const [sportCategories, setSportCategories] = useState<{ id: number; name: string; hasInstructor: boolean }[]>([])
+  const [sportCategories, setSportCategories] = useState<{ id: number; name: string; hasInstructor: boolean; onlineAllowed?: boolean }[]>([])
 
   useEffect(() => {
     const token = localStorage.getItem('fitpass_venue_token')
@@ -547,7 +547,7 @@ export default function SalonPaneliPage() {
       const data = await res.json()
       if (data.error) { setClassError(data.error); return }
       setClassSuccess('Ders başarıyla eklendi!')
-      setClassForm({ title: '', description: '', category: '', basePrice: '', duration: '60', capacity: '', instructorId: '' })
+      setClassForm({ title: '', description: '', category: '', basePrice: '', duration: '60', capacity: '', instructorId: '', deliveryMode: 'in_person', meetingUrl: '' })
       setShowClassForm(false)
       fetchVenue(token)
       setTimeout(() => setClassSuccess(''), 2500)
@@ -774,7 +774,17 @@ export default function SalonPaneliPage() {
                     </div>
                     <div>
                       <label style={labelStyle}>Kategori *</label>
-                      <select value={classForm.category} onChange={e => setClassForm({ ...classForm, category: e.target.value, instructorId: '' })} required style={inputStyle}>
+                      <select value={classForm.category} onChange={e => {
+                        // Online'a uygun OLMAYAN branşa geçilirse teslim biçimini yüz yüzeye çek.
+                        // Aksi halde form "online" görünürken sunucu 400 döner ve salon sebebini anlamaz.
+                        const yeni = sportCategories.find(c => c.name === e.target.value)
+                        const onlineOlur = yeni?.onlineAllowed !== false
+                        setClassForm({
+                          ...classForm, category: e.target.value, instructorId: '',
+                          deliveryMode: onlineOlur ? classForm.deliveryMode : 'in_person',
+                          meetingUrl: onlineOlur ? classForm.meetingUrl : '',
+                        })
+                      }} required style={inputStyle}>
                         <option value="">Seçin</option>
                         {sportCategories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                       </select>
@@ -798,6 +808,37 @@ export default function SalonPaneliPage() {
                       <label style={labelStyle}>Kapasite (kişi) *</label>
                       <input type="number" placeholder="15" min="1" value={classForm.capacity} onChange={e => setClassForm({ ...classForm, capacity: e.target.value })} required style={inputStyle} />
                     </div>
+                    {/* TESLİM BİÇİMİ (O11) — salon da online ders satabilir (ürün kararı).
+                        Uygun olmayan branşta seçenek hiç gösterilmiyor: gösterip sunucuda
+                        reddetmek, salonu sebebini bilmediği bir hatayla baş başa bırakırdı. */}
+                    {selectedCat?.onlineAllowed !== false && (
+                      <div>
+                        <label style={labelStyle}>Teslim biçimi</label>
+                        <select
+                          value={classForm.deliveryMode}
+                          onChange={e => setClassForm({ ...classForm, deliveryMode: e.target.value, meetingUrl: e.target.value === 'online' ? classForm.meetingUrl : '' })}
+                          style={inputStyle}
+                        >
+                          <option value="in_person">Yüz yüze (salonda)</option>
+                          <option value="online">Online (canlı)</option>
+                        </select>
+                      </div>
+                    )}
+                    {classForm.deliveryMode === 'online' && (
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <label style={labelStyle}>Katılım bağlantısı *</label>
+                        <input
+                          value={classForm.meetingUrl}
+                          onChange={e => setClassForm({ ...classForm, meetingUrl: e.target.value })}
+                          placeholder="https://zoom.us/j/..."
+                          style={inputStyle}
+                        />
+                        <div style={{ fontSize: 11.5, color: '#888', marginTop: 5, lineHeight: 1.5 }}>
+                          Zoom, Meet, Teams — fark etmez; <b>https</b> ile başlamalı. Bu bağlantı yalnızca
+                          rezervasyon yapan kişilere gösterilir, herkese açık sayfalarda görünmez.
+                        </div>
+                      </div>
+                    )}
                     {showInstructor && (
                       <div>
                         <label style={labelStyle}>Hoca (opsiyonel)</label>
