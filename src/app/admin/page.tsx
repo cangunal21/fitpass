@@ -215,11 +215,36 @@ export default function AdminPage() {
     if (tab === 'complaints') fetchComplaints()
   }
 
+  // ASKI ile ONAY İKİ AYRI ANAHTAR. Askıdaki bir salonu "Onayla" ile geri getiremezsiniz:
+  // `approve` yalnız isApproved'a dokunur, `suspend` ise isActive'i kapatır ve public listeler
+  // `isApproved && isActive` ister. Sonuç: admin "onayladım ama salon hâlâ görünmüyor" der.
+  // Bu ayrım DOĞRU (onay = kalite kapısı, askı = moderasyon) ama panelde görünmüyordu.
   const handleApprove = async (id: number, approve: boolean) => {
+    // Askıdaki bir salonu onaylıyorsak: tek başına onay YETMEZ, uyar ve istenirse askıyı da kaldır.
+    let askiyiDaKaldir = false
+    if (approve) {
+      const v = venues.find(x => x.id === id)
+      if (v?.isSuspended) {
+        askiyiDaKaldir = confirm(
+          'Bu salon ASKIDA. Onaylamak tek başına yetmez — askı kalkmadan listelerde görünmez.\n\n' +
+          'Askıyı da kaldırayım mı?\n\nTamam = onayla + askıyı kaldır · İptal = yalnızca onayla'
+        )
+      }
+    }
     if (!await adminAction(`${API_URL}/api/admin/venues/${id}/approve`, {
       method: 'PUT', headers: getHeaders(), body: JSON.stringify({ approve }),
     })) return
     setVenues(prev => prev.map(v => v.id === id ? { ...v, isApproved: approve } : v))
+
+    // Askı kaldırma AYRI bir uç — onay isteğiyle birlikte gönderilemez. Kullanıcı "ikisini de yap"
+    // dediyse burada tamamlıyoruz; başarısız olursa adminAction zaten bandı gösteriyor.
+    if (askiyiDaKaldir) {
+      if (await adminAction(`${API_URL}/api/admin/venues/${id}/suspend`, {
+        method: 'PUT', headers: getHeaders(), body: JSON.stringify({ suspend: false }),
+      })) {
+        setVenues(prev => prev.map(v => v.id === id ? { ...v, isSuspended: false, isActive: true } : v))
+      }
+    }
   }
 
   const handleSuspend = async (id: number, suspend: boolean) => {
@@ -390,6 +415,13 @@ export default function AdminPage() {
                   <span style={{ fontSize: 12, fontWeight: 600, padding: '3px 10px', borderRadius: 20, backgroundColor: v.isSuspended ? '#FEF2F2' : v.isApproved ? '#F0FDF4' : '#FEF9C3', color: v.isSuspended ? '#DC2626' : v.isApproved ? '#16a34a' : '#92400e' }}>
                     {v.isSuspended ? 'Donduruldu' : v.isApproved ? '✓ Onaylı' : 'Bekliyor'}
                   </span>
+                  {/* Askıdayken durumu AÇIKÇA yaz: "Onayla"ya basıp salonun neden hâlâ
+                      görünmediğini anlamayan admin bu satır olmadan kayboluyordu. */}
+                  {v.isSuspended && (
+                    <span style={{ fontSize: 11, color: '#DC2626', textAlign: 'right', maxWidth: 240, lineHeight: 1.4 }}>
+                      Askıdayken onaylı olsa da listelerde görünmez — geri getirmek için “Aktif Et”.
+                    </span>
+                  )}
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                     {!v.isApproved && (
                       <button onClick={() => handleApprove(v.id, true)} style={{ padding: '6px 14px', borderRadius: 10, border: 'none', background: '#10B981', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Onayla</button>
