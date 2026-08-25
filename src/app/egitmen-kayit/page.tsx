@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { GraduationCap, AlertCircle, CheckCircle2 } from 'lucide-react'
+import OnayKutulari, { BOS_ONAY, onayGovdesi, type OnayDurumu } from '@/components/OnayKutulari'
 
 /**
  * MEKÂNSIZ (BİREYSEL) EĞİTMEN KAYDI.
@@ -18,6 +19,7 @@ export default function EgitmenKayitPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
+  const [onay, setOnay] = useState<OnayDurumu>(BOS_ONAY)
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
@@ -25,12 +27,14 @@ export default function EgitmenKayitPage() {
     e.preventDefault()
     setError('')
     if (form.password.length < 8) { setError('Şifre en az 8 karakter olmalı.'); return }
+    // Sunucu da bu kapıyı uyguluyor (fitpass/src/utils/consent.ts); buradaki kontrol anında geri bildirim için.
+    if (!onay.sozlesme) { setError('Devam etmek için sözleşmeleri onaylamanız gerekiyor.'); return }
     setLoading(true)
     try {
       const res = await fetch(`${API_URL}/api/instructor/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, onaylar: onayGovdesi('egitmen', onay) }),
       })
       const data = await res.json()
       if (data?.error) { setError(data.error); return }
@@ -102,6 +106,8 @@ export default function EgitmenKayitPage() {
                 ekleyip davet göndermeli. Bu form, kendi <b>online</b> derslerini satmak isteyen
                 bağımsız eğitmenler için.
               </div>
+
+              <OnayKutulari ozne="egitmen" deger={onay} onChange={setOnay} />
 
               {error && <div style={{ ...errorStyle, display: 'flex', alignItems: 'center', gap: 8 }}><AlertCircle size={14} /> {error}</div>}
               <button type="submit" disabled={loading} style={btnStyle(loading)}>

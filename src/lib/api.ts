@@ -203,7 +203,7 @@ const qsOf = (params?: Record<string, string | undefined>) =>
   params ? '?' + new URLSearchParams(Object.entries(params).filter(([, v]) => v) as [string, string][]).toString() : ''
 
 export const api = {
-  register: (data: { username: string; email: string; password: string; fullName: string; phone?: string; referralCode?: string; preferredSports?: string[]; preferredNeighborhoods?: number[] }) =>
+  register: (data: { username: string; email: string; password: string; fullName: string; phone?: string; referralCode?: string; preferredSports?: string[]; preferredNeighborhoods?: number[]; onaylar?: Record<string, boolean | { granted: boolean; version?: string }> }) =>
     request('/api/auth/register', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify(data) }),
 
   login: (data: { email: string; password: string }) =>

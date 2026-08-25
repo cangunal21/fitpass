@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Building2, AlertCircle } from 'lucide-react'
+import OnayKutulari, { BOS_ONAY, onayGovdesi, type OnayDurumu } from '@/components/OnayKutulari'
 
 
 export default function SalonGirisPage() {
@@ -13,6 +14,7 @@ export default function SalonGirisPage() {
   const [neighborhoods, setNeighborhoods] = useState<{ id: number; name: string }[]>([])
   const [selectedSports, setSelectedSports] = useState<string[]>([])
   const [sportOptions, setSportOptions] = useState<string[]>([])
+  const [onay, setOnay] = useState<OnayDurumu>(BOS_ONAY)
   const [instructor, setInstructor] = useState({ fullName: '', email: '', phone: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -90,6 +92,8 @@ export default function SalonGirisPage() {
     if (form.password.length < 8) { setError('Şifre en az 8 karakter olmalı.'); return }
     if (selectedSports.length === 0) { setError('En az bir spor branşı seçmelisiniz.'); return }
     if (!form.neighborhoodId) { setError('Lütfen salonun bulunduğu ilçeyi seçin.'); return }
+    // Sunucu da bu kapıyı uyguluyor (fitpass/src/utils/consent.ts); buradaki kontrol anında geri bildirim için.
+    if (!onay.sozlesme) { setError('Devam etmek için sözleşmeleri onaylamanız gerekiyor.'); return }
     setLoading(true)
     try {
       const body: any = {
@@ -99,6 +103,7 @@ export default function SalonGirisPage() {
         // sabit 1 çoklu-şehirde mahalle-şehir tutarsızlığı üretiyordu).
         neighborhoodId: parseInt(form.neighborhoodId),
         sportCategories: selectedSports,
+        onaylar: onayGovdesi('salon', onay),
       }
       if (instructor.fullName.trim()) {
         body.instructor = { fullName: instructor.fullName, email: instructor.email, phone: instructor.phone }
@@ -254,6 +259,8 @@ export default function SalonGirisPage() {
                   </div>
                 </div>
               </div>
+
+              <OnayKutulari ozne="salon" deger={onay} onChange={setOnay} />
 
               {error && <div style={{ ...errorStyle, display: 'flex', alignItems: 'center', gap: 8 }}><AlertCircle size={14} /> {error}</div>}
               <button type="submit" disabled={loading} style={btnStyle(loading)}>

@@ -1,0 +1,86 @@
+/* Hukuk belgesi tipografisi. Seçiciler ÜRETİLEN HTML'i hedefler (h1/h2/p/table…),
+   o yüzden etiket seçicileri kaçınılmaz — üretilen gövdeye sınıf ekleyemeyiz. */
+
+.hukuk h1 {
+  font-size: 20px;
+  color: #4f46e5;
+  text-align: center;
+  margin: 0 0 2px;
+  line-height: 1.3;
+}
+.hukuk h1 + h1 {
+  margin-top: 2px;
+}
+.hukuk :global(.sub) {
+  text-align: center;
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 28px;
+}
+.hukuk h2 {
+  font-size: 15px;
+  color: #4f46e5;
+  margin: 28px 0 8px;
+  border-bottom: 1px solid #ebebeb;
+  padding-bottom: 5px;
+}
+.hukuk h3 {
+  font-size: 14px;
+  color: #333;
+  margin: 20px 0 6px;
+}
+.hukuk p {
+  margin: 9px 0;
+  line-height: 1.75;
+  font-size: 14.5px;
+  color: #333;
+}
+.hukuk b {
+  color: #111;
+  font-weight: 700;
+}
+.hukuk ul,
+.hukuk ol {
+  margin: 9px 0;
+  padding-left: 22px;
+  line-height: 1.75;
+  font-size: 14.5px;
+  color: #333;
+}
+.hukuk li {
+  margin: 4px 0;
+}
+
+/* Geniş tablo SAYFAYI yatay kaydırtmasın; kendi kutusunda kaysın.
+   .tablo-kutu sarmalayıcısını scripts/hukuk-uret.cjs ekliyor. */
+.hukuk :global(.tablo-kutu) {
+  overflow-x: auto;
+  margin: 14px 0;
+  -webkit-overflow-scrolling: touch;
+}
+.hukuk table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  min-width: 460px;
+}
+.hukuk th,
+.hukuk td {
+  border: 1px solid #e5e5e5;
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+.hukuk th {
+  background-color: #eef2ff;
+  color: #4f46e5;
+  font-weight: 700;
+}
+.hukuk :global(.note) {
+  margin-top: 32px;
+  font-size: 12.5px;
+  color: #999;
+  border-top: 1px solid #ebebeb;
+  padding-top: 12px;
+  line-height: 1.6;
+}

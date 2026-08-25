@@ -7,6 +7,7 @@ import { api, saveToken, saveUser, saveRefreshToken } from '@/lib/api'
 import { AlertCircle, Gift } from 'lucide-react'
 import { useT } from '@/lib/i18n'
 import DogrulamaKodu from '@/components/DogrulamaKodu'
+import OnayKutulari, { BOS_ONAY, onayGovdesi, type OnayDurumu } from '@/components/OnayKutulari'
 
 function KayitForm() {
   const router = useRouter()
@@ -44,10 +45,15 @@ function KayitForm() {
     setError('')
   }
 
+  const [onay, setOnay] = useState<OnayDurumu>(BOS_ONAY)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (form.password !== form.passwordConfirm) { setError(t('register.passwordMismatch')); return }
     if (form.password.length < 8) { setError(t('register.passwordShort')); return }
+    // Sunucu da bu kapıyı uyguluyor (bkz. fitpass/src/utils/consent.ts); buradaki kontrol
+    // kullanıcıya anında geri bildirim için, sunucuyu ikame etmek için değil.
+    if (!onay.sozlesme) { setError(t('consent.required')); return }
 
     setLoading(true)
     try {
@@ -60,6 +66,7 @@ function KayitForm() {
         referralCode: form.referralCode || undefined,
         preferredSports: selectedSports,
         preferredNeighborhoods: selectedNeighborhoods,
+        onaylar: onayGovdesi('uye', onay),
       })
 
       if (res.error) { setError(res.error); setLoading(false); return }
@@ -190,6 +197,8 @@ function KayitForm() {
               </div>
             </div>
           )}
+
+          <OnayKutulari ozne="uye" deger={onay} onChange={setOnay} />
 
           {error && (
             <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 12, padding: '12px 16px', fontSize: 13, color: '#DC2626', display: 'flex', alignItems: 'center', gap: 8 }}>

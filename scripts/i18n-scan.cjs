@@ -27,7 +27,11 @@ const bulgular = tara({
   // admin + salon-* + egitmen-* : B2B/dahili yüzeyler, bilerek Türkçe-only.
   // Eklenmezse tarayıcı 71 sahte uyarı üretiyor ve kapı sürekli kırmızı kalıp GERÇEK
   // çeviri eksiklerini gizliyordu (uyarı körlüğü).
-  skipDirRe: /(^|\/)(admin|salon-[a-z-]+|egitmen-[a-z-]+)\//,
+  //
+  // hukuk/ : sözleşme ve politika metinleri Türk hukukuna göre yazıldı ve BAĞLAYICI OLAN
+  // Türkçe metindir. Gövde çevrilemez; sayfa çerçevesini çevirip gövdeyi Türkçe bırakmak
+  // kullanıcıyı metnin İngilizcesi varmış gibi yanıltır. Bu yüzden sayfanın tamamı Türkçe.
+  skipDirRe: /(^|\/)(admin|salon-[a-z-]+|egitmen-[a-z-]+|hukuk)\//,
 })
 
 // TR/EN anahtar paritesi

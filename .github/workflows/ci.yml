@@ -36,6 +36,9 @@ jobs:
       - name: i18n taraması (çevrilmemiş metin + anahtar paritesi)
         run: npm run i18n:check
 
+      - name: Hukuk metinleri güncel mi (yerelde zorlar, CI'da atlar)
+        run: npm run hukuk:check
+
       # API SÖZLEŞMESİ DAMGASI: src/types/api.ts üç repoda da BİREBİR aynı olmalı. Damga
       # içeriğin hash'i olduğu için, damgaları eşit olan iki dosya kanıtlanabilir şekilde aynıdır.
       # Bir repoda değişip diğerlerinde değişmezse uyuşmazlık yine derleyiciden kaçardı.
