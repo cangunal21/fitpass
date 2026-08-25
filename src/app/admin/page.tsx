@@ -9,14 +9,13 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false)
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState('')
-  const [activeTab, setActiveTab] = useState<'stats' | 'venues' | 'venue-images' | 'reports' | 'users' | 'bookings' | 'coupons' | 'categories' | 'instructors' | 'complaints'>('venues')
+  const [activeTab, setActiveTab] = useState<'stats' | 'venues' | 'venue-images' | 'reports' | 'users' | 'bookings'  | 'categories' | 'instructors' | 'complaints'>('venues')
   const [pendingImages, setPendingImages] = useState<any[]>([])
   const [reports, setReports] = useState<any[]>([])
   const [stats, setStats] = useState<any>(null)
   const [venues, setVenues] = useState<any[]>([])
   const [users, setUsers] = useState<any[]>([])
   const [bookings, setBookings] = useState<any[]>([])
-  const [coupons, setCoupons] = useState<any[]>([])
   const [categories, setCategories] = useState<any[]>([])
   const [instructors, setInstructors] = useState<any[]>([])
   const [complaints, setComplaints] = useState<any[]>([])
@@ -84,10 +83,6 @@ export default function AdminPage() {
     if (v) setBookings(v)   // null = okuma BASARISIZ; eski liste korunur, bant hatayi gosterir
   }
 
-  const fetchCoupons = async () => {
-    const v = await adminOku(`${API_URL}/api/admin/coupons`, d => d.coupons || [])
-    if (v) setCoupons(v)   // null = okuma BASARISIZ; eski liste korunur, bant hatayi gosterir
-  }
 
   const fetchCategories = async () => {
     const v = await adminOku(`${API_URL}/api/admin/categories`, d => d.categories || [])
@@ -207,7 +202,6 @@ export default function AdminPage() {
     setActiveTab(tab)
     if (tab === 'users') fetchUsers()
     if (tab === 'bookings') fetchBookings()
-    if (tab === 'coupons') fetchCoupons()
     if (tab === 'categories') fetchCategories()
     if (tab === 'venue-images') fetchPendingImages()
     if (tab === 'reports') fetchReports()
@@ -269,11 +263,6 @@ export default function AdminPage() {
     setUsers(prev => prev.map(u => u.id === id ? { ...u, banned: ban } : u))
   }
 
-  const handleDeleteCoupon = async (id: number) => {
-    if (!confirm('Bu kuponu silmek istediğinize emin misiniz?')) return
-    if (!await adminAction(`${API_URL}/api/admin/coupons/${id}`, { method: 'DELETE', headers: getHeaders() })) return
-    setCoupons(prev => prev.filter(c => c.id !== id))
-  }
 
   const fetchInstructors = async () => {
     const v = await adminOku(`${API_URL}/api/admin/instructors`, d => d.instructors || [])
@@ -370,7 +359,6 @@ export default function AdminPage() {
             { key: 'reports', label: 'Şikayetler' },
             { key: 'users', label: 'Kullanıcılar' },
             { key: 'bookings', label: 'Rezervasyonlar' },
-            { key: 'coupons', label: 'Kuponlar' },
             { key: 'categories', label: 'Kategoriler' },
             { key: 'instructors', label: 'Hocalar' },
             { key: 'complaints', label: 'Mesajlar' },
@@ -542,30 +530,6 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* KUPONLAR */}
-        {activeTab === 'coupons' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {coupons.length === 0 && <div style={{ color: '#888', fontSize: 14 }}>Kupon bulunamadı.</div>}
-            {coupons.map(c => (
-              <div key={c.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a' }}>{c.code}</div>
-                  <div style={{ fontSize: 12, color: '#888' }}>{c.venue?.name} · {c.discountType === 'percent' ? `%${c.discountValue}` : `₺${c.discountValue}`} indirim</div>
-                  <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>
-                    {c.usedCount}/{c.maxUses || '∞'} kullanım
-                    {c.expiresAt ? ` · ${new Date(c.expiresAt).toLocaleDateString('tr-TR')} bitiş` : ''}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, padding: '3px 10px', borderRadius: 20, backgroundColor: c.isActive ? '#F0FDF4' : '#FEF2F2', color: c.isActive ? '#16a34a' : '#DC2626' }}>
-                    {c.isActive ? 'Aktif' : 'Pasif'}
-                  </span>
-                  <button onClick={() => handleDeleteCoupon(c.id)} style={{ padding: '5px 12px', borderRadius: 8, border: 'none', background: '#EF4444', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Sil</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
 
         {/* KATEGORİLER */}
         {activeTab === 'categories' && (

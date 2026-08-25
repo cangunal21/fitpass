@@ -27,7 +27,7 @@ const FORMAT_PLAYERS: Record<string, number> = {
 export default function SalonPaneliPage() {
   const router = useRouter()
   const [venue, setVenue] = useState<any>(null)
-  const [activeTab, setActiveTab] = useState<'dersler' | 'hocalar' | 'resimler' | 'rezervasyonlar' | 'dropin' | 'istatistikler' | 'kuponlar' | 'gelir' | 'yorumlar' | 'qr' | 'profil' | 'odeme'>('dersler')
+  const [activeTab, setActiveTab] = useState<'dersler' | 'hocalar' | 'resimler' | 'rezervasyonlar' | 'dropin' | 'istatistikler' | 'gelir' | 'yorumlar' | 'qr' | 'profil' | 'odeme'>('dersler')
 
   // Alt-üye (ödeme/işyeri onayı) formu
   const [smForm, setSmForm] = useState({ subMerchantType: 'LIMITED_OR_JOINT_STOCK_COMPANY', legalCompanyTitle: '', iban: 'TR', taxOffice: '', taxNumber: '', identityNumber: '', contactName: '', contactSurname: '', payoutGsm: '+90', ibanMatchConsent: false })
@@ -90,12 +90,6 @@ export default function SalonPaneliPage() {
   const [revenue, setRevenue] = useState<any>(null)
   const [revenueLoading, setRevenueLoading] = useState(false)
 
-  // Coupon state
-  const [coupons, setCoupons] = useState<any[]>([])
-  const [couponForm, setCouponForm] = useState({ code: '', discountType: 'percent', discountValue: '', maxUses: '', perUserLimit: '1', expiresAt: '' })
-  const [couponError, setCouponError] = useState('')
-  const [couponSuccess, setCouponSuccess] = useState('')
-  const [deletingCoupon, setDeletingCoupon] = useState<number | null>(null)
   const [reviews, setReviews] = useState<any[]>([])
   const [replyPrivate, setReplyPrivate] = useState<Record<number, boolean>>({})
   const [reviewsLoading, setReviewsLoading] = useState(false)
@@ -142,7 +136,7 @@ export default function SalonPaneliPage() {
   }, [])
 
   // Oturum-sonu yardimcisi: eskiden yalniz ILK yukleme (fetchVenue) 401'de yonlendiriyordu; sekme
-  // fetch'leri (bookings/instructors/coupons...) 401'de sessizce bos listeye dusuyordu → salon "verim
+  // fetch'leri (bookings/instructors...) 401'de sessizce bos listeye dusuyordu → salon "verim
   // kayboldu" saniyordu. Bu yardimci token'i temizleyip giris'e atar; her sekme fetch'i res.status 401'de cagirir.
   const venueSessionExpired = () => {
     localStorage.removeItem('fitpass_venue_token')
@@ -227,13 +221,6 @@ export default function SalonPaneliPage() {
     setRevenueLoading(false)
   }
 
-  const fetchCoupons = async () => {
-    const token = localStorage.getItem('fitpass_venue_token')!
-    const res = await fetch(`${API_URL}/api/venue/coupons`, { headers: { Authorization: `Bearer ${token}` } })
-    if (res.status === 401) return venueSessionExpired()
-    const data = await res.json()
-    setCoupons(data.coupons || [])
-  }
 
   const fetchReviews = async () => {
     if (!venue?.id) return
@@ -343,45 +330,7 @@ export default function SalonPaneliPage() {
     setTimeout(() => setPwSuccess(''), 3000)
   }
 
-  const handleAddCoupon = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setCouponError(''); setCouponSuccess('')
-    const token = localStorage.getItem('fitpass_venue_token')!
-    const body: any = {
-      code: couponForm.code,
-      discountType: couponForm.discountType,
-      discountValue: Number(couponForm.discountValue),
-    }
-    if (couponForm.maxUses) body.maxUses = Number(couponForm.maxUses)
-    body.perUserLimit = couponForm.perUserLimit === 'unlimited' ? null : Number(couponForm.perUserLimit || 1)
-    if (couponForm.expiresAt) body.expiresAt = couponForm.expiresAt
-    if (saving) return
-    setSaving(true)
-    try {
-      const res = await fetch(`${API_URL}/api/venue/coupons`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(body),
-      })
-      const data = await res.json()
-      if (data.error) { setCouponError(data.error); return }
-      setCouponSuccess('Kupon oluşturuldu!')
-      setCouponForm({ code: '', discountType: 'percent', discountValue: '', maxUses: '', perUserLimit: '1', expiresAt: '' })
-      fetchCoupons()
-      setTimeout(() => setCouponSuccess(''), 3000)
-    } catch { setCouponError('Bağlantı hatası, tekrar deneyin.') } finally { setSaving(false) }
-  }
 
-  const handleDeleteCoupon = async (couponId: number) => {
-    if (!confirm('Bu kuponu deaktive etmek istediğinize emin misiniz?')) return
-    const token = localStorage.getItem('fitpass_venue_token')!
-    setDeletingCoupon(couponId)
-    const res = await fetch(`${API_URL}/api/venue/coupons/${couponId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
-    const data = await res.json()
-    setDeletingCoupon(null)
-    if (data.error) { alert(data.error); return }
-    fetchCoupons()
-  }
 
   const handleTabChange = (tab: typeof activeTab) => {
     setActiveTab(tab)
@@ -390,7 +339,6 @@ export default function SalonPaneliPage() {
     if (tab === 'dersler') fetchInstructors()
     if (tab === 'dropin') fetchDropInSlots()
     if (tab === 'istatistikler') fetchStats()
-    if (tab === 'kuponlar') fetchCoupons()
     if (tab === 'gelir') fetchRevenue()
     if (tab === 'yorumlar') fetchReviews()
     if (tab === 'odeme') {
@@ -711,7 +659,6 @@ export default function SalonPaneliPage() {
                 ] },
                 { title: 'Pazarlama & Vitrin', items: [
                   { key: 'resimler', label: 'Salon Resimleri', icon: <ImageIcon size={16} /> },
-                  { key: 'kuponlar', label: 'Kuponlar', icon: <Ticket size={16} /> },
                 ] },
                 { title: 'Ayarlar', items: [
                   { key: 'profil', label: 'Profil & Şifre', icon: <Settings size={16} /> },
@@ -1483,92 +1430,6 @@ export default function SalonPaneliPage() {
                 )}
               </>
             )}
-          </div>
-        )}
-
-        {/* KUPONLAR */}
-        {activeTab === 'kuponlar' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            {/* Kupon Oluşturma Formu */}
-            <div style={{ backgroundColor: '#fff', borderRadius: 20, padding: '28px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-              <h3 style={{ fontSize: 16, fontWeight: 800, color: '#1a1a1a', marginBottom: 20 }}>Yeni Kupon Oluştur</h3>
-              <form onSubmit={handleAddCoupon} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                  <div>
-                    <label style={labelStyle}>Kupon Kodu *</label>
-                    <input type="text" placeholder="YAZA20" value={couponForm.code} onChange={e => setCouponForm({ ...couponForm, code: e.target.value.toUpperCase() })} required style={inputStyle} />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>İndirim Tipi *</label>
-                    <select value={couponForm.discountType} onChange={e => setCouponForm({ ...couponForm, discountType: e.target.value })} style={inputStyle}>
-                      <option value="percent">Yüzde (%)</option>
-                      <option value="fixed">Sabit Tutar (₺)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label style={labelStyle}>İndirim Değeri *</label>
-                    <input type="number" placeholder={couponForm.discountType === 'percent' ? '20' : '50'} value={couponForm.discountValue} onChange={e => setCouponForm({ ...couponForm, discountValue: e.target.value })} required min="0" style={inputStyle} />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>Maksimum Kullanım (opsiyonel)</label>
-                    <input type="number" placeholder="100" value={couponForm.maxUses} onChange={e => setCouponForm({ ...couponForm, maxUses: e.target.value })} min="1" style={inputStyle} />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>Kişi Başı Kullanım</label>
-                    <select value={couponForm.perUserLimit} onChange={e => setCouponForm({ ...couponForm, perUserLimit: e.target.value })} style={inputStyle}>
-                      <option value="1">Her müşteri 1 kez</option>
-                      <option value="2">Her müşteri 2 kez</option>
-                      <option value="3">Her müşteri 3 kez</option>
-                      <option value="unlimited">Sınırsız</option>
-                    </select>
-                  </div>
-                  <div style={{ gridColumn: '1 / -1' }}>
-                    <label style={labelStyle}>Son Kullanım Tarihi (opsiyonel)</label>
-                    <input type="date" value={couponForm.expiresAt} onChange={e => setCouponForm({ ...couponForm, expiresAt: e.target.value })} style={inputStyle} />
-                  </div>
-                </div>
-                {couponError && <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#DC2626', display: 'flex', alignItems: 'center', gap: 8 }}><AlertCircle size={14} /> {couponError}</div>}
-                {couponSuccess && <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#16a34a' }}>✓ {couponSuccess}</div>}
-                <button type="submit" disabled={saving} style={{ padding: '13px', borderRadius: 12, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 14, fontWeight: 700, cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.7 : 1 }}>{saving ? 'Oluşturuluyor...' : 'Kupon Oluştur'}</button>
-              </form>
-            </div>
-
-            {/* Kupon Listesi */}
-            <div>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#555', marginBottom: 12 }}>Mevcut Kuponlar</h3>
-              {coupons.length === 0 ? (
-                <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '32px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', color: '#aaa', fontSize: 14 }}>
-                  Henüz kupon oluşturulmadı.
-                </div>
-              ) : coupons.map((c: any) => (
-                <div key={c.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '18px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-                    <div style={{ backgroundColor: '#EEF2FF', borderRadius: 10, padding: '8px 16px' }}>
-                      <span style={{ fontSize: 15, fontWeight: 800, color: '#4F46E5', letterSpacing: 1 }}>{c.code}</span>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>
-                        {c.discountType === 'percent' ? `%${c.discountValue} indirim` : `₺${c.discountValue} indirim`}
-                      </div>
-                      <div style={{ fontSize: 12, color: '#888', marginTop: 2, display: 'flex', gap: 10 }}>
-                        <span>{c.usedCount ?? 0}{c.maxUses ? `/${c.maxUses}` : ''} kullanım</span>
-                        {c.expiresAt && <span>· Son: {trDateNumeric(c.expiresAt)}</span>}
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, backgroundColor: c.isActive !== false ? '#F0FDF4' : '#FEF2F2', color: c.isActive !== false ? '#16a34a' : '#DC2626', padding: '3px 10px', borderRadius: 20 }}>
-                      {c.isActive !== false ? '● Aktif' : '● Pasif'}
-                    </span>
-                    {c.isActive !== false && (
-                      <button onClick={() => handleDeleteCoupon(c.id)} disabled={deletingCoupon === c.id} style={{ padding: '5px 14px', borderRadius: 10, border: '1px solid #FECACA', background: '#FEF2F2', color: '#DC2626', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
-                        {deletingCoupon === c.id ? '...' : 'Deaktive Et'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         )}
 
