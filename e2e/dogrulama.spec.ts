@@ -62,6 +62,9 @@ async function formuDoldur(page: import('@playwright/test').Page) {
   await page.locator('input[name="email"]').fill('testci@ornek.com')
   await page.locator('input[name="password"]').fill('Parola12345')
   await page.locator('input[name="passwordConfirm"]').fill('Parola12345')
+  // Sözleşme onayı ZORUNLU (KVKK) — işaretlenmezse form gönderilmez. İlk kutu sözleşme,
+  // ikincisi isteğe bağlı ticari ileti izni; ikincisi bilerek işaretlenmiyor.
+  await page.locator('input[type="checkbox"]').first().check()
   await page.getByRole('button', { name: /^Kayıt Ol$/ }).click()
 }
 
@@ -101,5 +104,43 @@ test.describe('Kayıt — e-posta doğrulama kodu', () => {
 
     await page.getByPlaceholder('000000').fill('135790')
     await expect(page).toHaveURL(/localhost:3210\/$/)
+  })
+
+  test('onay kapısı: sözleşme işaretlenmeden kayıt gönderilmez', async ({ page }) => {
+    await diliAyarla(page, 'tr')
+    await apiKur(page, { dogruKod: '135790' })
+    await page.goto('/kayit')
+
+    // formuDoldur'un aynısı ama onay kutusu İŞARETLENMİYOR.
+    await page.getByPlaceholder('Adın Soyadın').fill('Test Kullanıcı')
+    await page.getByPlaceholder('kullaniciadi').fill('testci')
+    await page.locator('input[name="email"]').fill('testci@ornek.com')
+    await page.locator('input[name="password"]').fill('Parola12345')
+    await page.locator('input[name="passwordConfirm"]').fill('Parola12345')
+
+    // Kutular ÖN-İŞARETLİ GELMEMELİ: KVKK'da rıza "özgür irade" ister.
+    const kutular = page.locator('input[type="checkbox"]')
+    await expect(kutular).toHaveCount(2)
+    await expect(kutular.first()).not.toBeChecked()
+    await expect(kutular.nth(1)).not.toBeChecked()
+
+    await page.getByRole('button', { name: /^Kayıt Ol$/ }).click()
+
+    await expect(page.getByText('Devam etmek için sözleşmeleri onaylamanız gerekiyor.')).toBeVisible()
+    // Kod ekranına GEÇMEMELİ — istek hiç gitmedi
+    await expect(page.getByRole('heading', { name: /E-postanı doğrula/i })).toBeHidden()
+    await expect(page).toHaveURL(/\/kayit/)
+  })
+
+  test('yasal metinler kayıt ekranından erişilebilir olmalı', async ({ page }) => {
+    await diliAyarla(page, 'tr')
+    await page.goto('/kayit')
+    // Aydınlatma yükümlülüğü, metnin OKUNABİLİR olmasını gerektirir: bağ kırıksa onay
+    // kutusu tek başına bir şey ifade etmez.
+    await expect(page.getByRole('link', { name: 'Üyelik Sözleşmesi' })).toHaveAttribute('href', '/hukuk/uyelik')
+    await expect(page.getByRole('link', { name: 'Gizlilik Politikası ve Aydınlatma Metni' })).toHaveAttribute('href', '/hukuk/gizlilik')
+
+    await page.goto('/hukuk/gizlilik')
+    await expect(page.getByRole('heading', { name: /GİZLİLİK POLİTİKASI/i }).first()).toBeVisible()
   })
 })
