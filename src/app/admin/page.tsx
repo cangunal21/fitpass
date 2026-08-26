@@ -9,12 +9,16 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false)
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState('')
-  const [activeTab, setActiveTab] = useState<'stats' | 'venues' | 'venue-images' | 'reports' | 'users' | 'bookings'  | 'categories' | 'instructors' | 'complaints'>('venues')
+  const [activeTab, setActiveTab] = useState<'stats' | 'venues' | 'venue-images' | 'reports' | 'users' | 'bookings'  | 'categories' | 'instructors' | 'complaints' | 'hareketler' | 'donus' | 'analitik'>('venues')
   const [pendingImages, setPendingImages] = useState<any[]>([])
   const [reports, setReports] = useState<any[]>([])
   const [stats, setStats] = useState<any>(null)
   const [venues, setVenues] = useState<any[]>([])
   const [oncuProgrami, setOncuProgrami] = useState<{ onayliSayisi: number; sinir: number; aktif: boolean; rozetLimiti: number } | null>(null)
+  const [olaylar, setOlaylar] = useState<any[]>([])
+  const [olayFiltre, setOlayFiltre] = useState('')
+  const [donus, setDonus] = useState<any[]>([])
+  const [analitik, setAnalitik] = useState<any>(null)
   const [users, setUsers] = useState<any[]>([])
   const [bookings, setBookings] = useState<any[]>([])
   const [categories, setCategories] = useState<any[]>([])
@@ -212,6 +216,23 @@ export default function AdminPage() {
     if (tab === 'reports') fetchReports()
     if (tab === 'instructors') fetchInstructors()
     if (tab === 'complaints') fetchComplaints()
+    if (tab === 'hareketler') fetchOlaylar(olayFiltre)
+    if (tab === 'donus') fetchDonus()
+    if (tab === 'analitik') fetchAnalitik()
+  }
+
+  const fetchOlaylar = async (olay: string) => {
+    const q = olay ? `?olay=${encodeURIComponent(olay)}` : ''
+    const v = await adminOku(`${API_URL}/api/admin/venue-events${q}`, d => d.olaylar || [])
+    if (v) setOlaylar(v)
+  }
+  const fetchDonus = async () => {
+    const v = await adminOku(`${API_URL}/api/admin/venue-retention`, d => d.salonlar || [])
+    if (v) setDonus(v)
+  }
+  const fetchAnalitik = async () => {
+    const v = await adminOku(`${API_URL}/api/admin/platform-analytics`, d => d)
+    if (v) setAnalitik(v)
   }
 
   // ASKI ile ONAY İKİ AYRI ANAHTAR. Askıdaki bir salonu "Onayla" ile geri getiremezsiniz:
@@ -356,7 +377,7 @@ export default function AdminPage() {
         )}
 
         {/* Tabs */}
-        <div style={{ display: 'flex', gap: 4, backgroundColor: '#eee', borderRadius: 16, padding: 4, marginBottom: 24, width: 'fit-content' }}>
+        <div style={{ display: 'flex', gap: 4, backgroundColor: '#eee', borderRadius: 16, padding: 4, marginBottom: 24, flexWrap: 'wrap' }}>
           {([
             { key: 'stats', label: 'İstatistikler' },
             { key: 'venues', label: 'Salonlar' },
@@ -367,8 +388,11 @@ export default function AdminPage() {
             { key: 'categories', label: 'Kategoriler' },
             { key: 'instructors', label: 'Hocalar' },
             { key: 'complaints', label: 'Mesajlar' },
+            { key: 'hareketler', label: 'Salon Hareketleri' },
+            { key: 'donus', label: 'Geri Dönüş' },
+            { key: 'analitik', label: 'Analitik' },
           ] as const).map(tab => (
-            <button key={tab.key} onClick={() => handleTab(tab.key)} style={{ padding: '10px 20px', borderRadius: 12, border: 'none', background: activeTab === tab.key ? '#fff' : 'transparent', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: activeTab === tab.key ? '#1a1a1a' : '#888', boxShadow: activeTab === tab.key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
+            <button key={tab.key} onClick={() => handleTab(tab.key)} style={{ padding: '10px 18px', borderRadius: 12, border: 'none', background: activeTab === tab.key ? '#fff' : 'transparent', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: activeTab === tab.key ? '#1a1a1a' : '#888', boxShadow: activeTab === tab.key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', whiteSpace: 'nowrap' }}>
               {tab.label}
             </button>
           ))}
@@ -708,9 +732,144 @@ export default function AdminPage() {
             ))}
           </div>
         )}
+
+        {/* SALON HAREKETLERİ */}
+        {activeTab === 'hareketler' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ backgroundColor: '#F7F7F7', border: '1px solid #EAEAEA', borderRadius: 12, padding: '10px 14px', fontSize: 12.5, color: '#666', lineHeight: 1.6 }}>
+              Salonun ne yaptığının kaydı. <b style={{ color: '#111' }}>Etkilenen</b> = olay anındaki rezervasyon sayısı,
+              <b style={{ color: '#111' }}> kalan</b> = seansa kaç saat kala yapıldığı. İkisi de sonradan hesaplanamaz.
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {['', 'seans_iptal', 'seans_guncelle', 'ders_kapat', 'ders_guncelle'].map(f => (
+                <button key={f || 'hepsi'} onClick={() => { setOlayFiltre(f); fetchOlaylar(f) }}
+                  style={{ padding: '6px 14px', borderRadius: 20, border: `1px solid ${olayFiltre === f ? '#4F46E5' : '#E5E5E5'}`, background: olayFiltre === f ? '#EEF2FF' : '#fff', color: olayFiltre === f ? '#4F46E5' : '#666', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>
+                  {f ? OLAY_ADI[f] : 'Hepsi'}
+                </button>
+              ))}
+            </div>
+            {olaylar.length === 0 && <div style={{ color: '#888', fontSize: 14 }}>Kayıtlı hareket yok.</div>}
+            {olaylar.map(o => (
+              <div key={o.id} style={{ backgroundColor: '#fff', borderRadius: 14, padding: '14px 18px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 10px', borderRadius: 20, backgroundColor: '#FAFAFA', color: OLAY_RENK[o.olay] || '#666', border: '1px solid #EEE' }}>
+                    {OLAY_ADI[o.olay] || o.olay}
+                  </span>
+                  {/* Salon silinmişse ad null döner — kayıt yine görünmeli, varlık sebebi bu. */}
+                  <span style={{ fontSize: 14, fontWeight: 700, color: '#111' }}>{o.venueName || `(silinmiş salon #${o.venueId})`}</span>
+                  <span style={{ fontSize: 12, color: '#999' }}>{new Date(o.olusturma).toLocaleString('tr-TR')}</span>
+                </div>
+                <div style={{ fontSize: 12.5, color: '#666', marginTop: 6, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                  {o.etkilenen > 0 && <span>Etkilenen rezervasyon: <b style={{ color: '#DC2626' }}>{o.etkilenen}</b></span>}
+                  {o.kalanSaat != null && (
+                    <span>Seansa kalan: <b style={{ color: o.kalanSaat < 24 ? '#DC2626' : '#111' }}>{o.kalanSaat} saat</b></span>
+                  )}
+                  {o.hedefTur && <span style={{ color: '#aaa' }}>{o.hedefTur} #{o.hedefId}</span>}
+                </div>
+                {(o.oncesi || o.sonrasi) && (
+                  <div style={{ marginTop: 8, fontSize: 11.5, color: '#888', fontFamily: 'ui-monospace, monospace', backgroundColor: '#FAFAFA', borderRadius: 8, padding: '8px 10px', overflowX: 'auto' }}>
+                    {o.oncesi && <div>önce: {JSON.stringify(o.oncesi)}</div>}
+                    {o.sonrasi && <div>sonra: {JSON.stringify(o.sonrasi)}</div>}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* GERİ DÖNÜŞ */}
+        {activeTab === 'donus' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ backgroundColor: '#F7F7F7', border: '1px solid #EAEAEA', borderRadius: 12, padding: '10px 14px', fontSize: 12.5, color: '#666', lineHeight: 1.6 }}>
+              Ölçüm <b style={{ color: '#111' }}>yalnız kimliği bilinen kişiler</b> üzerinden. Grup rezervasyonundaki
+              etiketsiz koltuklar sayılmaz — onların tekrar gelip gelmediği bilinemez, paydaya konsa
+              çok grup rezervasyonu alan salon sızıntı yapıyormuş gibi görünürdü.
+              <b style={{ color: '#111' }}> 10 kişinin altında oran anlamsızdır.</b>
+            </div>
+            {donus.length === 0 && <div style={{ color: '#888', fontSize: 14 }}>Veri yok.</div>}
+            {donus.map(d => {
+              const yeterli = d.kimligiBilinenKisi >= 10
+              return (
+                <div key={d.venueId} style={{ backgroundColor: '#fff', borderRadius: 14, padding: '14px 18px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 14.5, fontWeight: 700, color: '#111' }}>
+                      {d.name}{!d.isApproved && <span style={{ fontSize: 11, color: '#92400E', marginLeft: 8 }}>(onaysız)</span>}
+                    </span>
+                    <span style={{ fontSize: 20, fontWeight: 800, color: !yeterli ? '#BBB' : d.donusOrani >= 40 ? '#16a34a' : d.donusOrani >= 20 ? '#92400E' : '#DC2626' }}>
+                      {d.donusOrani != null ? `%${d.donusOrani}` : '—'}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 12.5, color: '#666', marginTop: 4, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                    <span>{d.donenKisi}/{d.kimligiBilinenKisi} kişi geri döndü</span>
+                    <span>Kişi başı ort. {d.kisiBasiOrtalama} ders</span>
+                    <span>Toplam {d.toplamRezervasyon} rezervasyon</span>
+                  </div>
+                  {!yeterli && (
+                    <div style={{ fontSize: 11.5, color: '#999', marginTop: 4 }}>
+                      Yeterli veri yok — bu oran salon hakkında bir şey söylemez.
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
+                    {['1', '2', '3', '4', '5+'].map(k => (
+                      <span key={k} style={{ fontSize: 11.5, padding: '3px 9px', borderRadius: 8, backgroundColor: '#FAFAFA', border: '1px solid #EEE', color: '#666' }}>
+                        {k} kez: <b style={{ color: '#111' }}>{d.dagilim?.[k] || 0}</b>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* ANALİTİK */}
+        {activeTab === 'analitik' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {!analitik && <div style={{ color: '#888', fontSize: 14 }}>Yükleniyor...</div>}
+            {analitik && ([
+              { baslik: 'Mahalleye göre — DERSİN YAPILDIĞI yer', alt: 'Salonun mahallesi. "Nerede spor yapılıyor" sorusu.', veri: analitik.dersMahalle, ad: 'name', deger: 'koltuk', ikincil: 'rezervasyon' },
+              { baslik: 'Branşa göre', alt: 'Hangi sporda ne kadar koltuk satıldı.', veri: analitik.brans, ad: 'brans', deger: 'koltuk', ikincil: 'rezervasyon' },
+              { baslik: 'Aya göre', alt: 'Seans tarihine göre aylık dağılım.', veri: analitik.aylik, ad: 'ay', deger: 'koltuk', ikincil: 'rezervasyon' },
+              { baslik: 'Mahalleye göre — KULLANICININ oturduğu yer', alt: 'Yukarıdakiyle AYNI ŞEY DEĞİL. İkisi yan yana konunca arz-talep boşluğu görünür.', veri: analitik.kullaniciMahalle, ad: 'name', deger: 'kullanici', ikincil: null },
+            ] as const).map(blok => {
+              const enBuyuk = Math.max(1, ...(blok.veri || []).map((r: any) => Number(r[blok.deger]) || 0))
+              return (
+                <div key={blok.baslik} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '18px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+                  <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111', margin: 0 }}>{blok.baslik}</h3>
+                  <p style={{ fontSize: 12, color: '#999', margin: '2px 0 14px' }}>{blok.alt}</p>
+                  {(!blok.veri || blok.veri.length === 0) && <div style={{ fontSize: 13, color: '#888' }}>Veri yok.</div>}
+                  {(blok.veri || []).map((r: any, i: number) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                      <span style={{ fontSize: 12.5, color: '#555', width: 150, flexShrink: 0 }}>{r[blok.ad]}</span>
+                      <div style={{ flex: 1, height: 18, backgroundColor: '#F4F4F5', borderRadius: 6, overflow: 'hidden' }}>
+                        <div style={{ width: `${Math.round((Number(r[blok.deger]) / enBuyuk) * 100)}%`, height: '100%', backgroundColor: '#4F46E5', opacity: 0.85 }} />
+                      </div>
+                      <span style={{ fontSize: 12.5, fontWeight: 700, color: '#111', width: 90, textAlign: 'right', flexShrink: 0 }}>
+                        {Number(r[blok.deger])}{blok.ikincil ? <span style={{ color: '#aaa', fontWeight: 500 }}> / {Number(r[blok.ikincil])}</span> : null}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
   )
+}
+
+const OLAY_ADI: Record<string, string> = {
+  seans_iptal: 'Seans iptal',
+  seans_guncelle: 'Seans güncelle',
+  ders_kapat: 'Ders kapat',
+  ders_guncelle: 'Ders güncelle',
+}
+const OLAY_RENK: Record<string, string> = {
+  seans_iptal: '#DC2626',
+  ders_kapat: '#DC2626',
+  seans_guncelle: '#92400E',
+  ders_guncelle: '#92400E',
 }
 
 const inputStyle: React.CSSProperties = { width: '100%', padding: '12px 16px', borderRadius: 12, border: '1.5px solid #e5e5e5', fontSize: 14, outline: 'none', backgroundColor: '#fafafa', color: '#1a1a1a', boxSizing: 'border-box' }
