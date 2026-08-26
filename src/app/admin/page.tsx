@@ -14,6 +14,7 @@ export default function AdminPage() {
   const [reports, setReports] = useState<any[]>([])
   const [stats, setStats] = useState<any>(null)
   const [venues, setVenues] = useState<any[]>([])
+  const [oncuProgrami, setOncuProgrami] = useState<{ onayliSayisi: number; sinir: number; aktif: boolean; rozetLimiti: number } | null>(null)
   const [users, setUsers] = useState<any[]>([])
   const [bookings, setBookings] = useState<any[]>([])
   const [categories, setCategories] = useState<any[]>([])
@@ -70,7 +71,11 @@ export default function AdminPage() {
   useEffect(() => {
     if (!authed) return
     adminOku(`${API_URL}/api/admin/stats`, d => d.stats).then(v => { if (v) setStats(v) })
-    adminOku(`${API_URL}/api/admin/venues`, d => d.venues || []).then(v => { if (v) setVenues(v) })
+    adminOku(`${API_URL}/api/admin/venues`, d => d).then(d => {
+      if (!d) return
+      setVenues(d.venues || [])
+      setOncuProgrami(d.oncuProgrami || null)
+    })
   }, [authed])
 
   const fetchUsers = async () => {
@@ -391,10 +396,32 @@ export default function AdminPage() {
         {/* SALONLAR */}
         {activeTab === 'venues' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {oncuProgrami && (
+              <div style={{ backgroundColor: oncuProgrami.aktif ? '#FFFBEB' : '#F7F7F7', border: `1px solid ${oncuProgrami.aktif ? '#FDE68A' : '#EAEAEA'}`, borderRadius: 12, padding: '10px 14px', fontSize: 12.5, color: '#666', lineHeight: 1.6 }}>
+                <b style={{ color: '#111' }}>Öncü Salon programı:</b>{' '}
+                {oncuProgrami.aktif
+                  ? `açık — ${oncuProgrami.onayliSayisi}/${oncuProgrami.sinir} onaylı salon. İlk ${oncuProgrami.rozetLimiti} salon rozetli; öncelikli sıralama ${oncuProgrami.sinir} salonda kendiliğinden sona erer.`
+                  : `kapandı — onaylı salon sayısı ${oncuProgrami.onayliSayisi}, sınır ${oncuProgrami.sinir}. Sıralama önceliği artık uygulanmıyor (sözleşme m.10.2).`}
+              </div>
+            )}
             {venues.map(v => (
               <div key={v.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a' }}>{v.name}</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    {v.name}
+                    {/* Sıra 1-50 → rozet. 50'den büyük sıra da öne çıkarmadan yararlanır
+                        (m.10.1) ama "İlk 50" DEĞİLDİR; ikisini ayırmak yanlış vaat üretmemek için. */}
+                    {typeof v.founderRank === 'number' && v.founderRank <= (oncuProgrami?.rozetLimiti ?? 50) && (
+                      <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20, backgroundColor: '#FFFBEB', color: '#92400E', border: '1px solid #FDE68A' }}>
+                        İlk {oncuProgrami?.rozetLimiti ?? 50} · Öncü Salon #{v.founderRank}
+                      </span>
+                    )}
+                    {typeof v.founderRank === 'number' && v.founderRank > (oncuProgrami?.rozetLimiti ?? 50) && (
+                      <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20, backgroundColor: '#F7F7F7', color: '#888', border: '1px solid #EAEAEA' }}>
+                        Sıra #{v.founderRank}
+                      </span>
+                    )}
+                  </div>
                   <div style={{ fontSize: 12, color: '#888' }}>{v.email} · {v.phone}</div>
                   <div style={{ fontSize: 12, color: '#888' }}>{v.address} · {v._count?.classes || 0} ders</div>
                   <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{new Date(v.createdAt).toLocaleDateString('tr-TR')} tarihinde başvurdu</div>
