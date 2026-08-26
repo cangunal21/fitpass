@@ -54,6 +54,8 @@ function KayitForm() {
     // Sunucu da bu kapıyı uyguluyor (bkz. fitpass/src/utils/consent.ts); buradaki kontrol
     // kullanıcıya anında geri bildirim için, sunucuyu ikame etmek için değil.
     if (!onay.sozlesme) { setError(t('consent.required')); return }
+    // Yaş beyanı AYRI bir kapı: sözleşme onayıyla birleştirilseydi "ayrı onay" şartı düşerdi.
+    if (!onay.yasBeyani) { setError(t('consent.ageRequired')); return }
 
     setLoading(true)
     try {

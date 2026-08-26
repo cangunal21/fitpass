@@ -17,10 +17,12 @@ import { useT } from '@/lib/i18n'
 
 export type OnayDurumu = {
   sozlesme: boolean
+  /** 18 yaş beyanı — sözleşme onayından AYRI kutu (Gizlilik 11.4 "ayrı bir onayla alınır"). */
+  yasBeyani: boolean
   ticariIleti: boolean
 }
 
-export const BOS_ONAY: OnayDurumu = { sozlesme: false, ticariIleti: false }
+export const BOS_ONAY: OnayDurumu = { sozlesme: false, yasBeyani: false, ticariIleti: false }
 
 /** Backend'in beklediği gövde (bkz. fitpass/src/utils/consent.ts). */
 export function onayGovdesi(ozne: 'uye' | 'salon' | 'egitmen', d: OnayDurumu): Record<string, boolean> {
@@ -30,7 +32,9 @@ export function onayGovdesi(ozne: 'uye' | 'salon' | 'egitmen', d: OnayDurumu): R
       : ozne === 'egitmen'
         ? { 'egitmen-aydinlatma': d.sozlesme, gizlilik: d.sozlesme }
         : { uyelik: d.sozlesme, gizlilik: d.sozlesme }
-  return { ...sozlesmeler, 'acik-riza-ticari-ileti': d.ticariIleti }
+  // Salon tüzel kişidir, yaş beyanı istenmez (bkz. fitpass/src/utils/consent.ts).
+  const yas: Record<string, boolean> = ozne === 'salon' ? {} : { 'yas-beyani': d.yasBeyani }
+  return { ...sozlesmeler, ...yas, 'acik-riza-ticari-ileti': d.ticariIleti }
 }
 
 const kutuStil: React.CSSProperties = {
@@ -102,6 +106,18 @@ export default function OnayKutulari({
           {t('consent.accept')}
         </span>
       </label>
+
+      {ozne !== 'salon' && (
+        <label style={satirStil}>
+          <input
+            type="checkbox"
+            checked={deger.yasBeyani}
+            onChange={e => onChange({ ...deger, yasBeyani: e.target.checked })}
+            style={kutuStil}
+          />
+          <span>{t('consent.age')}</span>
+        </label>
+      )}
 
       <label style={satirStil}>
         <input

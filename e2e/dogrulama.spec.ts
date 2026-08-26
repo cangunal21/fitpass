@@ -62,9 +62,12 @@ async function formuDoldur(page: import('@playwright/test').Page) {
   await page.locator('input[name="email"]').fill('testci@ornek.com')
   await page.locator('input[name="password"]').fill('Parola12345')
   await page.locator('input[name="passwordConfirm"]').fill('Parola12345')
-  // Sözleşme onayı ZORUNLU (KVKK) — işaretlenmezse form gönderilmez. İlk kutu sözleşme,
-  // ikincisi isteğe bağlı ticari ileti izni; ikincisi bilerek işaretlenmiyor.
-  await page.locator('input[type="checkbox"]').first().check()
+  // Zorunlu onaylar (KVKK): [0] sözleşme, [1] 18 yaş beyanı. [2] ticari ileti İSTEĞE BAĞLI ve
+  // bilerek işaretlenmiyor — test onu da işaretleseydi, o kutunun yanlışlıkla zorunlu hâle
+  // gelmesi fark edilmezdi.
+  const kutular = page.locator('input[type="checkbox"]')
+  await kutular.nth(0).check()
+  await kutular.nth(1).check()
   await page.getByRole('button', { name: /^Kayıt Ol$/ }).click()
 }
 
@@ -120,13 +123,18 @@ test.describe('Kayıt — e-posta doğrulama kodu', () => {
 
     // Kutular ÖN-İŞARETLİ GELMEMELİ: KVKK'da rıza "özgür irade" ister.
     const kutular = page.locator('input[type="checkbox"]')
-    await expect(kutular).toHaveCount(2)
-    await expect(kutular.first()).not.toBeChecked()
-    await expect(kutular.nth(1)).not.toBeChecked()
+    await expect(kutular).toHaveCount(3) // sözleşme + 18 yaş + ticari ileti
+    for (let i = 0; i < 3; i++) await expect(kutular.nth(i)).not.toBeChecked()
 
     await page.getByRole('button', { name: /^Kayıt Ol$/ }).click()
-
     await expect(page.getByText('Devam etmek için sözleşmeleri onaylamanız gerekiyor.')).toBeVisible()
+
+    // YAŞ BEYANI AYRI BİR KAPI: sözleşme onaylansa da beyan yoksa kayıt gitmemeli.
+    // Gizlilik 11.4 beyanın "ayrı bir onayla" alınmasını istiyor; aynı kutuya gömülseydi
+    // bu adım geçilirdi ve şart karşılanmamış olurdu.
+    await kutular.nth(0).check()
+    await page.getByRole('button', { name: /^Kayıt Ol$/ }).click()
+    await expect(page.getByText(/18 yaş ve üzeri içindir/)).toBeVisible()
     // Kod ekranına GEÇMEMELİ — istek hiç gitmedi
     await expect(page.getByRole('heading', { name: /E-postanı doğrula/i })).toBeHidden()
     await expect(page).toHaveURL(/\/kayit/)

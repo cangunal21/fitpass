@@ -29,6 +29,7 @@ export default function EgitmenKayitPage() {
     if (form.password.length < 8) { setError('Şifre en az 8 karakter olmalı.'); return }
     // Sunucu da bu kapıyı uyguluyor (fitpass/src/utils/consent.ts); buradaki kontrol anında geri bildirim için.
     if (!onay.sozlesme) { setError('Devam etmek için sözleşmeleri onaylamanız gerekiyor.'); return }
+    if (!onay.yasBeyani) { setError('Eğitmen kaydı 18 yaş ve üzeri içindir; devam etmek için yaş beyanını onaylayın.'); return }
     setLoading(true)
     try {
       const res = await fetch(`${API_URL}/api/instructor/register`, {
