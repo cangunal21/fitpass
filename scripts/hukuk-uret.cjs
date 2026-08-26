@@ -60,10 +60,21 @@ function govdeCikar(ham, dosya) {
   return ham.slice(bas + '<body>'.length, son).trim()
 }
 
-function surumCikar(govde) {
+function surumCikar(govde, dosya) {
   // Sürüm etiketi .sub div'inde: "Son güncelleme: [GG.AA.YYYY] · TASLAK 9"
+  //
+  // BULAMAZSA SESSİZ GEÇMEZ. Bu üreteç .py dosyasının KAYNAK METNİNİ okuyor, çalıştırmıyor;
+  // bir kaynak damgayı değişkenden üretmeye kalkarsa (`TASLAK "+VER`) regex eşleşmiyor ve
+  // belge sitede SÜRÜMSÜZ görünüyordu. Sürüm, kullanıcının hangi metni kabul ettiğinin
+  // kaydıdır (bkz. fitpass/src/utils/consent.ts) — sessizce kaybolamaz.
   const m = govde.match(/TASLAK\s*(\d+)/i)
-  return m ? `Taslak ${m[1]}` : null
+  if (!m) {
+    throw new Error(
+      `${dosya}: sürüm etiketi bulunamadı. Belgede "TASLAK N" DÜZ METİN olarak geçmeli — ` +
+      `değişkenden üretilirse bu betik göremez (kaynağı çalıştırmıyor, metnini okuyor).`
+    )
+  }
+  return `Taslak ${m[1]}`
 }
 
 function uret() {
@@ -89,7 +100,7 @@ function uret() {
     // Tabloları kaydırılabilir kutuya al: PDF'te sayfa genişliği sabit, sitede telefon var.
     // Sarmalanmazsa geniş tablo SAYFAYI yatay kaydırtır (gövde metni de bozulur).
     const govdeSon = govdeTarihli.replace(/<table[\s\S]*?<\/table>/g, m => `<div class="tablo-kutu">${m}</div>`)
-    ciktilar.push({ ...b, govde: govdeSon, tarih, surum: surumCikar(govde) })
+    ciktilar.push({ ...b, govde: govdeSon, tarih, surum: surumCikar(govde, dosyalar[0]) })
   }
 
   const satirlar = [
@@ -133,6 +144,30 @@ function uret() {
   return { icerik: satirlar.join('\n'), ciktilar, eksik }
 }
 
+/**
+ * BACKEND SÜRÜM SENKRONU.
+ *
+ * Onay kaydı, kullanıcının HANGİ SÜRÜMÜ kabul ettiğini yazıyor (fitpass/src/utils/consent.ts →
+ * RIZA_BELGELERI). O liste elle güncelleniyordu ve bir yorumla uyarılıyordu — yetmedi: Salon
+ * Aracılık Taslak 11'den 12'ye çıktığında backend 11'de kaldı ve kullanıcılar YENİ metni görüp
+ * kayda ESKİ sürüm yazılacaktı. Bu, onay kaydının ispat değerini yok eder.
+ * Artık uyarı değil KAPI: sürümler ayrışırsa --check kırmızı yanar.
+ */
+function backendSurumFarki(ciktilar) {
+  const yol = path.join(KAYNAK_DIZIN, 'fitpass/src/utils/consent.ts')
+  if (!fs.existsSync(yol)) return null // backend bu makinede yok (CI) → atla
+  const kaynak = fs.readFileSync(yol, 'utf8')
+  const farklar = []
+  for (const c of ciktilar) {
+    // RIZA_BELGELERI içindeki `slug: { surum: 'Taslak N'` kalıbı (tırnaklı ya da tırnaksız anahtar)
+    const re = new RegExp(`['"]?${c.slug.replace(/[-]/g, '\\-')}['"]?\\s*:\\s*\\{[^}]*?surum:\\s*['"]([^'"]+)['"]`)
+    const m = kaynak.match(re)
+    if (!m) continue // o belge onay listesinde yok — normal (her belge onaylanmıyor)
+    if (m[1] !== c.surum) farklar.push({ slug: c.slug, web: c.surum, backend: m[1] })
+  }
+  return farklar
+}
+
 const { icerik, ciktilar, eksik } = uret()
 const kontrol = process.argv.includes('--check')
 
@@ -150,6 +185,14 @@ if (kontrol) {
     console.error('   Çalıştırın:  npm run hukuk:uret\n')
     process.exit(1)
   }
+  const farklar = backendSurumFarki(ciktilar)
+  if (farklar && farklar.length) {
+    console.error('\n❌ BACKEND ONAY SÜRÜMLERİ AYRIŞMIŞ.')
+    console.error('   Kullanıcı yeni metni görüp kayda ESKİ sürüm yazılır — onay kaydının')
+    console.error('   ispat değeri yok olur. fitpass/src/utils/consent.ts → RIZA_BELGELERI:')
+    for (const f of farklar) console.error(`   ${f.slug.padEnd(22)} site: ${f.web}   backend: ${f.backend}`)
+    process.exit(1)
+  }
   console.log(`✅ Hukuk metinleri güncel — ${ciktilar.length} belge.`)
 } else {
   fs.writeFileSync(CIKTI, icerik)
@@ -157,6 +200,12 @@ if (kontrol) {
   for (const c of ciktilar) {
     console.log(`   ${c.slug.padEnd(22)} ${String(c.surum || '—').padEnd(11)} ${c.tarih}  ${(c.govde.length / 1024).toFixed(1)} KB`)
   }
+}
+
+const surumFarklari = backendSurumFarki(ciktilar)
+if (surumFarklari && surumFarklari.length) {
+  console.log('\n⚠️  BACKEND ONAY SÜRÜMLERİ AYRIŞMIŞ — fitpass/src/utils/consent.ts güncellenmeli:')
+  for (const f of surumFarklari) console.log(`   ${f.slug.padEnd(22)} site: ${f.web}   backend: ${f.backend}`)
 }
 
 if (eksik.length) {
