@@ -9,7 +9,7 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false)
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState('')
-  const [activeTab, setActiveTab] = useState<'stats' | 'venues' | 'venue-images' | 'reports' | 'users' | 'bookings'  | 'categories' | 'instructors' | 'complaints' | 'hareketler' | 'donus' | 'analitik'>('venues')
+  const [activeTab, setActiveTab] = useState<'stats' | 'venues' | 'venue-images' | 'reports' | 'users' | 'bookings'  | 'categories' | 'instructors' | 'complaints' | 'hareketler' | 'donus' | 'analitik' | 'geribildirim'>('venues')
   const [pendingImages, setPendingImages] = useState<any[]>([])
   const [reports, setReports] = useState<any[]>([])
   const [stats, setStats] = useState<any>(null)
@@ -19,6 +19,8 @@ export default function AdminPage() {
   const [olayFiltre, setOlayFiltre] = useState('')
   const [donus, setDonus] = useState<any[]>([])
   const [analitik, setAnalitik] = useState<any>(null)
+  const [geri, setGeri] = useState<{ kayitlar: any[]; ozet: any[] } | null>(null)
+  const [sadeceSorunlu, setSadeceSorunlu] = useState(true)
   const [users, setUsers] = useState<any[]>([])
   const [bookings, setBookings] = useState<any[]>([])
   const [categories, setCategories] = useState<any[]>([])
@@ -219,6 +221,7 @@ export default function AdminPage() {
     if (tab === 'hareketler') fetchOlaylar(olayFiltre)
     if (tab === 'donus') fetchDonus()
     if (tab === 'analitik') fetchAnalitik()
+    if (tab === 'geribildirim') fetchGeri(sadeceSorunlu)
   }
 
   const fetchOlaylar = async (olay: string) => {
@@ -229,6 +232,10 @@ export default function AdminPage() {
   const fetchDonus = async () => {
     const v = await adminOku(`${API_URL}/api/admin/venue-retention`, d => d.salonlar || [])
     if (v) setDonus(v)
+  }
+  const fetchGeri = async (sorunlu: boolean) => {
+    const v = await adminOku(`${API_URL}/api/admin/seans-geri-bildirim${sorunlu ? '?sorunlu=1' : ''}`, d => d)
+    if (v) setGeri(v)
   }
   const fetchAnalitik = async () => {
     const v = await adminOku(`${API_URL}/api/admin/platform-analytics`, d => d)
@@ -391,6 +398,7 @@ export default function AdminPage() {
             { key: 'hareketler', label: 'Salon Hareketleri' },
             { key: 'donus', label: 'Geri Dönüş' },
             { key: 'analitik', label: 'Analitik' },
+            { key: 'geribildirim', label: 'Gizli Geri Bildirim' },
           ] as const).map(tab => (
             <button key={tab.key} onClick={() => handleTab(tab.key)} style={{ padding: '10px 18px', borderRadius: 12, border: 'none', background: activeTab === tab.key ? '#fff' : 'transparent', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: activeTab === tab.key ? '#1a1a1a' : '#888', boxShadow: activeTab === tab.key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', whiteSpace: 'nowrap' }}>
               {tab.label}
@@ -822,6 +830,64 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* GİZLİ GERİ BİLDİRİM */}
+        {activeTab === 'geribildirim' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ backgroundColor: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 12, padding: '10px 14px', fontSize: 12.5, color: '#78350F', lineHeight: 1.6 }}>
+              Bu veri kullanıcıya <b>&quot;yalnızca yöneticilere iletilir&quot;</b> denerek toplandı.
+              Salon ve eğitmen panellerinde <b>görünmez</b>; dışarı aktarılırsa verilen söz bozulur
+              ve bir daha dürüst cevap gelmez.
+            </div>
+
+            {geri?.ozet && geri.ozet.length > 0 && (
+              <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: '16px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+                <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111', margin: '0 0 2px' }}>Satıcı özeti</h3>
+                <p style={{ fontSize: 12, color: '#999', margin: '0 0 12px' }}>
+                  Tek şikâyet gürültüdür; oran birikiyorsa sinyaldir. Az sayıda geri bildirimle karar vermeyin.
+                </p>
+                {geri.ozet.map((o, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '7px 0', borderTop: i ? '1px solid #F4F4F5' : 'none' }}>
+                    <span style={{ fontSize: 13.5, color: '#111', fontWeight: 600 }}>
+                      {o.ad} <span style={{ fontSize: 11, color: '#aaa', fontWeight: 500 }}>({o.tur})</span>
+                    </span>
+                    <span style={{ fontSize: 13, color: o.oran >= 30 ? '#DC2626' : '#92400E', fontWeight: 700 }}>
+                      {o.sorunlu}/{o.toplam} · %{o.oran}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 8 }}>
+              {([[true, 'Yalnızca sorunlu'], [false, 'Hepsi']] as const).map(([v, l]) => (
+                <button key={String(v)} onClick={() => { setSadeceSorunlu(v); fetchGeri(v) }}
+                  style={{ padding: '6px 14px', borderRadius: 20, border: `1px solid ${sadeceSorunlu === v ? '#4F46E5' : '#E5E5E5'}`, background: sadeceSorunlu === v ? '#EEF2FF' : '#fff', color: sadeceSorunlu === v ? '#4F46E5' : '#666', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>
+                  {l}
+                </button>
+              ))}
+            </div>
+
+            {(!geri?.kayitlar || geri.kayitlar.length === 0) && <div style={{ color: '#888', fontSize: 14 }}>Geri bildirim yok.</div>}
+            {(geri?.kayitlar || []).map(k => (
+              <div key={k.id} style={{ backgroundColor: '#fff', borderRadius: 14, padding: '14px 18px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', borderLeft: `3px solid ${k.ilanEdilenGibi ? '#16a34a' : '#DC2626'}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 10px', borderRadius: 20, backgroundColor: k.ilanEdilenGibi ? '#F0FDF4' : '#FEF2F2', color: k.ilanEdilenGibi ? '#16a34a' : '#DC2626' }}>
+                    {k.ilanEdilenGibi ? 'İlan edildiği gibi' : 'Sorunlu'}
+                  </span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: '#111' }}>{k.saticiAd || '—'}</span>
+                  {k.sebep && <span style={{ fontSize: 12, color: '#92400E' }}>{SEBEP_ADI[k.sebep] || k.sebep}</span>}
+                  <span style={{ fontSize: 12, color: '#999' }}>{new Date(k.olusturma).toLocaleString('tr-TR')}</span>
+                </div>
+                {k.yorum && (
+                  <div style={{ fontSize: 13.5, color: '#444', marginTop: 8, lineHeight: 1.6, background: '#FAFAFA', borderRadius: 8, padding: '8px 12px' }}>
+                    {k.yorum}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* ANALİTİK */}
         {activeTab === 'analitik' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -859,6 +925,13 @@ export default function AdminPage() {
   )
 }
 
+const SEBEP_ADI: Record<string, string> = {
+  hoca_gelmedi: 'Eğitmen gelmedi',
+  kisa_surdu: 'Çok kısa sürdü',
+  baglanti: 'Bağlantı çalışmadı',
+  icerik_farkli: 'İçerik ilandan farklıydı',
+  diger: 'Başka',
+}
 const OLAY_ADI: Record<string, string> = {
   seans_iptal: 'Seans iptal',
   seans_guncelle: 'Seans güncelle',

@@ -203,6 +203,8 @@ const qsOf = (params?: Record<string, string | undefined>) =>
   params ? '?' + new URLSearchParams(Object.entries(params).filter(([, v]) => v) as [string, string][]).toString() : ''
 
 export const api = {
+  gizliGeriBildirim: (token: string, data: { bookingId: number; ilanEdilenGibi: boolean; sebep?: string; yorum?: string }) =>
+    request('/api/reviews/gizli-geri-bildirim', { method: 'POST', headers: jsonHeaders(token), body: JSON.stringify(data) }),
   register: (data: { username: string; email: string; password: string; fullName: string; phone?: string; referralCode?: string; preferredSports?: string[]; preferredNeighborhoods?: number[]; onaylar?: Record<string, boolean | { granted: boolean; version?: string }> }) =>
     request('/api/auth/register', { method: 'POST', headers: jsonHeaders(), body: JSON.stringify(data) }),
 

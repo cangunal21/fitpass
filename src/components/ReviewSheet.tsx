@@ -60,6 +60,11 @@ export default function ReviewSheet({
   const [instructorRating, setInstructorRating] = useState(0)
   const [instructorComment, setInstructorComment] = useState('')
   const [isAnonymous, setIsAnonymous] = useState(true)
+  // GİZLİ BÖLÜM — yalnız yöneticiye gider, hiçbir yerde yayımlanmaz. İSTEĞE BAĞLI:
+  // null = kullanıcı cevaplamadı (atladı) → hiç gönderilmez.
+  const [ilanEdilenGibi, setIlanEdilenGibi] = useState<boolean | null>(null)
+  const [gizliSebep, setGizliSebep] = useState('')
+  const [gizliYorum, setGizliYorum] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
@@ -81,8 +86,21 @@ export default function ReviewSheet({
       instructorComment: hasInstructor && instructorRating >= 1 ? (instructorComment.trim() || undefined) : undefined,
       isAnonymous,
     })
+    if (res?.error) { setSubmitting(false); setError(res.error); return }
+
+    // GİZLİ GERİ BİLDİRİM — AYRI uç, ayrı tablo, yalnız yöneticiye.
+    // Public puanlama başarılı olduktan SONRA gönderiliyor ve hatası kullanıcıya YANSITILMIYOR:
+    // isteğe bağlı bir ek adımın hatası, başarıyla kaydedilmiş puanlamayı başarısız göstermemeli.
+    if (ilanEdilenGibi !== null) {
+      await api.gizliGeriBildirim(token, {
+        bookingId: hedef.bookingId,
+        ilanEdilenGibi,
+        sebep: ilanEdilenGibi ? undefined : (gizliSebep || undefined),
+        yorum: gizliYorum.trim() || undefined,
+      }).catch(() => {})
+    }
+
     setSubmitting(false)
-    if (res?.error) { setError(res.error); return }
     setDone(true)
     onGonderildi?.({ venueRating, venueComment })
   }
@@ -119,6 +137,43 @@ export default function ReviewSheet({
                 <textarea value={instructorComment} onChange={e => setInstructorComment(e.target.value)} placeholder={t('rate.instructorPh')} rows={2} style={commentBox} />
               </>
             )}
+
+            {/* GİZLİ BÖLÜM — yukarıdaki puanlamadan görsel olarak AYRILMIŞ. Kullanıcı neyin
+                yayımlandığını, neyin yalnız yöneticiye gittiğini karıştırmamalı. */}
+            <div style={{ marginTop: 20, padding: '14px 16px', background: '#FAFAFA', border: '1px solid #EFEFEF', borderRadius: 12 }}>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: '#111' }}>{t('rate.privateQ')}</div>
+              <div style={{ fontSize: 11.5, color: '#999', marginTop: 3, lineHeight: 1.6 }}>{t('rate.privateNote')}</div>
+
+              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                {([true, false] as const).map(v => (
+                  <button key={String(v)} type="button"
+                    onClick={() => { setIlanEdilenGibi(ilanEdilenGibi === v ? null : v); if (v) setGizliSebep('') }}
+                    style={{ flex: 1, padding: '9px 12px', borderRadius: 10, cursor: 'pointer', fontSize: 13.5, fontWeight: 600,
+                      border: `1.5px solid ${ilanEdilenGibi === v ? (v ? '#16a34a' : '#DC2626') : '#E5E5E5'}`,
+                      background: ilanEdilenGibi === v ? (v ? '#F0FDF4' : '#FEF2F2') : '#fff',
+                      color: ilanEdilenGibi === v ? (v ? '#16a34a' : '#DC2626') : '#666' }}>
+                    {v ? t('rate.privateYes') : t('rate.privateNo')}
+                  </button>
+                ))}
+              </div>
+
+              {ilanEdilenGibi === false && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+                  {([['hoca_gelmedi', t('rate.rNoShow')], ['kisa_surdu', t('rate.rShort')], ['baglanti', t('rate.rLink')], ['icerik_farkli', t('rate.rContent')], ['diger', t('rate.rOther')]] as const).map(([k, l]) => (
+                    <button key={k} type="button" onClick={() => setGizliSebep(gizliSebep === k ? '' : k)}
+                      style={{ padding: '6px 12px', borderRadius: 20, cursor: 'pointer', fontSize: 12.5, fontWeight: 600,
+                        border: `1px solid ${gizliSebep === k ? '#4F46E5' : '#E5E5E5'}`,
+                        background: gizliSebep === k ? '#EEF2FF' : '#fff', color: gizliSebep === k ? '#4F46E5' : '#666' }}>
+                      {l}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {ilanEdilenGibi !== null && (
+                <textarea value={gizliYorum} onChange={e => setGizliYorum(e.target.value)} placeholder={t('rate.privatePh')} rows={2} style={commentBox} />
+              )}
+            </div>
 
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#555', cursor: 'pointer', marginTop: 16 }}>
               <input type="checkbox" checked={isAnonymous} onChange={e => setIsAnonymous(e.target.checked)} />
